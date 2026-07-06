@@ -1,4 +1,4 @@
-# Notelo — platforma rezerwacji dla wielu obiektów (MVP)
+# Notelo — platforma rezerwacji dla wielu obiektów (MVP) 
 
 Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, wille, apartamenty) rejestrują się samodzielnie, dostają własną stronę rezerwacji i panel recepcji. Inspirowany zestawieniem Profitroom / Hotres / IdoBooking.
 
