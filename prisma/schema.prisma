@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  name         String
+  isAdmin      Boolean   @default(false) // globalny administrator platformy
+  createdAt    DateTime             @default(now())
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
+  property     Property?
+}
+
+model Session {
+  token     String   @id
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+}
+
+model PasswordResetToken {
+  token     String   @id
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+}
+
+model Property {
+  id             Int        @id @default(autoincrement())
+  ownerId        Int        @unique
+  owner          User       @relation(fields: [ownerId], references: [id])
+  slug           String     @unique
+  name           String
+  plan           String     @default("FREE") // FREE | STANDARD | PRO
+  createdAt      DateTime   @default(now())
+  description    String     @default("")
+  address        String     @default("")
+  checkInFrom    String     @default("15:00")
+  checkOutTo     String     @default("11:00")
+  depositPercent Int        @default(30)
+  terms          String     @default("") // regulamin obiektu
+  privacyPolicy  String     @default("") // polityka prywatności
+  unitTypes      UnitType[]
+  photos         Photo[]
+  promoCodes     PromoCode[]
+  faqs           PropertyFaq[]
+}
+
+model PropertyFaq {
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  property   Property @relation(fields: [propertyId], references: [id])
+  question   String
+  answer     String
+  sort       Int      @default(0)
+}
+
+model PromoCode {
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  property   Property @relation(fields: [propertyId], references: [id])
+  code       String // wpisywany przez gościa, per obiekt
+  percentOff Int // rabat % od kwoty pobytu
+  validFrom  String   @default("") // YYYY-MM-DD lub puste = od zawsze
+  validTo    String   @default("") // YYYY-MM-DD lub puste = bezterminowo
+  maxUses    Int      @default(0) // 0 = bez limitu
+  usedCount  Int      @default(0)
+  active     Boolean  @default(true)
+
+  @@unique([propertyId, code])
+}
+
+model Photo {
+  id         Int       @id @default(autoincrement())
+  propertyId Int?
+  property   Property? @relation(fields: [propertyId], references: [id])
+  unitTypeId Int?
+  unitType   UnitType? @relation(fields: [unitTypeId], references: [id])
+  path       String // ścieżka względem /public, np. /uploads/p1/abc.jpg
+  createdAt  DateTime  @default(now())
+}
+
+model UnitType {
+  id          Int          @id @default(autoincrement())
+  propertyId  Int
+  property    Property     @relation(fields: [propertyId], references: [id])
+  name        String
+  description String       @default("")
+  maxGuests   Int
+  basePriceGr Int
+  minStay     Int          @default(1)
+  amenities   String       @default("[]") // JSON: lista kluczy z lib/amenities.ts
+  units       Unit[]
+  seasons     RateSeason[]
+  photos      Photo[]
+}
+
+model Unit {
+  id           Int           @id @default(autoincrement())
+  unitTypeId   Int
+  unitType     UnitType      @relation(fields: [unitTypeId], references: [id])
+  name         String
+  active       Boolean       @default(true) // false = wyłączona ze sprzedaży
+  icalToken    String? // sekret w URL eksportu iCal
+  reservations Reservation[]
+  blocks       Block[]
+  icalFeeds    IcalFeed[]
+}
+
+// Zewnętrzny kalendarz (np. eksport iCal z Booking.com/Airbnb) — zajęte
+// terminy lądują jako Block z source=ICAL przy każdej synchronizacji.
+model IcalFeed {
+  id         Int       @id @default(autoincrement())
+  unitId     Int
+  unit       Unit      @relation(fields: [unitId], references: [id])
+  url        String
+  name       String    @default("")
+  channel    String    @default("OTHER") // BOOKING | AIRBNB | VRBO | OTHER
+  lastSyncAt DateTime?
+  lastError  String    @default("")
+  blocks     Block[]
+}
+
+model RateSeason {
+  id         Int      @id @default(autoincrement())
+  unitTypeId Int
+  unitType   UnitType @relation(fields: [unitTypeId], references: [id])
+  name       String
+  startDate  String // YYYY-MM-DD, pierwsza noc sezonu (inclusive)
+  endDate    String // YYYY-MM-DD, ostatnia noc sezonu (inclusive)
+  priceGr    Int
+  minStay    Int      @default(1)
+}
+
+model Block {
+  id        Int       @id @default(autoincrement())
+  unitId    Int
+  unit      Unit      @relation(fields: [unitId], references: [id])
+  startDate String // pierwsza zablokowana noc
+  endDate   String // exclusive — jak checkOut
+  note      String    @default("")
+  source    String    @default("MANUAL") // MANUAL | ICAL
+  feedId    Int?
+  feed      IcalFeed? @relation(fields: [feedId], references: [id])
+}
+
+model Reservation {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  unitId    Int
+  unit      Unit      @relation(fields: [unitId], references: [id])
+  checkIn   String // YYYY-MM-DD
+  checkOut  String // YYYY-MM-DD
+  guests    Int
+  guestName String
+  email     String
+  phone     String    @default("")
+  nip       String    @default("") // NIP do faktury (opcjonalny)
+  notes     String    @default("")
+  totalGr    Int
+  discountGr Int    @default(0) // udzielony rabat (kod promocyjny)
+  promoCode  String @default("") // użyty kod
+  depositGr  Int
+  status         String    @default("PENDING") // PENDING | CONFIRMED | CANCELLED
+  source         String    @default("ONLINE") // ONLINE | MANUAL
+  paymentOrderId String    @default("") // orderId z bramki (P24) po opłaceniu
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime? // PENDING po tym czasie nie blokuje dostępności
+}
