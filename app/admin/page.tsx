@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
       <div className="card p-10 text-center space-y-4">
         <p className="text-4xl">🚀</p>
         <h1 className="text-2xl font-bold text-brand-950">
-          Witaj w Hostimo! Zacznij od dodania pokoi.
+          Witaj w Notelo! Zacznij od dodania pokoi.
         </h1>
         <p className="text-slate-600 max-w-md mx-auto">
           Dodaj typy pokoi (np. „Pokój Standard&rdquo;, „Apartament&rdquo;), liczbę

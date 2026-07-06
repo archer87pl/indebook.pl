@@ -19,7 +19,7 @@ function toHtml(mail: Mail): string {
   <p style="font-weight:800;font-size:18px;color:#134e4a">host<span style="color:#0d9488">imo</span></p>
   <p style="white-space:pre-line;color:#0f172a;line-height:1.6">${escapeHtml(mail.body)}</p>
   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
-  <p style="font-size:12px;color:#94a3b8">Hostimo — rezerwuj bezpośrednio, bez prowizji portali</p>
+  <p style="font-size:12px;color:#94a3b8">Notelo — rezerwuj bezpośrednio, bez prowizji portali</p>
 </div>`;
 }
 
@@ -40,7 +40,7 @@ export async function sendMail(mail: Mail): Promise<void> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM ?? "Hostimo <onboarding@resend.dev>",
+        from: process.env.EMAIL_FROM ?? "Notelo <onboarding@resend.dev>",
         to: [mail.to],
         subject: mail.subject,
         text: mail.body,

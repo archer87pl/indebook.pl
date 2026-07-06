@@ -12,13 +12,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
   title: {
-    default: "Hostimo — rezerwacje online bez prowizji",
-    template: "%s | Hostimo",
+    default: "Notelo — rezerwacje online bez prowizji",
+    template: "%s | Notelo",
   },
   description:
     "System rezerwacji dla obiektów noclegowych: silnik rezerwacji, channel manager, płatności online i panel recepcji. Abonament zamiast prowizji.",
   openGraph: {
-    siteName: "Hostimo",
+    siteName: "Notelo",
     locale: "pl_PL",
     type: "website",
   },
@@ -92,7 +92,7 @@ export default function RootLayout({
             </div>
           </div>
           <div className="border-t border-white/10 text-center text-xs py-4">
-            © {new Date().getFullYear()} Hostimo · hostimo.pl — rezerwuj bezpośrednio, bez prowizji portali
+            © {new Date().getFullYear()} Notelo · notelo.pl — rezerwuj bezpośrednio, bez prowizji portali
           </div>
         </footer>
       </body>

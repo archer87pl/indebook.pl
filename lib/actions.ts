@@ -88,7 +88,7 @@ export async function login(formData: FormData) {
 
 /** Konto demo: logowanie jednym kliknięciem na wspólne konto pokazowe. */
 export async function demoLogin() {
-  const user = await prisma.user.findUnique({ where: { email: "demo@hostimo.pl" } });
+  const user = await prisma.user.findUnique({ where: { email: "demo@notelo.pl" } });
   if (!user) redirect("/login?error=1");
   await createSession(user!.id);
   redirect("/admin");
@@ -112,7 +112,7 @@ export async function requestPasswordReset(formData: FormData) {
     ]);
     await sendMail({
       to: user.email,
-      subject: "Hostimo — reset hasła",
+      subject: "Notelo — reset hasła",
       body: `Cześć ${user.name},\n\nAby ustawić nowe hasło, otwórz link (ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}\n\nJeśli to nie Ty prosiłeś o reset — zignoruj tę wiadomość.`,
     });
   }
@@ -479,7 +479,7 @@ export async function adminCreateReservation(formData: FormData) {
   const guests = Number(str(formData, "guests")) || 1;
   const guestName = str(formData, "guestName");
   const phone = str(formData, "phone");
-  const email = str(formData, "email") || "brak@hostimo.local";
+  const email = str(formData, "email") || "brak@notelo.local";
   const notes = str(formData, "notes");
   const priceOverride = str(formData, "totalZl");
 
@@ -584,7 +584,7 @@ export async function adminUpdateReservation(formData: FormData) {
     throw e;
   }
 
-  if (datesChanged && email && !email.endsWith("@hostimo.local")) {
+  if (datesChanged && email && !email.endsWith("@notelo.local")) {
     await sendMail({
       to: email,
       subject: `Rezerwacja ${r.code} — zmiana terminu`,

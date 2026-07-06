@@ -3,8 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // pula połączeń (pgbouncer) — używana przez aplikację w runtime na Vercel
+  url       = env("DATABASE_URL")
+  // bezpośrednie połączenie — używane przez `prisma db push` / migracje
+  directUrl = env("DIRECT_URL")
 }
 
 model User {

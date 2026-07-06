@@ -1,11 +1,12 @@
 {
-  "name": "hostimo",
+  "name": "notelo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +18,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",
+    "@vercel/blob": "^2.5.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4"

@@ -16,18 +16,18 @@ function addDays(base: Date, days: number): Date {
 async function main() {
   // globalny administrator platformy (niezależnie od reszty seedu)
   const admin = await prisma.user.findUnique({
-    where: { email: "admin@hostimo.pl" },
+    where: { email: "admin@notelo.pl" },
   });
   if (!admin) {
     await prisma.user.create({
       data: {
-        email: "admin@hostimo.pl",
-        name: "Administrator Hostimo",
+        email: "admin@notelo.pl",
+        name: "Administrator Notelo",
         passwordHash: hashPassword("admin1234"),
         isAdmin: true,
       },
     });
-    console.log("Superadmin: admin@hostimo.pl / admin1234");
+    console.log("Superadmin: admin@notelo.pl / admin1234");
   }
 
   const existing = await prisma.property.findFirst();
@@ -39,18 +39,18 @@ async function main() {
   const today = new Date();
   const year = today.getFullYear();
 
-  // ---------- Obiekt 1: Willa Hostimo ----------
+  // ---------- Obiekt 1: Willa Notelo ----------
   const willa = await prisma.property.create({
     data: {
       owner: {
         create: {
-          email: "demo@hostimo.pl",
+          email: "demo@notelo.pl",
           name: "Dariusz Demo",
           passwordHash: hashPassword("demo1234"),
         },
       },
-      slug: "willa-hostimo",
-      name: "Willa Hostimo",
+      slug: "willa-notelo",
+      name: "Willa Notelo",
       plan: "PRO",
       description:
         "Kameralna willa nad jeziorem — 6 pokoi, prywatny pomost i sauna. Rezerwuj bezpośrednio, bez prowizji portali.",
@@ -185,7 +185,7 @@ async function main() {
     data: {
       owner: {
         create: {
-          email: "marina@hostimo.pl",
+          email: "marina@notelo.pl",
           name: "Marta Marina",
           passwordHash: hashPassword("marina123"),
         },
@@ -245,8 +245,8 @@ async function main() {
   });
 
   console.log("Seed OK:");
-  console.log("  demo@hostimo.pl / demo1234   → Willa Hostimo (/o/willa-hostimo)");
-  console.log("  marina@hostimo.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
+  console.log("  demo@notelo.pl / demo1234   → Willa Notelo (/o/willa-notelo)");
+  console.log("  marina@notelo.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
 }
 
 main()

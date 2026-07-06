@@ -1,4 +1,4 @@
-# Hostimo — platforma rezerwacji dla wielu obiektów (MVP)
+# Notelo — platforma rezerwacji dla wielu obiektów (MVP)
 
 Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, wille, apartamenty) rejestrują się samodzielnie, dostają własną stronę rezerwacji i panel recepcji. Inspirowany zestawieniem Profitroom / Hotres / IdoBooking.
 
@@ -6,13 +6,14 @@ Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, will
 
 - Next.js 16 (App Router, Server Actions, Turbopack) + React 19 + TypeScript
 - Tailwind CSS 4 (paleta marki i klasy komponentów w `app/globals.css`)
-- Prisma 6 + SQLite (MVP; schema gotowa na migrację do Postgresa)
+- Prisma 6 + PostgreSQL (Supabase); zdjęcia w Vercel Blob
 
 ## Uruchomienie
 
 ```bash
 npm install
-npm run db:push   # tworzy dev.db wg prisma/schema.prisma
+# ustaw DATABASE_URL/DIRECT_URL w .env (Postgres/Supabase — patrz .env.example)
+npm run db:push   # tworzy tabele wg prisma/schema.prisma
 npm run db:seed   # dwa demo obiekty (dane logowania poniżej)
 npm run dev
 ```
@@ -21,9 +22,9 @@ Konta:
 
 | E-mail | Hasło | Rola |
 |---|---|---|
-| `demo@hostimo.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa Hostimo, plan Pro |
-| `marina@hostimo.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
-| `admin@hostimo.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
+| `demo@notelo.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa Notelo, plan Pro |
+| `marina@notelo.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
+| `admin@notelo.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
 
 Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 99 zł (bez limitu) — limit jednostek egzekwowany przy dodawaniu pokoi; plan zmienia superadmin.
 
@@ -65,16 +66,32 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 9
 - Kwoty w groszach (int, sufiks `Gr`); formatowanie i odmiana nocy w `lib/format.ts`.
 - Dostępność i przydział jednostki w transakcji (`lib/availability.ts`); PENDING po 30 min zwalnia termin.
 
-## Wdrożenie
+## Wdrożenie na Vercel (zalecane)
+
+Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **Vercel Cron**.
+
+1. **Baza (Supabase)** — utwórz projekt, skopiuj z Project Settings → Database:
+   - `DATABASE_URL` = connection string „Transaction" (pooler, port 6543) + `?pgbouncer=true&connection_limit=1`,
+   - `DIRECT_URL` = połączenie bezpośrednie (port 5432).
+   Zainicjalizuj schemat i dane:
+   ```bash
+   npx prisma db push   # tworzy tabele wg schema.prisma (używa DIRECT_URL)
+   npm run db:seed      # opcjonalnie: demo obiekty i superadmin
+   ```
+2. **Blob** — w dashboardzie Vercel: Storage → Create → Blob; token `BLOB_READ_WRITE_TOKEN` wstrzyknie się automatycznie do deploymentu (`vercel env pull` do dev).
+3. **Zmienne środowiskowe** (Vercel → Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`, `APP_URL` (adres produkcyjny), `CRON_SECRET` (dowolny losowy ciąg), oraz opcjonalnie `RESEND_API_KEY`, `EMAIL_FROM`, `P24_*`. Pełna lista w `.env.example`.
+4. **Cron** — harmonogram w `vercel.json` (wygaszanie rezerwacji co 10 min, sync iCal co godzinę). Endpointy `app/api/cron/*` chroni `CRON_SECRET`. Uwaga: plan **Hobby** ogranicza cron do 1×/dobę — do częstszego harmonogramu potrzebny plan Pro.
+5. Deploy przez `git push` (integracja GitHub) lub `vercel --prod`. Build sam odpala `prisma generate` (`postinstall`).
+
+## Wdrożenie na Docker (self-host)
 
 ```bash
-# Docker (SQLite + uploady na wolumenach)
+# uploady wymagają BLOB_READ_WRITE_TOKEN (zdjęcia trafiają do Vercel Blob)
 APP_URL=https://twojadomena.pl docker compose up -d --build
 ```
 
-- Obraz buduje standalone Next (`output: "standalone"`), przy starcie robi `prisma db push` i seed nie jest wymagany (rejestracja tworzy dane).
-- Zmienne środowiskowe: patrz `.env.example` (APP_URL wymagane w produkcji — linki w e-mailach, iCal, P24).
-- **Postgres zamiast SQLite**: w `prisma/schema.prisma` zmień `provider = "postgresql"`, ustaw `DATABASE_URL` i uruchom `prisma db push` — kod nie wymaga zmian (daty to stringi, kwoty int).
+- Obraz buduje standalone Next (`output: "standalone"` poza Vercelem), przy starcie robi `prisma db push`.
+- Wymaga zewnętrznego Postgresa (`DATABASE_URL`/`DIRECT_URL`) — SQLite nie jest już wspierany.
 - Za reverse proxy (nginx/traefik) wystaw port 3000 + HTTPS.
 - SEO: `app/sitemap.ts` i `app/robots.ts` generują sitemap.xml/robots.txt; landing ma JSON-LD (FAQPage, SoftwareApplication z ofertami planów, Organization).
 
