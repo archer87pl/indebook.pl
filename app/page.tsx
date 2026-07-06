@@ -423,7 +423,7 @@ export default async function HomePage() {
               <tr className="border-b border-slate-200 text-left">
                 <th className="px-5 py-3.5 font-medium text-slate-500 w-2/5"></th>
                 <th className="px-5 py-3.5 font-black text-brand-800 bg-brand-50">
-                  host<span className="text-brand-600">imo</span>
+                  not<span className="text-brand-600">elo</span>
                 </th>
                 <th className="px-5 py-3.5 font-semibold text-slate-500">Portale OTA</th>
               </tr>

@@ -37,10 +37,10 @@ export default function RootLayout({
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center gap-2">
               <span className="grid place-items-center h-8 w-8 rounded-lg bg-brand-700 text-white font-black text-sm">
-                H
+                N
               </span>
               <span className="text-xl font-bold tracking-tight text-brand-950">
-                host<span className="text-brand-600">imo</span>
+                not<span className="text-brand-600">elo</span>
               </span>
             </Link>
             <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
@@ -59,10 +59,10 @@ export default function RootLayout({
             <div className="space-y-2">
               <p className="flex items-center gap-2">
                 <span className="grid place-items-center h-7 w-7 rounded-lg bg-white/10 text-white font-black text-xs">
-                  H
+                  N
                 </span>
                 <span className="text-lg font-bold text-white">
-                  host<span className="text-brand-400">imo</span>
+                  not<span className="text-brand-400">elo</span>
                 </span>
               </p>
               <p className="text-xs leading-relaxed">
