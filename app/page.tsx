@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { demoLogin } from "@/lib/actions";
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Rezio — system rezerwacji online bez prowizji dla obiektów noclegowych",
   description:
-    "Silnik rezerwacji, channel manager (Booking.com, Airbnb), płatności BLIK i panel recepcji dla pensjonatów, willi i apartamentów. Stały abonament od 0 zł — zero prowizji od rezerwacji.",
+    "Silnik rezerwacji, channel manager (Booking.com, Airbnb), płatności BLIK, meldunek online z e-podpisem, SMS-y, opinie gości, ceny dynamiczne i faktury. Stały abonament od 0 zł — zero prowizji od rezerwacji.",
   keywords: [
     "system rezerwacji",
     "silnik rezerwacji",
@@ -20,12 +21,16 @@ export const metadata: Metadata = {
     "rezerwacje online bez prowizji",
     "system rezerwacji dla pensjonatu",
     "system rezerwacji apartamentów",
+    "meldunek online",
+    "karta meldunkowa online",
+    "ceny dynamiczne hotel",
+    "faktura za nocleg",
   ],
   alternates: { canonical: "/" },
   openGraph: {
     title: "Rezio — rezerwacje online bez prowizji",
     description:
-      "Strona rezerwacji, channel manager i recepcja dla małych obiektów noclegowych. Abonament zamiast prowizji.",
+      "Strona rezerwacji, channel manager, meldunek online, SMS-y i faktury — kompletna recepcja dla małych obiektów noclegowych. Abonament zamiast prowizji.",
     type: "website",
     locale: "pl_PL",
   },
@@ -56,6 +61,22 @@ const FAQ = [
     q: "Ile trwa wdrożenie systemu rezerwacji?",
     a: "Około 30 minut: zakładasz konto, dodajesz typy pokoi z cenami i zdjęciami — i Twoja strona rezerwacji działa pod własnym adresem. Kreator prowadzi Cię krok po kroku.",
   },
+  {
+    q: "Jak działa meldunek online?",
+    a: "Po potwierdzeniu rezerwacji gość dostaje link do karty meldunkowej: wypełnia dane, podpisuje się palcem lub myszką i od razu widzi instrukcje przyjazdu (kody do drzwi, WiFi, dojazd). Ty masz gotową kartę meldunkową do druku — bez kolejki na recepcji i bez skanowania dowodów.",
+  },
+  {
+    q: "Czy Rezio wysyła SMS-y i prosi gości o opinie?",
+    a: "Tak. Gość dostaje SMS z potwierdzeniem rezerwacji i przypomnienie dzień przed przyjazdem, a dzień po wymeldowaniu — prośbę o opinię. Opinie z gwiazdkami trafiają na Twoją stronę obiektu (także do wyników Google), a Ty możesz na nie publicznie odpowiadać.",
+  },
+  {
+    q: "Czy wystawię gościowi fakturę?",
+    a: "Tak — fakturę VAT, zaliczkową lub proforma wystawisz jednym kliknięciem z rezerwacji. System sam numeruje dokumenty, rozbija kwoty brutto na netto i VAT (8%/23%) i podstawia dane nabywcy z rezerwacji.",
+  },
+  {
+    q: "Czym są ceny dynamiczne?",
+    a: "Regułami, które same korygują ceny za noc: podwyżka w weekendy i przy wysokim obłożeniu, rabat last minute na domykanie luk. Ustawiasz raz — a cennik pracuje za Ciebie we wszystkich wycenach.",
+  },
 ];
 
 const FEATURES = [
@@ -78,6 +99,48 @@ const FEATURES = [
     tile: "from-accent-400/30 to-accent-100",
   },
   {
+    icon: "📝",
+    title: "Meldunek online z e-podpisem",
+    desc: "Gość wypełnia kartę meldunkową przed przyjazdem i podpisuje palcem. Bez kolejki na recepcji i bez skanów dowodów.",
+    tile: "from-teal-400/25 to-brand-100",
+  },
+  {
+    icon: "🔑",
+    title: "Instrukcje przyjazdu",
+    desc: "Kody do drzwi, WiFi i dojazd odblokowują się po meldunku online. Samodzielne zameldowanie bez telefonów.",
+    tile: "from-cyan-400/20 to-brand-100",
+  },
+  {
+    icon: "💬",
+    title: "Czat z gościem",
+    desc: "Wiadomości przypięte do rezerwacji z powiadomieniami e-mail. Koniec z szukaniem ustaleń w SMS-ach i telefonach.",
+    tile: "from-indigo-400/20 to-brand-200/40",
+  },
+  {
+    icon: "📲",
+    title: "SMS-y do gości",
+    desc: "Potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem — automatycznie, o ludzkiej porze.",
+    tile: "from-lime-400/25 to-brand-100",
+  },
+  {
+    icon: "⭐",
+    title: "Opinie gości",
+    desc: "Automatyczna prośba o opinię po pobycie, moderacja i odpowiedzi. Gwiazdki trafiają do wyników Google.",
+    tile: "from-amber-400/30 to-accent-100",
+  },
+  {
+    icon: "📈",
+    title: "Ceny dynamiczne",
+    desc: "Drożej w weekendy i przy pełnym obłożeniu, rabat last minute. Reguły raz ustawione pracują same.",
+    tile: "from-fuchsia-400/20 to-brand-200/40",
+  },
+  {
+    icon: "🧾",
+    title: "Faktury",
+    desc: "VAT, zaliczkowa lub proforma jednym kliknięciem z rezerwacji. Numeracja, netto/VAT i rejestr w komplecie.",
+    tile: "from-orange-400/25 to-accent-100",
+  },
+  {
     icon: "🧳",
     title: "Panel gościa",
     desc: "Gość sam zmienia termin, liczbę osób lub anuluje — z przeliczeniem ceny według cennika.",
@@ -89,11 +152,39 @@ const FEATURES = [
     desc: "Przychody, ADR i obłożenie per kanał sprzedaży. Eksport CSV do księgowości.",
     tile: "from-rose-400/20 to-accent-100",
   },
+];
+
+// automatyczna ścieżka gościa — od rezerwacji do opinii
+const JOURNEY = [
   {
-    icon: "🏷️",
-    title: "Kody promocyjne",
-    desc: "Rabaty procentowe z limitem użyć i terminem ważności. Cennik sezonowy per typ pokoju.",
-    tile: "from-amber-400/25 to-brand-100",
+    icon: "🛎",
+    title: "Rezerwacja 24/7",
+    desc: "Gość rezerwuje na Twojej stronie — z cennikiem sezonowym i cenami dynamicznymi.",
+  },
+  {
+    icon: "💳",
+    title: "Zaliczka BLIK-iem",
+    desc: "Płatność potwierdza rezerwację automatycznie. Nieopłacone same zwalniają termin.",
+  },
+  {
+    icon: "📝",
+    title: "Meldunek online",
+    desc: "Karta meldunkowa z e-podpisem wypełniona przed przyjazdem — zero papierologii.",
+  },
+  {
+    icon: "🔑",
+    title: "Instrukcje i SMS",
+    desc: "Po meldunku gość widzi kody i dojazd, a dzień przed przyjazdem dostaje SMS.",
+  },
+  {
+    icon: "💬",
+    title: "Czat w trakcie pobytu",
+    desc: "Pytania i ustalenia w jednym wątku przy rezerwacji, z powiadomieniami.",
+  },
+  {
+    icon: "⭐",
+    title: "Opinia po wyjeździe",
+    desc: "Automatyczna prośba o ocenę — gwiazdki lądują na Twojej stronie i w Google.",
   },
 ];
 
@@ -111,7 +202,7 @@ const STEPS = [
   {
     n: "3",
     title: "Przyjmuj rezerwacje 24/7",
-    desc: "Twoja strona rezerwacji działa pod własnym adresem. Zaliczka potwierdza pobyt, a Ty widzisz wszystko w jednym panelu.",
+    desc: "Twoja strona działa pod własnym adresem. Zaliczka potwierdza pobyt, system melduje gości, wysyła SMS-y i prosi o opinie.",
   },
 ];
 
@@ -120,7 +211,55 @@ const COMPARISON: [string, string, string][] = [
   ["Dane i kontakt do gościa", "Twoje, od pierwszej chwili", "ukryte za portalem"],
   ["Marka i strona obiektu", "Twoja własna strona", "profil w cudzym serwisie"],
   ["Zmiana terminu przez gościa", "samoobsługa online", "telefon / wiadomości"],
+  ["Meldunek i karta meldunkowa", "online, z e-podpisem", "papier na recepcji"],
+  ["Opinie gości", "na Twojej stronie i w Google", "zostają na portalu"],
+  ["Faktura dla gościa", "jedno kliknięcie z rezerwacji", "poza systemem"],
   ["Raporty i obłożenie per kanał", "wbudowane", "brak lub płatne dodatki"],
+];
+
+// macierz funkcji per plan: true/false lub tekst (np. limit)
+const PRICE_MATRIX: {
+  group: string;
+  rows: [string, string | boolean, string | boolean, string | boolean][];
+}[] = [
+  {
+    group: "Sprzedaż",
+    rows: [
+      ["Jednostki (pokoje / apartamenty)", "3", "15", "bez limitu"],
+      ["Strona obiektu z rezerwacją online", true, true, true],
+      ["Cennik sezonowy i min. długość pobytu", true, true, true],
+      ["Kody promocyjne", false, true, true],
+      ["Ceny dynamiczne (weekend / last minute / obłożenie)", false, false, true],
+      ["Płatności online — BLIK, karty (Przelewy24)", false, true, true],
+    ],
+  },
+  {
+    group: "Kanały sprzedaży",
+    rows: [
+      ["Channel manager iCal (Booking.com, Airbnb, Vrbo)", false, true, true],
+      ["Alerty o podwójnych rezerwacjach", false, true, true],
+    ],
+  },
+  {
+    group: "Obsługa gościa",
+    rows: [
+      ["Panel gościa — zmiana terminu, anulowanie", true, true, true],
+      ["E-maile do gości", true, true, true],
+      ["Opinie gości z moderacją i odpowiedziami", true, true, true],
+      ["Meldunek online z e-podpisem + instrukcje przyjazdu", false, true, true],
+      ["Czat z gościem", false, true, true],
+      ["SMS-y — potwierdzenia i przypomnienia", false, true, true],
+    ],
+  },
+  {
+    group: "Biuro i analityka",
+    rows: [
+      ["Faktury VAT / zaliczkowe / proforma", false, false, true],
+      ["Raporty przychodów i obłożenia per kanał", false, false, true],
+      ["Eksport CSV do księgowości", false, false, true],
+      ["Priorytetowe wsparcie", false, false, true],
+    ],
+  },
 ];
 
 const QUOTES = [
@@ -174,7 +313,7 @@ export default async function HomePage() {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "System rezerwacji online bez prowizji dla obiektów noclegowych: silnik rezerwacji, channel manager, płatności online i panel recepcji.",
+        "System rezerwacji online bez prowizji dla obiektów noclegowych: silnik rezerwacji, channel manager, płatności online, meldunek online z e-podpisem, SMS-y, opinie gości, ceny dynamiczne, faktury i panel recepcji.",
       url: base,
       offers: PLANS.map((p) => ({
         "@type": "Offer",
@@ -228,9 +367,9 @@ export default async function HomePage() {
                 <span className="text-gradient">Zero prowizji.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg text-brand-100/90">
-                Strona rezerwacji, channel manager i recepcja w jednym panelu.
-                Wdrożenie w 30 minut, abonament od 0 zł — zamiast oddawania 15–25%
-                portalom.
+                Strona rezerwacji, channel manager, meldunek online, SMS-y, opinie
+                i faktury — kompletna recepcja w jednym panelu. Wdrożenie w 30 minut,
+                abonament od 0 zł zamiast oddawania 15–25% portalom.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/rejestracja" className="btn-accent px-8 py-3.5 text-base shadow-lg shadow-accent-500/25">
@@ -347,6 +486,15 @@ export default async function HomePage() {
                   Booking.com · Airbnb · 12:00
                 </span>
               </div>
+              <div
+                className="animate-float absolute -left-6 bottom-10 rounded-xl bg-white/95 backdrop-blur text-slate-800 shadow-xl ring-1 ring-black/10 px-4 py-3 text-xs font-semibold"
+                style={{ "--tilt": "-2deg", animationDelay: "-6s" } as React.CSSProperties}
+              >
+                ⭐ Nowa opinia <span className="text-accent-500">★★★★★</span>
+                <span className="block text-[10px] font-normal text-slate-500">
+                  „Cudowne miejsce, wrócimy!”
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -373,6 +521,37 @@ export default async function HomePage() {
                   →
                 </span>
               )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------- ŚCIEŻKA GOŚCIA ---------- */}
+      <section className="reveal space-y-8">
+        <div className="text-center space-y-2">
+          <h2 className="text-3xl font-black text-brand-950">
+            Obsługa gościa dzieje się sama
+          </h2>
+          <p className="text-slate-500">
+            Od rezerwacji do opinii w Google — automatycznie. Ty tylko witasz gości.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {JOURNEY.map((s, i) => (
+            <div
+              key={s.title}
+              className="relative card p-5 space-y-1.5 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-100 to-accent-100 text-xl">
+                  {s.icon}
+                </span>
+                <span className="text-xs font-black text-slate-300">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <h3 className="font-bold text-brand-950">{s.title}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -423,7 +602,7 @@ export default async function HomePage() {
               <tr className="border-b border-slate-200 text-left">
                 <th className="px-5 py-3.5 font-medium text-slate-500 w-2/5"></th>
                 <th className="px-5 py-3.5 font-black text-brand-800 bg-brand-50">
-                  not<span className="text-brand-600">elo</span>
+                  rez<span className="text-brand-600">io</span>
                 </th>
                 <th className="px-5 py-3.5 font-semibold text-slate-500">Portale OTA</th>
               </tr>
@@ -581,6 +760,76 @@ export default async function HomePage() {
             </div>
           ))}
         </div>
+
+        {/* pełna macierz funkcji */}
+        <details className="card overflow-hidden max-w-4xl mx-auto group">
+          <summary className="cursor-pointer select-none px-6 py-4 text-center font-semibold text-brand-950 hover:bg-brand-50 transition-colors list-none">
+            Porównaj wszystkie funkcje planów{" "}
+            <span className="text-slate-400 group-open:hidden">▾</span>
+            <span className="text-slate-400 hidden group-open:inline">▴</span>
+          </summary>
+          <div className="overflow-x-auto border-t border-slate-100">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left border-b border-slate-200">
+                  <th className="px-5 py-3 font-medium text-slate-500 w-1/2"></th>
+                  {PLANS.map((p) => (
+                    <th
+                      key={p.key}
+                      className={`px-4 py-3 text-center font-bold ${
+                        p.highlighted ? "text-brand-800 bg-brand-50" : "text-slate-600"
+                      }`}
+                    >
+                      {p.label}
+                      <span className="block text-xs font-medium text-slate-400">
+                        {p.priceZl} zł/mc
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {PRICE_MATRIX.map((g) => (
+                  <React.Fragment key={g.group}>
+                    <tr className="bg-slate-50">
+                      <td
+                        colSpan={4}
+                        className="px-5 py-2 text-xs font-bold uppercase tracking-widest text-slate-400"
+                      >
+                        {g.group}
+                      </td>
+                    </tr>
+                    {g.rows.map(([label, ...cells]) => (
+                      <tr key={label} className="border-b border-slate-100 last:border-0">
+                        <td className="px-5 py-2.5 text-slate-700">{label}</td>
+                        {cells.map((c, i) => (
+                          <td
+                            key={i}
+                            className={`px-4 py-2.5 text-center ${
+                              PLANS[i].highlighted ? "bg-brand-50/60" : ""
+                            }`}
+                          >
+                            {c === true ? (
+                              <span className="text-brand-600 font-bold">✓</span>
+                            ) : c === false ? (
+                              <span className="text-slate-300">—</span>
+                            ) : (
+                              <span className="font-semibold text-slate-700">{c}</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <p className="text-center text-xs text-slate-400">
+          Wszystkie plany: bez umowy na czas określony, bez prowizji od rezerwacji,
+          zmiana planu w każdej chwili.
+        </p>
       </section>
 
       {/* ---------- FAQ ---------- */}
