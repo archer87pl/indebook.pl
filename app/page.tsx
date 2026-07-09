@@ -102,7 +102,7 @@ const FEATURES = [
     icon: "📝",
     title: "Meldunek online z e-podpisem",
     desc: "Gość wypełnia kartę meldunkową przed przyjazdem i podpisuje palcem. Bez kolejki na recepcji i bez skanów dowodów.",
-    tile: "from-teal-400/25 to-brand-100",
+    tile: "from-sky-400/25 to-brand-100",
   },
   {
     icon: "🔑",
@@ -348,7 +348,7 @@ export default async function HomePage() {
             style={{ animationDelay: "-5s" }}
           />
           <div
-            className="aurora-blob h-64 w-64 bg-emerald-300/60 bottom-0 right-1/3"
+            className="aurora-blob h-64 w-64 bg-sky-300/60 bottom-0 right-1/3"
             style={{ animationDelay: "-9s" }}
           />
           <div className="absolute inset-0 grid-pattern" />

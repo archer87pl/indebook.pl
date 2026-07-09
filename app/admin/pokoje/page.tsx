@@ -69,7 +69,7 @@ export default async function RoomsPage(props: {
                       name="amenities"
                       value={a.key}
                       defaultChecked={parseAmenities(ut.amenities).includes(a.key)}
-                      className="accent-teal-700"
+                      className="accent-brand-600"
                     />
                     {a.icon} {a.label}
                   </label>
@@ -223,7 +223,7 @@ export default async function RoomsPage(props: {
             <div className="grid gap-x-4 gap-y-1.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {AMENITIES.map((a) => (
                 <label key={a.key} className="flex items-center gap-2 text-sm text-slate-700">
-                  <input type="checkbox" name="amenities" value={a.key} className="accent-teal-700" />
+                  <input type="checkbox" name="amenities" value={a.key} className="accent-brand-600" />
                   {a.icon} {a.label}
                 </label>
               ))}

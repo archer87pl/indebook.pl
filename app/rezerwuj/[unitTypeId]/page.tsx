@@ -93,7 +93,7 @@ export default async function BookPage(props: {
             <textarea name="notes" rows={3} className="input w-full" />
           </label>
           <label className="flex items-start gap-2 text-sm text-slate-600">
-            <input type="checkbox" name="rodo" required className="mt-1 accent-teal-700" />
+            <input type="checkbox" name="rodo" required className="mt-1 accent-brand-600" />
             <span>
               Wyrażam zgodę na przetwarzanie moich danych osobowych w celu realizacji
               rezerwacji (RODO) i akceptuję{" "}

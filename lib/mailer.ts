@@ -16,7 +16,7 @@ function escapeHtml(s: string): string {
 
 function toHtml(mail: Mail): string {
   return `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px">
-  <p style="font-weight:800;font-size:18px;color:#134e4a">rez<span style="color:#0d9488">io</span></p>
+  <p style="font-weight:800;font-size:18px;color:#172554">rez<span style="color:#2563eb">io</span></p>
   <p style="white-space:pre-line;color:#0f172a;line-height:1.6">${escapeHtml(mail.body)}</p>
   <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
   <p style="font-size:12px;color:#94a3b8">Rezio — rezerwuj bezpośrednio, bez prowizji portali</p>

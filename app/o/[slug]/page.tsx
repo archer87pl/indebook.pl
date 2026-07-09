@@ -111,7 +111,7 @@ export default async function PropertyPage(props: {
             className="pointer-events-none absolute inset-0 opacity-20"
             style={{
               backgroundImage:
-                "radial-gradient(circle at 80% 20%, #fbbf24 0, transparent 40%), radial-gradient(circle at 10% 90%, #99f6e4 0, transparent 35%)",
+                "radial-gradient(circle at 80% 20%, #fbbf24 0, transparent 40%), radial-gradient(circle at 10% 90%, #93c5fd 0, transparent 35%)",
             }}
           />
           <p className="relative text-sm font-semibold uppercase tracking-widest text-accent-400">
