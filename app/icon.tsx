@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// Dynamicznie generowany favicon — białe „N" na kafelku w kolorze marki
+// Dynamicznie generowany favicon — białe „R" na kafelku w kolorze marki
 // (brand-700 = #0f766e), spójne z logo w nagłówku.
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
@@ -23,7 +23,7 @@ export default function Icon() {
           fontFamily: "sans-serif",
         }}
       >
-        N
+        R
       </div>
     ),
     size,

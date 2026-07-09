@@ -192,6 +192,44 @@ export default async function PropertySettingsPage(props: {
           </label>
         </div>
         <label className="label">
+          Instrukcje przyjazdu (kody drzwi, WiFi, dojazd) — gość zobaczy je
+          dopiero po wypełnieniu meldunku online
+          <textarea
+            name="arrivalInfo"
+            rows={4}
+            defaultValue={property.arrivalInfo}
+            placeholder={"Kod do drzwi: 1234#\nWiFi: NazwaSieci / hasło\nParking za budynkiem."}
+            className="input"
+          />
+        </label>
+        <div className="rounded-lg bg-slate-50 p-4 space-y-4">
+          <div>
+            <h2 className="font-semibold text-brand-950 text-sm">Dane do faktur</h2>
+            <p className="text-xs text-slate-500">
+              Używane jako sprzedawca na fakturach. NIP jest wymagany, by
+              wystawiać faktury. Puste „nazwa" / „adres" = nazwa i adres obiektu.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="label">
+              Nazwa sprzedawcy (opcjonalnie)
+              <input name="sellerName" defaultValue={property.sellerName} placeholder={property.name} className="input" />
+            </label>
+            <label className="label">
+              NIP sprzedawcy
+              <input name="sellerNip" defaultValue={property.sellerNip} placeholder="np. 5220000000" className="input" />
+            </label>
+          </div>
+          <label className="label">
+            Adres na fakturze (opcjonalnie)
+            <input name="sellerAddress" defaultValue={property.sellerAddress} placeholder={property.address} className="input" />
+          </label>
+          <label className="label">
+            Numer konta bankowego (opcjonalnie)
+            <input name="bankAccount" defaultValue={property.bankAccount} placeholder="PL00 0000 0000 0000 0000 0000 0000" className="input font-mono text-xs" />
+          </label>
+        </div>
+        <label className="label">
           Regulamin obiektu (widoczny pod /o/{property.slug}/regulamin)
           <textarea
             name="terms"

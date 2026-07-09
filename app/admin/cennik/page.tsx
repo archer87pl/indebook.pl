@@ -4,23 +4,28 @@ import {
   adminUpdatePricing,
   createPromoCode,
   deletePromoCode,
+  savePricingRule,
   togglePromoCode,
 } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { PRICING_RULE_KINDS } from "@/lib/dynamic-pricing";
 import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function PricingPage(props: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
   const { property } = await requireOwner();
   const sp = await props.searchParams;
-  const promoCodes = await prisma.promoCode.findMany({
-    where: { propertyId: property.id },
-    orderBy: { id: "desc" },
-  });
+  const [promoCodes, pricingRules] = await Promise.all([
+    prisma.promoCode.findMany({
+      where: { propertyId: property.id },
+      orderBy: { id: "desc" },
+    }),
+    prisma.pricingRule.findMany({ where: { propertyId: property.id } }),
+  ]);
   const unitTypes = await prisma.unitType.findMany({
     where: { propertyId: property.id },
     include: { seasons: { orderBy: { startDate: "asc" } }, units: true },
@@ -36,6 +41,7 @@ export default async function PricingPage(props: {
           {sp.error}
         </p>
       )}
+      {sp.saved && <p className="alert-success">✓ Zapisano regułę cenową.</p>}
 
       {unitTypes.map((ut) => (
         <div key={ut.id} className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
@@ -123,6 +129,70 @@ export default async function PricingPage(props: {
           </form>
         </div>
       ))}
+
+      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+        <div>
+          <h2 className="font-bold text-lg text-brand-950">Ceny dynamiczne</h2>
+          <p className="text-xs text-slate-500">
+            Automatyczne korekty cen za noc, nakładane na cennik (bazę/sezony).
+            Dodatnia korekta = podwyżka, ujemna = rabat. Korekty z kilku reguł
+            sumują się.
+          </p>
+        </div>
+        {PRICING_RULE_KINDS.map((kind) => {
+          const rule = pricingRules.find((r) => r.kind === kind.key);
+          return (
+            <form
+              key={kind.key}
+              action={savePricingRule}
+              className="flex flex-wrap items-end gap-3 text-sm bg-slate-50 rounded-lg px-3 py-3"
+            >
+              <input type="hidden" name="kind" value={kind.key} />
+              <div className="w-44">
+                <p className="font-semibold">{kind.label}</p>
+                <p className="text-xs text-slate-500">{kind.hint}</p>
+              </div>
+              <label className="flex flex-col gap-1 font-medium">
+                Korekta ceny (%)
+                <input
+                  type="number"
+                  name="percent"
+                  required
+                  min={-50}
+                  max={100}
+                  defaultValue={rule?.percent ?? kind.defaultPercent}
+                  className={`${input} w-28`}
+                />
+              </label>
+              {kind.paramLabel && (
+                <label className="flex flex-col gap-1 font-medium">
+                  {kind.paramLabel}
+                  <input
+                    type="number"
+                    name="param"
+                    required
+                    min={1}
+                    max={kind.key === "OCCUPANCY" ? 100 : 60}
+                    defaultValue={rule?.param || kind.defaultParam}
+                    className={`${input} w-32`}
+                  />
+                </label>
+              )}
+              <label className="flex items-center gap-2 font-medium pb-2.5">
+                <input
+                  type="checkbox"
+                  name="active"
+                  defaultChecked={rule?.active ?? false}
+                />
+                aktywna
+              </label>
+              <button className="bg-slate-700 hover:bg-slate-800 text-white font-semibold rounded-lg px-4 py-2">
+                Zapisz
+              </button>
+            </form>
+          );
+        })}
+      </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
         <div>

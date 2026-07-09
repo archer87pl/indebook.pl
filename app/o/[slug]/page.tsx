@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SearchForm from "@/components/SearchForm";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
+import { formatDatePl } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
+import { averageRating, stars } from "@/lib/reviews";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +27,46 @@ export default async function PropertyPage(props: {
     },
   });
   if (!property) notFound();
+  if (property.suspended) {
+    return (
+      <div className="max-w-lg mx-auto mt-12 card p-8 text-center space-y-3">
+        <p className="text-4xl">🚧</p>
+        <h1 className="text-xl font-bold text-brand-950">
+          Ten obiekt jest obecnie niedostępny
+        </h1>
+        <p className="text-sm text-slate-600">
+          Strona rezerwacji obiektu {property.name} jest tymczasowo wyłączona.
+        </p>
+        <Link href="/" className="btn-primary">
+          Przeglądaj inne obiekty
+        </Link>
+      </div>
+    );
+  }
+
+  const reviews = await prisma.review.findMany({
+    where: { propertyId: property.id, hidden: false },
+    orderBy: { createdAt: "desc" },
+  });
+  const avg = averageRating(reviews.map((r) => r.rating));
 
   const cover = property.photos[0]?.path;
+  const ratingJsonLd =
+    reviews.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "LodgingBusiness",
+          name: property.name,
+          address: property.address || undefined,
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: avg,
+            reviewCount: reviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : null;
   const faqJsonLd =
     property.faqs.length > 0
       ? {
@@ -46,6 +86,12 @@ export default async function PropertyPage(props: {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      {ratingJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ratingJsonLd) }}
         />
       )}
       <section>
@@ -77,6 +123,17 @@ export default async function PropertyPage(props: {
           <p className="relative mt-4 max-w-2xl text-brand-100/90">
             {property.description}
           </p>
+          {reviews.length > 0 && (
+            <a
+              href="#opinie"
+              className="relative mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 backdrop-blur px-4 py-1.5 text-sm font-semibold hover:bg-white/20"
+            >
+              <span className="text-accent-400">{stars(avg)}</span>
+              {avg.toFixed(1).replace(".", ",")} ·{" "}
+              {reviews.length}{" "}
+              {reviews.length === 1 ? "opinia" : reviews.length < 5 ? "opinie" : "opinii"}
+            </a>
+          )}
         </div>
         <div className="-mt-10 mx-4 sm:mx-8 relative z-10">
           <SearchForm action={`/o/${property.slug}/wyniki`} />
@@ -155,6 +212,50 @@ export default async function PropertyPage(props: {
               className="h-36 w-full object-cover rounded-xl border border-slate-200"
             />
           ))}
+        </section>
+      )}
+
+      {reviews.length > 0 && (
+        <section id="opinie" className="space-y-5 max-w-3xl scroll-mt-20">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-2xl font-bold text-brand-950">Opinie gości</h2>
+            <span className="text-sm text-slate-500">
+              <span className="text-accent-500">{stars(avg)}</span>{" "}
+              {avg.toFixed(1).replace(".", ",")} / 5 · {reviews.length}
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {reviews.map((rev) => (
+              <div key={rev.id} className="card p-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-brand-950">
+                    {rev.authorName}
+                  </span>
+                  <span className="text-accent-500" title={`${rev.rating}/5`}>
+                    {stars(rev.rating)}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  {formatDatePl(rev.createdAt.toISOString().slice(0, 10))}
+                </p>
+                {rev.comment && (
+                  <p className="text-sm text-slate-600 whitespace-pre-line">
+                    {rev.comment}
+                  </p>
+                )}
+                {rev.ownerReply && (
+                  <div className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm">
+                    <p className="text-xs font-semibold text-brand-700">
+                      Odpowiedź obiektu
+                    </p>
+                    <p className="text-slate-600 whitespace-pre-line">
+                      {rev.ownerReply}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

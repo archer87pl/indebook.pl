@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { Property, User } from "@prisma/client";
 import { prisma } from "./db";
 
-export const SESSION_COOKIE = "notelo_session";
+export const SESSION_COOKIE = "rezio_session";
 const SESSION_TTL_MS = 30 * 24 * 3600 * 1000; // 30 dni
 
 export async function createSession(userId: number): Promise<void> {

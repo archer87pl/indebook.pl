@@ -43,6 +43,9 @@ model Property {
   slug           String     @unique
   name           String
   plan           String     @default("FREE") // FREE | STANDARD | PRO
+  // zawieszony przez administratora platformy: ukryty w katalogu,
+  // strona obiektu niedostępna, brak nowych rezerwacji
+  suspended      Boolean    @default(false)
   createdAt      DateTime   @default(now())
   description    String     @default("")
   address        String     @default("")
@@ -51,10 +54,35 @@ model Property {
   depositPercent Int        @default(30)
   terms          String     @default("") // regulamin obiektu
   privacyPolicy  String     @default("") // polityka prywatności
+  // dane sprzedawcy na fakturach (puste name/address = nazwa/adres obiektu)
+  sellerName     String     @default("")
+  sellerNip      String     @default("")
+  sellerAddress  String     @default("")
+  bankAccount    String     @default("")
+  // instrukcje przyjazdu (kody drzwi, WiFi, dojazd) — gość widzi je dopiero
+  // po wypełnieniu meldunku online (zachęta do potwierdzenia tożsamości)
+  arrivalInfo    String     @default("")
   unitTypes      UnitType[]
   photos         Photo[]
   promoCodes     PromoCode[]
   faqs           PropertyFaq[]
+  pricingRules   PricingRule[]
+  reviews        Review[]
+  invoices       Invoice[]
+}
+
+// Reguła cen dynamicznych — maks. jedna danego rodzaju na obiekt.
+// Korekty per noc sumują się i nakładają na cenę z cennika (baza/sezon).
+model PricingRule {
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  property   Property @relation(fields: [propertyId], references: [id])
+  kind       String // WEEKEND | LAST_MINUTE | OCCUPANCY
+  param      Int      @default(0) // LAST_MINUTE: dni do nocy (<=), OCCUPANCY: próg obłożenia %, WEEKEND: nieużywany
+  percent    Int // korekta ceny nocy w %: dodatnia = podwyżka, ujemna = rabat
+  active     Boolean  @default(true)
+
+  @@unique([propertyId, kind])
 }
 
 model PropertyFaq {
@@ -177,4 +205,94 @@ model Reservation {
   paymentOrderId String    @default("") // orderId z bramki (P24) po opłaceniu
   createdAt      DateTime  @default(now())
   expiresAt      DateTime? // PENDING po tym czasie nie blokuje dostępności
+  checkInStatus  String    @default("NONE") // NONE | COMPLETED — meldunek online
+  // ustawiane przy wypełnieniu meldunku: link szedł na ten e-mail, więc adres jest żywy
+  emailVerifiedAt   DateTime?
+  // przypomnienie o jutrzejszym przyjeździe (e-mail/SMS) — wysłane raz, przez cron
+  arrivalReminderAt DateTime?
+  // prośba o opinię po pobycie (e-mail/SMS) — wysłana raz, przez cron
+  reviewRequestedAt DateTime?
+  checkInCard     CheckInCard?
+  messages        Message[]
+  review          Review?
+  invoices        Invoice[]
+}
+
+// Faktura wystawiona z rezerwacji. Dane sprzedawcy i nabywcy są zapisane
+// jako snapshot (niezmienne po wystawieniu). Kwoty w groszach.
+model Invoice {
+  id            Int          @id @default(autoincrement())
+  propertyId    Int
+  property      Property     @relation(fields: [propertyId], references: [id])
+  reservationId Int?
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  kind          String // PROFORMA | ZALICZKOWA | KONCOWA
+  number        String // pełny numer, np. "FV 3/2026"
+  seq           Int // kolejny numer w obrębie typ+rok+obiekt
+  year          Int
+  issueDate     String // YYYY-MM-DD (data wystawienia)
+  saleDate      String // YYYY-MM-DD (data sprzedaży/usługi)
+  sellerName    String
+  sellerNip     String
+  sellerAddress String
+  bankAccount   String       @default("")
+  buyerName     String
+  buyerNip      String       @default("")
+  buyerAddress  String       @default("")
+  itemName      String // opis pozycji (usługa noclegowa …)
+  grossGr       Int
+  netGr         Int
+  vatGr         Int
+  vatRate       Int // stawka VAT w % (np. 8)
+  createdAt     DateTime     @default(now())
+
+  @@unique([propertyId, kind, year, seq])
+}
+
+// Opinia gościa po pobycie — jedna na rezerwację. propertyId zdenormalizowany
+// dla szybkich list i średniej per obiekt. Nie kasujemy — moderacja przez `hidden`.
+model Review {
+  id            Int         @id @default(autoincrement())
+  reservationId Int         @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  propertyId    Int
+  property      Property    @relation(fields: [propertyId], references: [id])
+  authorName    String // wyświetlane skrócone (imię + inicjał), z guestName
+  rating        Int // 1..5
+  comment       String      @default("")
+  ownerReply    String      @default("") // publiczna odpowiedź obiektu
+  hidden        Boolean     @default(false) // moderacja: ukryj nadużycie
+  createdAt     DateTime    @default(now())
+}
+
+// Wiadomość w czacie gość <-> obiekt przypiętym do rezerwacji.
+model Message {
+  id            Int         @id @default(autoincrement())
+  reservationId Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  sender        String // GUEST | OWNER
+  body          String
+  createdAt     DateTime    @default(now())
+  readAt        DateTime? // kiedy przeczytała druga strona (nieprzeczytane = null)
+}
+
+// Karta meldunkowa (meldunek online) — dane osobowe gościa + e-podpis.
+// PII: kasowane po okresie retencji (lib/jobs.ts purgeExpiredCheckIns);
+// badge na rezerwacji (checkInStatus) zostaje jako informacja historyczna.
+model CheckInCard {
+  id            Int         @id @default(autoincrement())
+  reservationId Int         @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  fullName      String
+  address       String // adres zamieszkania
+  citizenship   String      @default("polskie")
+  docType       String      @default("") // DOWOD | PASZPORT | INNY | "" = nie podano
+  docNumber     String      @default("") // tylko numer — bez skanów dokumentów (RODO)
+  carPlate      String      @default("")
+  arrivalTime   String      @default("") // HH:MM
+  guestsJson    String      @default("[]") // dodatkowi goście: [{name, birthDate}]
+  signaturePng  String // data:image/png;base64,... (~5–30 KB)
+  termsAccepted Boolean     @default(false)
+  rodoAccepted  Boolean     @default(false)
+  completedAt   DateTime    @default(now())
 }

@@ -13,8 +13,16 @@ export default async function AdminDashboard() {
   const today = todayISO();
   const inProperty = { unit: { unitType: { propertyId: property.id } } };
 
-  const [unitTypesCount, arrivals, departures, inHouse, pending, upcoming, conflicts] =
-    await Promise.all([
+  const [
+    unitTypesCount,
+    arrivals,
+    departures,
+    inHouse,
+    pending,
+    upcoming,
+    conflicts,
+    unreadMessages,
+  ] = await Promise.all([
       prisma.unitType.count({ where: { propertyId: property.id } }),
       prisma.reservation.count({
         where: { ...inProperty, status: "CONFIRMED", checkIn: today },
@@ -40,6 +48,9 @@ export default async function AdminDashboard() {
         take: 8,
       }),
       findChannelConflicts(property.id),
+      prisma.message.count({
+        where: { sender: "GUEST", readAt: null, reservation: inProperty },
+      }),
     ]);
 
   if (unitTypesCount === 0) {
@@ -47,7 +58,7 @@ export default async function AdminDashboard() {
       <div className="card p-10 text-center space-y-4">
         <p className="text-4xl">🚀</p>
         <h1 className="text-2xl font-bold text-brand-950">
-          Witaj w Notelo! Zacznij od dodania pokoi.
+          Witaj w Rezio! Zacznij od dodania pokoi.
         </h1>
         <p className="text-slate-600 max-w-md mx-auto">
           Dodaj typy pokoi (np. „Pokój Standard&rdquo;, „Apartament&rdquo;), liczbę
@@ -78,6 +89,19 @@ export default async function AdminDashboard() {
           + Nowa rezerwacja
         </Link>
       </div>
+
+      {unreadMessages > 0 && (
+        <Link
+          href="/admin/rezerwacje"
+          className="block bg-accent-100 border border-accent-400/50 text-accent-700 rounded-xl px-5 py-3 text-sm font-semibold hover:bg-accent-100/70"
+        >
+          💬 {unreadMessages}{" "}
+          {unreadMessages === 1
+            ? "nieprzeczytana wiadomość od gościa"
+            : "nieprzeczytane wiadomości od gości"}{" "}
+          — zobacz w Rezerwacjach →
+        </Link>
+      )}
 
       {conflicts.length > 0 && (
         <Link
@@ -118,7 +142,17 @@ export default async function AdminDashboard() {
             {upcoming.map((r) => (
               <tr key={r.id} className="border-b border-slate-100 last:border-0">
                 <td className="px-5 py-2 font-mono text-xs">{r.code}</td>
-                <td className="px-5 py-2">{r.guestName}</td>
+                <td className="px-5 py-2">
+                  {r.guestName}
+                  {r.checkInStatus === "COMPLETED" && (
+                    <span
+                      className="ml-1.5 text-emerald-700 text-xs font-semibold"
+                      title="Karta meldunkowa wypełniona online"
+                    >
+                      ✓ meldunek
+                    </span>
+                  )}
+                </td>
                 <td className="px-5 py-2">
                   {r.unit.unitType.name} ({r.unit.name})
                 </td>

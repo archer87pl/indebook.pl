@@ -32,7 +32,12 @@ export default async function ReservationsPage(props: {
     prisma.reservation.count({ where }),
     prisma.reservation.findMany({
       where,
-      include: { unit: { include: { unitType: true } } },
+      include: {
+        unit: { include: { unitType: true } },
+        _count: {
+          select: { messages: { where: { sender: "GUEST", readAt: null } } },
+        },
+      },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -108,7 +113,26 @@ export default async function ReservationsPage(props: {
                 </td>
                 <td className="px-4 py-3">
                   {r.guestName}
-                  <p className="text-slate-400">{r.guests} os.</p>
+                  {r._count.messages > 0 && (
+                    <Link
+                      href={`/admin/rezerwacje/${r.id}#czat`}
+                      className="ml-1.5 inline-block bg-accent-100 text-accent-700 rounded-full px-2 py-0.5 text-xs font-bold align-middle"
+                      title="Nieprzeczytane wiadomości od gościa"
+                    >
+                      💬 {r._count.messages}
+                    </Link>
+                  )}
+                  <p className="text-slate-400">
+                    {r.guests} os.
+                    {r.checkInStatus === "COMPLETED" && (
+                      <span
+                        className="ml-1 text-emerald-700 font-semibold"
+                        title="Karta meldunkowa wypełniona online"
+                      >
+                        · ✓ meldunek
+                      </span>
+                    )}
+                  </p>
                 </td>
                 <td className="px-4 py-3 text-slate-500">
                   {r.email}

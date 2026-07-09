@@ -9,7 +9,7 @@ import { PLANS } from "@/lib/plans";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Notelo — system rezerwacji online bez prowizji dla obiektów noclegowych",
+  title: "Rezio — system rezerwacji online bez prowizji dla obiektów noclegowych",
   description:
     "Silnik rezerwacji, channel manager (Booking.com, Airbnb), płatności BLIK i panel recepcji dla pensjonatów, willi i apartamentów. Stały abonament od 0 zł — zero prowizji od rezerwacji.",
   keywords: [
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Notelo — rezerwacje online bez prowizji",
+    title: "Rezio — rezerwacje online bez prowizji",
     description:
       "Strona rezerwacji, channel manager i recepcja dla małych obiektów noclegowych. Abonament zamiast prowizji.",
     type: "website",
@@ -33,15 +33,15 @@ export const metadata: Metadata = {
 
 const FAQ = [
   {
-    q: "Czy Notelo pobiera prowizję od rezerwacji?",
+    q: "Czy Rezio pobiera prowizję od rezerwacji?",
     a: "Nie. Płacisz stały miesięczny abonament (od 0 zł w planie Start), a wszystkie rezerwacje z Twojej strony są bez prowizji. Portale OTA pobierają 15–25% — u nas gość rezerwuje bezpośrednio u Ciebie.",
   },
   {
     q: "Jak działa synchronizacja z Booking.com i Airbnb?",
-    a: "Przez kalendarze iCal w obie strony: Notelo importuje zajęte terminy z portali i wystawia własny kalendarz do podpięcia u nich. Synchronizacja odbywa się automatycznie co godzinę, a system ostrzega przed podwójnymi rezerwacjami.",
+    a: "Przez kalendarze iCal w obie strony: Rezio importuje zajęte terminy z portali i wystawia własny kalendarz do podpięcia u nich. Synchronizacja odbywa się automatycznie co godzinę, a system ostrzega przed podwójnymi rezerwacjami.",
   },
   {
-    q: "Jakie płatności online obsługuje Notelo?",
+    q: "Jakie płatności online obsługuje Rezio?",
     a: "Zaliczki przez Przelewy24: BLIK, karty płatnicze i szybkie przelewy. Rezerwacja potwierdza się automatycznie po wpłacie, a nieopłacone rezerwacje same zwalniają termin po 30 minutach.",
   },
   {
@@ -148,7 +148,7 @@ const MOCK_CAL = [
 
 export default async function HomePage() {
   const properties = await prisma.property.findMany({
-    where: { unitTypes: { some: {} } },
+    where: { suspended: false, unitTypes: { some: {} } },
     include: {
       unitTypes: true,
       photos: { where: { propertyId: { not: null } }, orderBy: { id: "asc" }, take: 1 },
@@ -170,7 +170,7 @@ export default async function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: "Notelo",
+      name: "Rezio",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
@@ -187,7 +187,7 @@ export default async function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Notelo",
+      name: "Rezio",
       url: base,
       description: "Platforma rezerwacji bezpośrednich dla obiektów noclegowych.",
     },
@@ -268,12 +268,12 @@ export default async function HomePage() {
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   <span className="ml-3 flex-1 rounded-md bg-white border border-slate-200 px-3 py-1 text-[11px] text-slate-400 font-mono">
-                    notelo.pl/admin
+                    rezio.pl/admin
                   </span>
                 </div>
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold">Pulpit · Willa Notelo</p>
+                    <p className="text-sm font-bold">Pulpit · Willa Rezio</p>
                     <span className="rounded-full bg-brand-100 text-brand-800 px-2 py-0.5 text-[10px] font-bold">
                       Pro
                     </span>
@@ -413,7 +413,7 @@ export default async function HomePage() {
             Rezerwacja bezpośrednia się opłaca
           </h2>
           <p className="text-slate-500">
-            Przy 100 000 zł obrotu rocznie portale zabierają 15–25 tys. zł. Notelo —
+            Przy 100 000 zł obrotu rocznie portale zabierają 15–25 tys. zł. Rezio —
             od 0 do 1188 zł.
           </p>
         </div>
@@ -447,7 +447,7 @@ export default async function HomePage() {
       <section id="obiekty" className="reveal space-y-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-black text-brand-950">Obiekty na Notelo</h2>
+            <h2 className="text-3xl font-black text-brand-950">Obiekty na Rezio</h2>
             <p className="text-slate-500 text-sm mt-1">
               Rezerwuj bezpośrednio — wspierasz obiekt, nie pośrednika.
             </p>
@@ -509,7 +509,7 @@ export default async function HomePage() {
       {/* ---------- OPINIE ---------- */}
       <section className="reveal space-y-8">
         <h2 className="text-3xl font-black text-brand-950 text-center">
-          Właściciele o Notelo
+          Właściciele o Rezio
         </h2>
         <div className="grid gap-5 md:grid-cols-3">
           {QUOTES.map((q) => (

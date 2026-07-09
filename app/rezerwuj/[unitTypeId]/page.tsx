@@ -4,8 +4,8 @@ import { createReservation } from "@/lib/actions";
 import { freeUnits } from "@/lib/availability";
 import { formatDatePl, isValidISO, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
+import { quoteStayDynamic } from "@/lib/dynamic-pricing";
 import { formatPln, plNights } from "@/lib/format";
-import { quoteStay } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,7 @@ export default async function BookPage(props: {
     include: { seasons: true, property: true },
   });
   if (!unitType) notFound();
+  if (unitType.property.suspended) redirect(`/o/${unitType.property.slug}`);
 
   const available = await freeUnits(unitType.id, from, to);
   if (available.length === 0) {
@@ -48,7 +49,12 @@ export default async function BookPage(props: {
     );
   }
 
-  const quote = quoteStay(unitType, from, to, unitType.property.depositPercent);
+  const quote = await quoteStayDynamic(
+    unitType,
+    from,
+    to,
+    unitType.property.depositPercent
+  );
 
   return (
     <div className="grid gap-8 md:grid-cols-[1fr_320px]">

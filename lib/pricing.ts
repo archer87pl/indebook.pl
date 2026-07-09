@@ -1,5 +1,5 @@
 import type { RateSeason, UnitType } from "@prisma/client";
-import { eachNight } from "./dates";
+import { eachNight, nightsBetween } from "./dates";
 
 export type Quote = {
   nights: number;
@@ -38,4 +38,36 @@ export function quoteStay(
     minStay,
     nightly,
   };
+}
+
+// ---------- Ceny dynamiczne (czysta logika; reguły i obłożenie dostarcza
+// lib/dynamic-pricing.ts, który zna bazę) ----------
+
+export type PricingRuleLike = { kind: string; param: number; percent: number };
+
+/** Noc weekendowa: piątek lub sobota. */
+export function isWeekendNight(iso: string): boolean {
+  const day = new Date(`${iso}T00:00:00Z`).getUTCDay();
+  return day === 5 || day === 6;
+}
+
+/** Suma korekt % dla nocy wg aktywnych reguł cen dynamicznych. */
+export function nightAdjustmentPercent(
+  rules: PricingRuleLike[],
+  night: string,
+  today: string,
+  occupancyPct: number
+): number {
+  let pct = 0;
+  for (const r of rules) {
+    if (r.kind === "WEEKEND" && isWeekendNight(night)) pct += r.percent;
+    if (r.kind === "LAST_MINUTE" && nightsBetween(today, night) <= r.param)
+      pct += r.percent;
+    if (r.kind === "OCCUPANCY" && occupancyPct >= r.param) pct += r.percent;
+  }
+  return pct;
+}
+
+export function applyAdjustment(priceGr: number, pct: number): number {
+  return Math.max(0, Math.round((priceGr * (100 + pct)) / 100));
 }

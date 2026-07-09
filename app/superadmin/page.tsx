@@ -7,8 +7,11 @@ import { PLANS, planDef } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
-export default async function SuperadminPage() {
+export default async function SuperadminPage(props: {
+  searchParams: Promise<{ deleted?: string }>;
+}) {
   const admin = await requireSuperadmin();
+  const sp = await props.searchParams;
   const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000);
 
   const [users, properties, reservationsTotal, reservations30d, gmv, gmv30d] =
@@ -72,6 +75,10 @@ export default async function SuperadminPage() {
         </div>
       </div>
 
+      {sp.deleted && (
+        <p className="alert-success">✓ Obiekt został trwale usunięty.</p>
+      )}
+
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
@@ -101,6 +108,7 @@ export default async function SuperadminPage() {
               <th className="px-5 py-2 font-medium">Typy / jednostki</th>
               <th className="px-5 py-2 font-medium">Rezerwacje</th>
               <th className="px-5 py-2 font-medium">Utworzony</th>
+              <th className="px-5 py-2 font-medium"></th>
             </tr>
           </thead>
           <tbody>
@@ -113,12 +121,14 @@ export default async function SuperadminPage() {
               return (
                 <tr key={p.id} className="border-b border-slate-100 last:border-0">
                   <td className="px-5 py-2">
-                    <Link
-                      href={`/o/${p.slug}`}
-                      className="font-medium text-brand-700 hover:underline"
-                    >
+                    <span className="font-medium">
                       {p.name}
-                    </Link>
+                      {p.suspended && (
+                        <span className="ml-1.5 rounded bg-red-100 text-red-700 px-1.5 py-0.5 text-[10px] font-bold align-middle">
+                          ZAWIESZONY
+                        </span>
+                      )}
+                    </span>
                     <p className="text-xs text-slate-400">/o/{p.slug}</p>
                   </td>
                   <td className="px-5 py-2">
@@ -148,6 +158,14 @@ export default async function SuperadminPage() {
                   <td className="px-5 py-2">{resCount}</td>
                   <td className="px-5 py-2 text-slate-500">
                     {p.createdAt.toLocaleDateString("pl-PL")}
+                  </td>
+                  <td className="px-5 py-2">
+                    <Link
+                      href={`/superadmin/obiekt/${p.id}`}
+                      className="text-brand-700 text-xs font-semibold hover:underline whitespace-nowrap"
+                    >
+                      Zarządzaj →
+                    </Link>
                   </td>
                 </tr>
               );

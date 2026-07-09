@@ -8,10 +8,12 @@ export const dynamic = "force-dynamic";
 const NAV = [
   { href: "/admin", label: "Pulpit" },
   { href: "/admin/rezerwacje", label: "Rezerwacje" },
+  { href: "/admin/faktury", label: "Faktury" },
   { href: "/admin/kalendarz", label: "Kalendarz" },
   { href: "/admin/kanaly", label: "Kanały" },
   { href: "/admin/pokoje", label: "Pokoje" },
   { href: "/admin/cennik", label: "Cennik" },
+  { href: "/admin/opinie", label: "Opinie" },
   { href: "/admin/raporty", label: "Raporty" },
   { href: "/admin/obiekt", label: "Obiekt" },
 ];
@@ -24,7 +26,7 @@ export default async function AdminLayout({
   const { user, property } = await requireOwner();
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
             Panel obiektu
@@ -50,7 +52,7 @@ export default async function AdminLayout({
           <p className="text-xs text-slate-400">{user.email}</p>
         </div>
       </div>
-      <nav className="flex flex-wrap items-center gap-1 bg-white rounded-xl border border-slate-200 p-2">
+      <nav className="flex flex-wrap items-center gap-1 bg-white rounded-xl border border-slate-200 p-2 print:hidden">
         {NAV.map((item) => (
           <Link
             key={item.href}

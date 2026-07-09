@@ -44,6 +44,9 @@ prisma/*.db-journal
 # vercel
 .vercel
 
+# lokalne ustawienia Claude Code (uprawnienia per maszyna)
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

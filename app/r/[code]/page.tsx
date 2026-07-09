@@ -1,24 +1,52 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import ChatThread from "@/components/ChatThread";
 import StatusBadge from "@/components/StatusBadge";
-import { cancelByGuest, changeReservationDates, payDeposit } from "@/lib/actions";
+import {
+  cancelByGuest,
+  changeReservationDates,
+  payDeposit,
+  sendGuestMessage,
+} from "@/lib/actions";
+import { canCheckIn } from "@/lib/checkin";
 import { formatDatePl, nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { formatPln, plNights } from "@/lib/format";
 import { p24Configured } from "@/lib/payments";
+import { canReview } from "@/lib/reviews";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReservationPage(props: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ changed?: string; error?: string; paid?: string }>;
+  searchParams: Promise<{
+    changed?: string;
+    error?: string;
+    paid?: string;
+    checkedin?: string;
+    reviewed?: string;
+  }>;
 }) {
   const { code } = await props.params;
   const sp = await props.searchParams;
   const reservation = await prisma.reservation.findUnique({
     where: { code },
-    include: { unit: { include: { unitType: { include: { property: true } } } } },
+    include: {
+      review: true,
+      unit: { include: { unitType: { include: { property: true } } } },
+    },
   });
   if (!reservation) notFound();
+
+  // wejście gościa na stronę = przeczytanie odpowiedzi obiektu
+  await prisma.message.updateMany({
+    where: { reservationId: reservation.id, sender: "OWNER", readAt: null },
+    data: { readAt: new Date() },
+  });
+  const messages = await prisma.message.findMany({
+    where: { reservationId: reservation.id },
+    orderBy: { createdAt: "asc" },
+  });
 
   const property = reservation.unit.unitType.property;
   const expired =
@@ -40,6 +68,16 @@ export default async function ReservationPage(props: {
       {sp.changed && (
         <p className="alert-success">
           ✓ Termin pobytu został zmieniony. Potwierdzenie wysłaliśmy e-mailem.
+        </p>
+      )}
+      {sp.checkedin && (
+        <p className="alert-success">
+          ✓ Karta meldunkowa wypełniona. Dziękujemy — do zobaczenia!
+        </p>
+      )}
+      {sp.reviewed && (
+        <p className="alert-success">
+          ✓ Dziękujemy za opinię o pobycie!
         </p>
       )}
       {sp.error && <p className="alert-error">{sp.error}</p>}
@@ -99,6 +137,54 @@ export default async function ReservationPage(props: {
           </div>
         )}
       </div>
+
+      {canCheckIn(reservation) && (
+        <Link
+          href={`/r/${reservation.code}/meldunek`}
+          className="block card px-6 py-4 border-brand-300 bg-brand-50 hover:bg-brand-100 transition-colors"
+        >
+          <p className="font-semibold text-brand-950">
+            📝 Wypełnij meldunek online
+          </p>
+          <p className="text-sm text-slate-600">
+            Zajmie 2 minuty i przyspieszy zameldowanie. Po wypełnieniu pokażemy
+            instrukcje przyjazdu{property.arrivalInfo ? " (kody, WiFi, dojazd)" : ""}.
+          </p>
+        </Link>
+      )}
+
+      {reservation.checkInStatus === "COMPLETED" && (
+        <p className="alert-success">✓ Zameldowany online — karta meldunkowa wypełniona.</p>
+      )}
+
+      {reservation.checkInStatus === "COMPLETED" &&
+        reservation.status === "CONFIRMED" &&
+        property.arrivalInfo && (
+          <div className="card p-6 space-y-2">
+            <h2 className="font-semibold text-brand-950">
+              🔑 Informacje na przyjazd
+            </h2>
+            <p className="text-sm text-slate-700 whitespace-pre-line">
+              {property.arrivalInfo}
+            </p>
+          </div>
+        )}
+
+      {canReview({ ...reservation, hasReview: !!reservation.review }) && (
+        <Link
+          href={`/r/${reservation.code}/opinia`}
+          className="block card px-6 py-4 border-accent-400/50 bg-accent-100 hover:bg-accent-100/70 transition-colors"
+        >
+          <p className="font-semibold text-brand-950">⭐ Jak minął pobyt?</p>
+          <p className="text-sm text-slate-600">
+            Wystaw krótką opinię — zajmie chwilę i pomoże innym gościom.
+          </p>
+        </Link>
+      )}
+
+      {reservation.review && !sp.reviewed && (
+        <p className="alert-success">✓ Dziękujemy za opinię o pobycie!</p>
+      )}
 
       {payable && (
         <form action={payDeposit} className="space-y-2">
@@ -172,6 +258,33 @@ export default async function ReservationPage(props: {
           </form>
         </details>
       )}
+
+      <div id="czat" className="card p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold text-brand-950">
+            💬 Wiadomości do obiektu
+          </h2>
+          <p className="text-xs text-slate-500">
+            {property.name} dostanie powiadomienie e-mailem, a odpowiedź zobaczysz
+            tutaj.
+          </p>
+        </div>
+        <ChatThread messages={messages} viewer="GUEST" />
+        <form action={sendGuestMessage} className="space-y-2">
+          <input type="hidden" name="code" value={reservation.code} />
+          <textarea
+            name="body"
+            rows={2}
+            required
+            maxLength={2000}
+            placeholder="np. Będziemy około 18:00, czy możemy zostawić bagaże wcześniej?"
+            className="input w-full"
+          />
+          <button type="submit" className="btn-primary">
+            Wyślij wiadomość
+          </button>
+        </form>
+      </div>
 
       {active && (
         <form action={cancelByGuest} className="text-center">

@@ -38,6 +38,7 @@ export async function GET() {
     "Telefon",
     "NIP",
     "Kod promocyjny",
+    "Meldunek online",
     "Rabat [zł]",
     "Kwota [zł]",
     "Zaliczka [zł]",
@@ -59,6 +60,8 @@ export async function GET() {
       r.phone,
       r.nip,
       r.promoCode,
+      // celowo tylko TAK/NIE — dane karty meldunkowej nie trafiają do CSV (RODO)
+      r.checkInStatus === "COMPLETED" ? "TAK" : "NIE",
       zl(r.discountGr),
       zl(r.totalGr),
       zl(r.depositGr),

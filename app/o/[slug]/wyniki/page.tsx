@@ -4,8 +4,8 @@ import SearchForm from "@/components/SearchForm";
 import { freeUnits } from "@/lib/availability";
 import { formatDatePl, isValidISO, nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
+import { quoteStayDynamic } from "@/lib/dynamic-pricing";
 import { formatPln, plNights } from "@/lib/format";
-import { quoteStay } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +27,19 @@ export default async function ResultsPage(props: {
     include: { unitTypes: { include: { seasons: true } } },
   });
   if (!property) notFound();
+  if (property.suspended) {
+    return (
+      <div className="max-w-lg mx-auto mt-12 card p-8 text-center space-y-3">
+        <p className="text-4xl">🚧</p>
+        <h1 className="text-xl font-bold text-brand-950">
+          Ten obiekt jest obecnie niedostępny
+        </h1>
+        <Link href="/" className="btn-primary">
+          Przeglądaj inne obiekty
+        </Link>
+      </div>
+    );
+  }
 
   let offers: {
     unitTypeId: number;
@@ -47,7 +60,7 @@ export default async function ResultsPage(props: {
           .map(async (ut) => {
             const units = await freeUnits(ut.id, from, to);
             if (units.length === 0) return null;
-            const quote = quoteStay(ut, from, to, property.depositPercent);
+            const quote = await quoteStayDynamic(ut, from, to, property.depositPercent);
             return {
               unitTypeId: ut.id,
               name: ut.name,

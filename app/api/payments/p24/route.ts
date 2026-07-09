@@ -1,6 +1,8 @@
+import { checkInUrl } from "@/lib/checkin";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
 import { sendMail } from "@/lib/mailer";
+import { sendSms } from "@/lib/sms";
 import {
   type P24Notification,
   verifyP24NotificationSign,
@@ -43,7 +45,13 @@ export async function POST(req: Request) {
   await sendMail({
     to: reservation.email,
     subject: `Rezerwacja ${reservation.code} potwierdzona`,
-    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana (Przelewy24). Do zobaczenia ${reservation.checkIn}!`,
+    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana (Przelewy24). Do zobaczenia ${reservation.checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(reservation.code)}`,
   });
+  if (reservation.phone) {
+    await sendSms({
+      to: reservation.phone,
+      body: `Rezerwacja ${reservation.code} potwierdzona (zaliczka zaksiegowana). Przyjazd ${reservation.checkIn}. Meldunek online: ${checkInUrl(reservation.code)}`,
+    });
+  }
   return new Response("OK");
 }

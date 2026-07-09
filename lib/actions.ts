@@ -17,11 +17,31 @@ import { formatPln, parsePlnToGr } from "./format";
 import { syncIcalFeed } from "./ical";
 import { appUrl, createP24Payment, p24Configured } from "./payments";
 import { amenityDef } from "./amenities";
+import {
+  canCheckIn,
+  checkInUrl,
+  DOC_TYPES,
+  isValidSignature,
+  parseAdditionalGuests,
+} from "./checkin";
+import { PRICING_RULE_KINDS, quoteStayDynamic } from "./dynamic-pricing";
+import {
+  INVOICE_KINDS,
+  invoiceNumber,
+  isValidVatRate,
+  splitGross,
+} from "./invoices";
 import { deletePhotoFile, savePhotoFile } from "./photos";
+import {
+  canReview,
+  displayAuthor,
+  isValidRating,
+  REVIEW_MAX,
+} from "./reviews";
 import { planDef } from "./plans";
 import { sendMail } from "./mailer";
-import { quoteStay } from "./pricing";
-import { uniquePropertySlug } from "./slug";
+import { sendSms } from "./sms";
+import { slugify, uniquePropertySlug } from "./slug";
 
 const PENDING_TTL_MS = 30 * 60 * 1000; // 30 min na opłacenie zaliczki
 
@@ -88,7 +108,7 @@ export async function login(formData: FormData) {
 
 /** Konto demo: logowanie jednym kliknięciem na wspólne konto pokazowe. */
 export async function demoLogin() {
-  const user = await prisma.user.findUnique({ where: { email: "demo@notelo.pl" } });
+  const user = await prisma.user.findUnique({ where: { email: "demo@rezio.pl" } });
   if (!user) redirect("/login?error=1");
   await createSession(user!.id);
   redirect("/admin");
@@ -112,7 +132,7 @@ export async function requestPasswordReset(formData: FormData) {
     ]);
     await sendMail({
       to: user.email,
-      subject: "Notelo — reset hasła",
+      subject: "Rezio — reset hasła",
       body: `Cześć ${user.name},\n\nAby ustawić nowe hasło, otwórz link (ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}\n\nJeśli to nie Ty prosiłeś o reset — zignoruj tę wiadomość.`,
     });
   }
@@ -188,10 +208,17 @@ export async function createReservation(formData: FormData) {
     include: { seasons: true, property: true },
   });
   if (!unitType) redirect("/");
+  if (unitType.property.suspended)
+    fail("Ten obiekt jest obecnie niedostępny — rezerwacja nie jest możliwa.");
   if (guests > unitType.maxGuests)
     fail(`Ten typ pokoju mieści maksymalnie ${unitType.maxGuests} os.`);
 
-  const quote = quoteStay(unitType, from, to, unitType.property.depositPercent);
+  const quote = await quoteStayDynamic(
+    unitType,
+    from,
+    to,
+    unitType.property.depositPercent
+  );
   if (quote.nights < quote.minStay)
     fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
 
@@ -299,8 +326,14 @@ export async function payDeposit(formData: FormData) {
   await sendMail({
     to: reservation.email,
     subject: `Rezerwacja ${code} potwierdzona`,
-    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana. Do zobaczenia ${reservation.checkIn}!`,
+    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana. Do zobaczenia ${reservation.checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}`,
   });
+  if (reservation.phone) {
+    await sendSms({
+      to: reservation.phone,
+      body: `Rezerwacja ${code} w ${reservation.unit.unitType.property.name} potwierdzona. Przyjazd ${reservation.checkIn}. Meldunek online: ${checkInUrl(code)}`,
+    });
+  }
   revalidatePath(`/r/${code}`);
   redirect(`/r/${code}`);
 }
@@ -372,7 +405,13 @@ export async function changeReservationDates(formData: FormData) {
   if (from === r.checkIn && to === r.checkOut && guests === r.guests)
     fail("Nic się nie zmieniło — wybrano ten sam termin i liczbę gości.");
 
-  const quote = quoteStay(unitType, from, to, unitType.property.depositPercent);
+  const quote = await quoteStayDynamic(
+    unitType,
+    from,
+    to,
+    unitType.property.depositPercent,
+    r.id // własna rezerwacja nie podbija sobie obłożenia
+  );
   if (quote.nights < quote.minStay)
     fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
 
@@ -418,6 +457,262 @@ export async function changeReservationDates(formData: FormData) {
   });
   revalidatePath(back);
   redirect(`${back}?changed=1`);
+}
+
+/** Panel gościa: meldunek online (karta meldunkowa z e-podpisem). */
+export async function submitCheckIn(formData: FormData) {
+  const code = str(formData, "code");
+  const back = `/r/${code}/meldunek`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { code },
+    include: {
+      checkInCard: true,
+      unit: {
+        include: {
+          unitType: { include: { property: { include: { owner: true } } } },
+        },
+      },
+    },
+  });
+  if (!reservation) redirect("/");
+  const r = reservation!;
+  if (r.checkInCard)
+    redirect(`/r/${code}?error=${encodeURIComponent("Meldunek został już wypełniony.")}`);
+  if (!canCheckIn(r)) fail("Meldunek online nie jest dostępny dla tej rezerwacji.");
+
+  const fullName = str(formData, "fullName");
+  const address = str(formData, "address");
+  const citizenship = str(formData, "citizenship");
+  const docType = str(formData, "docType");
+  const docNumber = str(formData, "docNumber").toUpperCase();
+  const carPlate = str(formData, "carPlate").toUpperCase();
+  const arrivalTime = str(formData, "arrivalTime");
+  const signature = str(formData, "signature");
+  const terms = str(formData, "terms");
+  const rodo = str(formData, "rodo");
+
+  if (fullName.length < 3) fail("Podaj imię i nazwisko.");
+  if (address.length < 5) fail("Podaj adres zamieszkania.");
+  if (citizenship.length < 3) fail("Podaj obywatelstwo.");
+  if (docType && !DOC_TYPES.some((d) => d.key === docType))
+    fail("Wybierz rodzaj dokumentu z listy.");
+  if (docNumber && !docType) fail("Wybierz rodzaj dokumentu.");
+  if (docNumber && !/^[A-Z0-9 \-]{4,20}$/.test(docNumber))
+    fail("Nieprawidłowy numer dokumentu.");
+  if (carPlate && !/^[A-Z0-9 \-]{2,12}$/.test(carPlate))
+    fail("Nieprawidłowy numer rejestracyjny.");
+  if (arrivalTime && !/^\d{2}:\d{2}$/.test(arrivalTime))
+    fail("Godzinę przyjazdu podaj w formacie HH:MM.");
+  const additional = parseAdditionalGuests(formData, r.guests - 1);
+  if (additional.error) fail(additional.error);
+  if (terms !== "on") fail("Wymagana jest akceptacja regulaminu obiektu.");
+  if (rodo !== "on") fail("Wymagana jest zgoda na przetwarzanie danych.");
+  if (!isValidSignature(signature))
+    fail("Podpis jest wymagany — złóż podpis w polu formularza.");
+
+  await prisma.$transaction([
+    prisma.checkInCard.create({
+      data: {
+        reservationId: r.id,
+        fullName,
+        address,
+        citizenship,
+        docType,
+        docNumber,
+        carPlate,
+        arrivalTime,
+        guestsJson: JSON.stringify(additional.guests),
+        signaturePng: signature,
+        termsAccepted: true,
+        rodoAccepted: true,
+      },
+    }),
+    prisma.reservation.update({
+      where: { id: r.id },
+      // link do meldunku szedł na e-mail rezerwacji — adres jest potwierdzony
+      data: { checkInStatus: "COMPLETED", emailVerifiedAt: new Date() },
+    }),
+  ]);
+
+  const property = r.unit.unitType.property;
+  await sendMail({
+    to: r.email,
+    subject: `Meldunek online przyjęty — rezerwacja ${code}`,
+    body: `Dziękujemy, ${fullName}! Karta meldunkowa została wypełniona.${
+      property.arrivalInfo
+        ? `\n\nInformacje na przyjazd:\n${property.arrivalInfo}`
+        : ""
+    }\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
+  });
+  if (!property.owner.email.endsWith("@rezio.local")) {
+    await sendMail({
+      to: property.owner.email,
+      subject: `Gość wypełnił meldunek online — ${code}`,
+      body: `${fullName} wypełnił(a) kartę meldunkową dla rezerwacji ${code} (${r.checkIn} → ${r.checkOut}).\nKarta: ${appUrl()}/admin/rezerwacje/${r.id}/karta`,
+    });
+  }
+  revalidatePath(`/r/${code}`);
+  redirect(`/r/${code}?checkedin=1`);
+}
+
+// ---------- Opinie gości ----------
+
+/** Panel gościa: wystawienie opinii po pobycie (publiczne po kodzie). */
+export async function submitReview(formData: FormData) {
+  const code = str(formData, "code");
+  const back = `/r/${code}/opinia`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { code },
+    include: {
+      review: true,
+      unit: {
+        include: {
+          unitType: { include: { property: { include: { owner: true } } } },
+        },
+      },
+    },
+  });
+  if (!reservation) redirect("/");
+  const r = reservation!;
+  if (r.review)
+    redirect(`/r/${code}?error=${encodeURIComponent("Opinia została już wystawiona. Dziękujemy!")}`);
+  if (!canReview({ status: r.status, checkOut: r.checkOut, hasReview: false }))
+    fail("Opinię można wystawić dopiero po zakończonym pobycie.");
+
+  const rating = Number(str(formData, "rating"));
+  const comment = str(formData, "comment");
+  const consent = str(formData, "consent");
+
+  if (!isValidRating(rating)) fail("Wybierz ocenę od 1 do 5 gwiazdek.");
+  if (comment.length > REVIEW_MAX)
+    fail(`Opinia może mieć maksymalnie ${REVIEW_MAX} znaków.`);
+  if (consent !== "on")
+    fail("Wymagana jest zgoda na publikację opinii pod imieniem i inicjałem.");
+
+  const property = r.unit.unitType.property;
+  await prisma.review.create({
+    data: {
+      reservationId: r.id,
+      propertyId: property.id,
+      authorName: displayAuthor(r.guestName),
+      rating,
+      comment,
+    },
+  });
+  if (!property.owner.email.endsWith("@rezio.local")) {
+    await sendMail({
+      to: property.owner.email,
+      subject: `Nowa opinia (${rating}/5) — rezerwacja ${r.code}`,
+      body: `${displayAuthor(r.guestName)} wystawił(a) ocenę ${rating}/5${
+        comment ? `:\n\n"${comment}"` : "."
+      }\n\nModeruj i odpowiedz: ${appUrl()}/admin/opinie`,
+    });
+  }
+  revalidatePath(`/o/${property.slug}`);
+  redirect(`/r/${code}?reviewed=1`);
+}
+
+/** Panel obiektu: ukryj/pokaż opinię (moderacja nadużyć). */
+export async function toggleReviewHidden(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "id"));
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (review && review.propertyId === property.id) {
+    await prisma.review.update({
+      where: { id },
+      data: { hidden: !review.hidden },
+    });
+  }
+  revalidatePath("/admin/opinie");
+  redirect("/admin/opinie");
+}
+
+/** Panel obiektu: publiczna odpowiedź na opinię. */
+export async function replyToReview(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "id"));
+  const reply = str(formData, "reply").slice(0, REVIEW_MAX);
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (review && review.propertyId === property.id) {
+    await prisma.review.update({ where: { id }, data: { ownerReply: reply } });
+  }
+  revalidatePath("/admin/opinie");
+  redirect("/admin/opinie");
+}
+
+// ---------- Czat gość <-> obiekt ----------
+
+const MESSAGE_MAX = 2000;
+
+/** Panel gościa: wiadomość do obiektu (obiekt dostaje powiadomienie e-mail). */
+export async function sendGuestMessage(formData: FormData) {
+  const code = str(formData, "code");
+  const body = str(formData, "body");
+  const back = `/r/${code}`;
+
+  const reservation = await prisma.reservation.findUnique({
+    where: { code },
+    include: {
+      unit: {
+        include: {
+          unitType: { include: { property: { include: { owner: true } } } },
+        },
+      },
+    },
+  });
+  if (!reservation) redirect("/");
+  const r = reservation!;
+  if (!body || body.length > MESSAGE_MAX)
+    redirect(
+      `${back}?error=${encodeURIComponent(`Wiadomość musi mieć od 1 do ${MESSAGE_MAX} znaków.`)}#czat`
+    );
+
+  await prisma.message.create({
+    data: { reservationId: r.id, sender: "GUEST", body },
+  });
+  const property = r.unit.unitType.property;
+  if (!property.owner.email.endsWith("@rezio.local")) {
+    await sendMail({
+      to: property.owner.email,
+      subject: `Nowa wiadomość od gościa — ${r.code}`,
+      body: `${r.guestName} (rezerwacja ${r.code}, ${r.checkIn} → ${r.checkOut}) napisał(a):\n\n${body}\n\nOdpowiedz w panelu: ${appUrl()}/admin/rezerwacje/${r.id}#czat`,
+    });
+  }
+  revalidatePath(back);
+  redirect(`${back}#czat`);
+}
+
+/** Panel obiektu: odpowiedź do gościa (gość dostaje powiadomienie e-mail). */
+export async function sendOwnerMessage(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "id"));
+  const body = str(formData, "body");
+  const back = `/admin/rezerwacje/${id}`;
+
+  const reservation = await ownedReservation(id, property.id);
+  if (!reservation) redirect("/admin/rezerwacje");
+  const r = reservation!;
+  if (!body || body.length > MESSAGE_MAX)
+    redirect(
+      `${back}?error=${encodeURIComponent(`Wiadomość musi mieć od 1 do ${MESSAGE_MAX} znaków.`)}#czat`
+    );
+
+  await prisma.message.create({
+    data: { reservationId: r.id, sender: "OWNER", body },
+  });
+  if (r.email && !r.email.endsWith("@rezio.local")) {
+    await sendMail({
+      to: r.email,
+      subject: `Wiadomość od ${property.name} — rezerwacja ${r.code}`,
+      body: `${body}\n\nOdpowiedz na stronie rezerwacji: ${appUrl()}/r/${r.code}#czat`,
+    });
+  }
+  revalidatePath(back);
+  redirect(`${back}#czat`);
 }
 
 // ---------- Panel obiektu: pomocnicze kontrole własności ----------
@@ -467,8 +762,46 @@ export async function adminSetStatus(formData: FormData) {
     where: { id },
     data: { status, ...(status === "CONFIRMED" ? { expiresAt: null } : {}) },
   });
+  if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
+    if (reservation.email && !reservation.email.endsWith("@rezio.local")) {
+      await sendMail({
+        to: reservation.email,
+        subject: `Rezerwacja ${reservation.code} potwierdzona`,
+        body: `Obiekt potwierdził Twoją rezerwację (${reservation.checkIn} → ${reservation.checkOut}).\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(reservation.code)}`,
+      });
+    }
+    if (reservation.phone) {
+      await sendSms({
+        to: reservation.phone,
+        body: `Rezerwacja ${reservation.code} potwierdzona. Przyjazd ${reservation.checkIn}. Meldunek online: ${checkInUrl(reservation.code)}`,
+      });
+    }
+  }
   revalidatePath("/admin/rezerwacje");
   redirect("/admin/rezerwacje");
+}
+
+/** Wysyłka (lub ponowienie) linku do meldunku online do gościa. */
+export async function adminSendCheckInInvite(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "id"));
+  const back = `/admin/rezerwacje/${id}`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const reservation = await ownedReservation(id, property.id);
+  if (!reservation) redirect("/admin/rezerwacje");
+  const r = reservation!;
+  if (!canCheckIn(r))
+    fail("Meldunek online jest dostępny tylko dla potwierdzonych rezerwacji przed wymeldowaniem.");
+  if (!r.email || r.email.endsWith("@rezio.local"))
+    fail("Uzupełnij e-mail gościa, aby wysłać link do meldunku.");
+
+  await sendMail({
+    to: r.email,
+    subject: `Meldunek online — rezerwacja ${r.code}`,
+    body: `${property.name} zaprasza do wypełnienia meldunku online przed przyjazdem (${r.checkIn}).\nZajmie to 2 minuty i przyspieszy zameldowanie na miejscu:\n${checkInUrl(r.code)}`,
+  });
+  redirect(`${back}?invited=1`);
 }
 
 export async function adminCreateReservation(formData: FormData) {
@@ -479,7 +812,7 @@ export async function adminCreateReservation(formData: FormData) {
   const guests = Number(str(formData, "guests")) || 1;
   const guestName = str(formData, "guestName");
   const phone = str(formData, "phone");
-  const email = str(formData, "email") || "brak@notelo.local";
+  const email = str(formData, "email") || "brak@rezio.local";
   const notes = str(formData, "notes");
   const priceOverride = str(formData, "totalZl");
 
@@ -492,15 +825,16 @@ export async function adminCreateReservation(formData: FormData) {
   const unitType = await ownedUnitType(unitTypeId, property.id);
   if (!unitType) fail("Wybierz typ pokoju.");
 
-  const quote = quoteStay(unitType!, from, to, property.depositPercent);
+  const quote = await quoteStayDynamic(unitType!, from, to, property.depositPercent);
   const totalGr = priceOverride ? parsePlnToGr(priceOverride) : quote.totalGr;
   if (!Number.isFinite(totalGr)) fail("Nieprawidłowa cena.");
 
+  let code = "";
   try {
-    await prisma.$transaction(async (tx) => {
+    code = await prisma.$transaction(async (tx) => {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
-      await tx.reservation.create({
+      const reservation = await tx.reservation.create({
         data: {
           code: newCode(),
           unitId: units[0].id,
@@ -517,11 +851,26 @@ export async function adminCreateReservation(formData: FormData) {
           source: "MANUAL",
         },
       });
+      return reservation.code;
     });
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
       fail("Brak wolnych jednostek w tym terminie.");
     throw e;
+  }
+  // rezerwacje telefoniczne/ręczne: od razu zaproś gościa do meldunku online
+  if (!email.endsWith("@rezio.local")) {
+    await sendMail({
+      to: email,
+      subject: `Rezerwacja ${code} w ${property.name}`,
+      body: `Twoja rezerwacja (${from} → ${to}) została zapisana.\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
+    });
+  }
+  if (phone) {
+    await sendSms({
+      to: phone,
+      body: `Rezerwacja ${code} w ${property.name} zapisana (${from} - ${to}). Meldunek online: ${checkInUrl(code)}`,
+    });
   }
   revalidatePath("/admin/rezerwacje");
   redirect("/admin/rezerwacje");
@@ -584,7 +933,7 @@ export async function adminUpdateReservation(formData: FormData) {
     throw e;
   }
 
-  if (datesChanged && email && !email.endsWith("@notelo.local")) {
+  if (datesChanged && email && !email.endsWith("@rezio.local")) {
     await sendMail({
       to: email,
       subject: `Rezerwacja ${r.code} — zmiana terminu`,
@@ -593,6 +942,98 @@ export async function adminUpdateReservation(formData: FormData) {
   }
   revalidatePath("/admin/rezerwacje");
   redirect(`${back}?saved=1`);
+}
+
+// ---------- Panel obiektu: faktury ----------
+
+/** Wystawia fakturę z rezerwacji (numeracja kolejna per typ+rok+obiekt). */
+export async function issueInvoice(formData: FormData) {
+  const { property } = await requireOwner();
+  const reservationId = Number(str(formData, "reservationId"));
+  const kind = str(formData, "kind");
+  const vatRate = Number(str(formData, "vatRate"));
+  const buyerName = str(formData, "buyerName");
+  const buyerNip = str(formData, "buyerNip");
+  const buyerAddress = str(formData, "buyerAddress");
+  const itemName = str(formData, "itemName");
+  const back = `/admin/rezerwacje/${reservationId}`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const reservation = await ownedReservation(reservationId, property.id);
+  if (!reservation) redirect("/admin/rezerwacje");
+  const r = reservation!;
+
+  if (!INVOICE_KINDS.some((k) => k.key === kind)) fail("Wybierz rodzaj faktury.");
+  if (!isValidVatRate(vatRate)) fail("Nieprawidłowa stawka VAT.");
+  if (buyerName.length < 3) fail("Podaj nazwę / imię i nazwisko nabywcy.");
+
+  const sellerNip = property.sellerNip.trim();
+  if (!sellerNip)
+    fail(
+      "Uzupełnij NIP sprzedawcy w ustawieniach obiektu (sekcja „Dane do faktur”), zanim wystawisz fakturę."
+    );
+
+  const grossGr = kind === "ZALICZKOWA" ? r.depositGr : r.totalGr;
+  if (grossGr <= 0)
+    fail(
+      kind === "ZALICZKOWA"
+        ? "Ta rezerwacja nie ma zaliczki — wybierz inny rodzaj faktury."
+        : "Kwota faktury musi być większa od zera."
+    );
+  const { netGr, vatGr } = splitGross(grossGr, vatRate);
+  const year = Number(todayISO().slice(0, 4));
+  const defaultItem = `Usługa noclegowa — ${r.unit.unitType.name}, pobyt ${r.checkIn} → ${r.checkOut}`;
+
+  let invoiceId = 0;
+  try {
+    invoiceId = await prisma.$transaction(async (tx) => {
+      const count = await tx.invoice.count({
+        where: { propertyId: property.id, kind, year },
+      });
+      const seq = count + 1;
+      const inv = await tx.invoice.create({
+        data: {
+          propertyId: property.id,
+          reservationId: r.id,
+          kind,
+          seq,
+          year,
+          number: invoiceNumber(kind, seq, year),
+          issueDate: todayISO(),
+          saleDate: r.checkOut,
+          sellerName: property.sellerName.trim() || property.name,
+          sellerNip,
+          sellerAddress: property.sellerAddress.trim() || property.address,
+          bankAccount: property.bankAccount,
+          buyerName,
+          buyerNip,
+          buyerAddress,
+          itemName: itemName || defaultItem,
+          grossGr,
+          netGr,
+          vatGr,
+          vatRate,
+        },
+      });
+      return inv.id;
+    });
+  } catch {
+    fail("Nie udało się wystawić faktury — spróbuj ponownie.");
+  }
+  revalidatePath(back);
+  redirect(`/admin/faktury/${invoiceId}`);
+}
+
+export async function deleteInvoice(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "id"));
+  const back = str(formData, "back") || "/admin/faktury";
+  const invoice = await prisma.invoice.findUnique({ where: { id } });
+  if (invoice && invoice.propertyId === property.id) {
+    await prisma.invoice.delete({ where: { id } });
+  }
+  revalidatePath(back);
+  redirect(back);
 }
 
 // ---------- Panel obiektu: cennik ----------
@@ -635,6 +1076,33 @@ export async function adminAddSeason(formData: FormData) {
   });
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
+}
+
+/** Zapis reguły cen dynamicznych (jedna danego rodzaju na obiekt — upsert). */
+export async function savePricingRule(formData: FormData) {
+  const { property } = await requireOwner();
+  const kind = str(formData, "kind");
+  const percent = Number(str(formData, "percent"));
+  const param = Number(str(formData, "param")) || 0;
+  const active = str(formData, "active") === "on";
+  const fail = (msg: string) =>
+    redirect(`/admin/cennik?error=${encodeURIComponent(msg)}`);
+
+  if (!PRICING_RULE_KINDS.some((k) => k.key === kind)) redirect("/admin/cennik");
+  if (!Number.isInteger(percent) || percent < -50 || percent > 100)
+    fail("Korekta ceny musi być w zakresie od −50% do +100%.");
+  if (kind === "LAST_MINUTE" && (!Number.isInteger(param) || param < 1 || param > 60))
+    fail("Last minute: liczba dni do przyjazdu musi być w zakresie 1–60.");
+  if (kind === "OCCUPANCY" && (!Number.isInteger(param) || param < 1 || param > 100))
+    fail("Próg obłożenia musi być w zakresie 1–100%.");
+
+  await prisma.pricingRule.upsert({
+    where: { propertyId_kind: { propertyId: property.id, kind } },
+    update: { percent, param, active },
+    create: { propertyId: property.id, kind, percent, param, active },
+  });
+  revalidatePath("/admin/cennik");
+  redirect("/admin/cennik?saved=1");
 }
 
 export async function adminDeleteSeason(formData: FormData) {
@@ -786,6 +1254,11 @@ export async function updateProperty(formData: FormData) {
   const depositPercent = Number(str(formData, "depositPercent"));
   const terms = str(formData, "terms");
   const privacyPolicy = str(formData, "privacyPolicy");
+  const arrivalInfo = str(formData, "arrivalInfo");
+  const sellerName = str(formData, "sellerName");
+  const sellerNip = str(formData, "sellerNip");
+  const sellerAddress = str(formData, "sellerAddress");
+  const bankAccount = str(formData, "bankAccount");
   const fail = (msg: string) =>
     redirect(`/admin/obiekt?error=${encodeURIComponent(msg)}`);
 
@@ -806,6 +1279,11 @@ export async function updateProperty(formData: FormData) {
       depositPercent,
       terms,
       privacyPolicy,
+      arrivalInfo,
+      sellerName,
+      sellerNip,
+      sellerAddress,
+      bankAccount,
     },
   });
   revalidatePath("/admin/obiekt");
@@ -1152,6 +1630,162 @@ export async function superSetPlan(formData: FormData) {
   }
   revalidatePath("/superadmin");
   redirect("/superadmin");
+}
+
+/** Edycja danych obiektu przez administratora platformy. */
+export async function superUpdateProperty(formData: FormData) {
+  await requireSuperadmin();
+  const id = Number(str(formData, "id"));
+  const name = str(formData, "name");
+  const slug = slugify(str(formData, "slug"));
+  const plan = str(formData, "plan");
+  const depositPercent = Number(str(formData, "depositPercent"));
+  const checkInFrom = str(formData, "checkInFrom");
+  const checkOutTo = str(formData, "checkOutTo");
+  const address = str(formData, "address");
+  const description = str(formData, "description");
+  const back = `/superadmin/obiekt/${id}`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const property = await prisma.property.findUnique({ where: { id } });
+  if (!property) redirect("/superadmin");
+  if (name.length < 3) fail("Nazwa obiektu jest za krótka.");
+  if (!slug) fail("Nieprawidłowy adres (slug).");
+  if (!["FREE", "STANDARD", "PRO"].includes(plan)) fail("Nieznany plan.");
+  if (!/^\d{2}:\d{2}$/.test(checkInFrom) || !/^\d{2}:\d{2}$/.test(checkOutTo))
+    fail("Godziny podaj w formacie HH:MM.");
+  if (!Number.isInteger(depositPercent) || depositPercent < 0 || depositPercent > 100)
+    fail("Zaliczka musi być w zakresie 0–100%.");
+
+  const slugTaken = await prisma.property.findUnique({ where: { slug } });
+  if (slugTaken && slugTaken.id !== id)
+    fail(`Adres /o/${slug} jest już zajęty przez inny obiekt.`);
+
+  await prisma.property.update({
+    where: { id },
+    data: { name, slug, plan, depositPercent, checkInFrom, checkOutTo, address, description },
+  });
+  revalidatePath(back);
+  redirect(`${back}?saved=1`);
+}
+
+/** Zawieszenie / przywrócenie obiektu (ukrycie z katalogu, blokada rezerwacji). */
+export async function superToggleSuspend(formData: FormData) {
+  await requireSuperadmin();
+  const id = Number(str(formData, "id"));
+  const property = await prisma.property.findUnique({ where: { id } });
+  if (property) {
+    await prisma.property.update({
+      where: { id },
+      data: { suspended: !property.suspended },
+    });
+  }
+  revalidatePath(`/superadmin/obiekt/${id}`);
+  revalidatePath("/superadmin");
+  redirect(`/superadmin/obiekt/${id}`);
+}
+
+/** Edycja konta właściciela (imię, e-mail) przez administratora platformy. */
+export async function superUpdateOwner(formData: FormData) {
+  await requireSuperadmin();
+  const propertyId = Number(str(formData, "propertyId"));
+  const userId = Number(str(formData, "userId"));
+  const name = str(formData, "name");
+  const email = str(formData, "email").toLowerCase();
+  const back = `/superadmin/obiekt/${propertyId}`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  if (name.length < 3) fail("Podaj imię i nazwisko właściciela.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Podaj poprawny adres e-mail.");
+  const taken = await prisma.user.findUnique({ where: { email } });
+  if (taken && taken.id !== userId) fail("Inne konto już używa tego adresu e-mail.");
+
+  await prisma.user.update({ where: { id: userId }, data: { name, email } });
+  revalidatePath(back);
+  redirect(`${back}?saved=1`);
+}
+
+/** Wysyła właścicielowi link do ustawienia nowego hasła. */
+export async function superSendPasswordReset(formData: FormData) {
+  await requireSuperadmin();
+  const propertyId = Number(str(formData, "propertyId"));
+  const userId = Number(str(formData, "userId"));
+  const back = `/superadmin/obiekt/${propertyId}`;
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user) {
+    const token = randomBytes(32).toString("hex");
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+      prisma.passwordResetToken.create({
+        data: { token, userId: user.id, expiresAt: new Date(Date.now() + 3600_000) },
+      }),
+    ]);
+    await sendMail({
+      to: user.email,
+      subject: "Rezio — reset hasła",
+      body: `Cześć ${user.name},\n\nAdministrator platformy zainicjował reset hasła. Ustaw nowe hasło (link ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}`,
+    });
+  }
+  redirect(`${back}?reset=1`);
+}
+
+/**
+ * Trwałe usunięcie obiektu wraz z całą jego historią i kontem właściciela.
+ * Wymaga wpisania sluga obiektu jako potwierdzenia.
+ */
+export async function superDeleteProperty(formData: FormData) {
+  await requireSuperadmin();
+  const id = Number(str(formData, "id"));
+  const confirmSlug = str(formData, "confirmSlug");
+  const back = `/superadmin/obiekt/${id}`;
+  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+
+  const property = await prisma.property.findUnique({ where: { id } });
+  if (!property) redirect("/superadmin");
+  if (confirmSlug !== property.slug)
+    fail("Aby usunąć obiekt, wpisz dokładnie jego adres (slug) w polu potwierdzenia.");
+
+  // ścieżki zdjęć do sprzątnięcia w Blob po udanej transakcji
+  const photos = await prisma.photo.findMany({
+    where: { OR: [{ propertyId: id }, { unitType: { propertyId: id } }] },
+    select: { path: true },
+  });
+
+  const inProperty = { unit: { unitType: { propertyId: id } } };
+  await prisma.$transaction([
+    prisma.invoice.deleteMany({ where: { propertyId: id } }),
+    prisma.review.deleteMany({ where: { propertyId: id } }),
+    prisma.message.deleteMany({ where: { reservation: inProperty } }),
+    prisma.checkInCard.deleteMany({ where: { reservation: inProperty } }),
+    prisma.reservation.deleteMany({ where: inProperty }),
+    prisma.block.deleteMany({ where: { unit: { unitType: { propertyId: id } } } }),
+    prisma.icalFeed.deleteMany({ where: { unit: { unitType: { propertyId: id } } } }),
+    prisma.photo.deleteMany({
+      where: { OR: [{ propertyId: id }, { unitType: { propertyId: id } }] },
+    }),
+    prisma.unit.deleteMany({ where: { unitType: { propertyId: id } } }),
+    prisma.rateSeason.deleteMany({ where: { unitType: { propertyId: id } } }),
+    prisma.promoCode.deleteMany({ where: { propertyId: id } }),
+    prisma.propertyFaq.deleteMany({ where: { propertyId: id } }),
+    prisma.pricingRule.deleteMany({ where: { propertyId: id } }),
+    prisma.unitType.deleteMany({ where: { propertyId: id } }),
+    prisma.property.delete({ where: { id } }),
+    prisma.session.deleteMany({ where: { userId: property!.ownerId } }),
+    prisma.passwordResetToken.deleteMany({ where: { userId: property!.ownerId } }),
+    prisma.user.delete({ where: { id: property!.ownerId } }),
+  ]);
+
+  // best-effort: pliki w Blob (nie blokujemy usunięcia, gdy się nie powiedzie)
+  for (const p of photos) {
+    try {
+      await deletePhotoFile(p.path);
+    } catch {
+      // pominięcie osieroconego pliku jest akceptowalne
+    }
+  }
+  revalidatePath("/superadmin");
+  redirect("/superadmin?deleted=1");
 }
 
 export async function deleteUnit(formData: FormData) {

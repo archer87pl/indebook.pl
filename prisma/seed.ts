@@ -16,18 +16,18 @@ function addDays(base: Date, days: number): Date {
 async function main() {
   // globalny administrator platformy (niezależnie od reszty seedu)
   const admin = await prisma.user.findUnique({
-    where: { email: "admin@notelo.pl" },
+    where: { email: "admin@rezio.pl" },
   });
   if (!admin) {
     await prisma.user.create({
       data: {
-        email: "admin@notelo.pl",
-        name: "Administrator Notelo",
+        email: "admin@rezio.pl",
+        name: "Administrator Rezio",
         passwordHash: hashPassword("admin1234"),
         isAdmin: true,
       },
     });
-    console.log("Superadmin: admin@notelo.pl / admin1234");
+    console.log("Superadmin: admin@rezio.pl / admin1234");
   }
 
   const existing = await prisma.property.findFirst();
@@ -39,18 +39,18 @@ async function main() {
   const today = new Date();
   const year = today.getFullYear();
 
-  // ---------- Obiekt 1: Willa Notelo ----------
+  // ---------- Obiekt 1: Willa Rezio ----------
   const willa = await prisma.property.create({
     data: {
       owner: {
         create: {
-          email: "demo@notelo.pl",
+          email: "demo@rezio.pl",
           name: "Dariusz Demo",
           passwordHash: hashPassword("demo1234"),
         },
       },
-      slug: "willa-notelo",
-      name: "Willa Notelo",
+      slug: "willa-rezio",
+      name: "Willa Rezio",
       plan: "PRO",
       description:
         "Kameralna willa nad jeziorem — 6 pokoi, prywatny pomost i sauna. Rezerwuj bezpośrednio, bez prowizji portali.",
@@ -58,6 +58,10 @@ async function main() {
       checkInFrom: "15:00",
       checkOutTo: "11:00",
       depositPercent: 30,
+      sellerName: "Willa Rezio Sp. z o.o.",
+      sellerNip: "8451234567",
+      sellerAddress: "ul. Nadbrzeżna 12, 11-500 Giżycko",
+      bankAccount: "PL61 1090 1014 0000 0712 1981 2874",
     },
   });
 
@@ -115,6 +119,16 @@ async function main() {
     });
   }
 
+  // Ceny dynamiczne w Willi: drożej w weekendy i przy wysokim obłożeniu,
+  // rabat last minute na domykanie luk
+  await prisma.pricingRule.createMany({
+    data: [
+      { propertyId: willa.id, kind: "WEEKEND", percent: 15 },
+      { propertyId: willa.id, kind: "LAST_MINUTE", param: 7, percent: -10 },
+      { propertyId: willa.id, kind: "OCCUPANCY", param: 80, percent: 10 },
+    ],
+  });
+
   // Przykładowe rezerwacje w Willi
   const willaUnits = await prisma.unit.findMany({
     where: { unitType: { propertyId: willa.id } },
@@ -160,6 +174,66 @@ async function main() {
     },
   });
 
+  // Przeszłe pobyty z opiniami (dla sekcji „Opinie gości")
+  const pastStays = [
+    {
+      code: "HO-PAST01",
+      unit: willaUnits[1].id,
+      guestName: "Katarzyna Wiśniewska",
+      author: "Katarzyna W.",
+      rating: 5,
+      comment:
+        "Cudowne miejsce nad jeziorem, cisza i pięknie zadbany ogród. Gospodarze bardzo pomocni. Wrócimy!",
+      ownerReply: "Dziękujemy, do zobaczenia latem!",
+    },
+    {
+      code: "HO-PAST02",
+      unit: willaUnits[2].id,
+      guestName: "Marek Zieliński",
+      author: "Marek Z.",
+      rating: 4,
+      comment: "Świetny pobyt, pokój czysty i wygodny. Śniadania mogłyby być odrobinę obfitsze.",
+      ownerReply: "",
+    },
+    {
+      code: "HO-PAST03",
+      unit: willaUnits[4].id,
+      guestName: "Agnieszka Lewandowska",
+      author: "Agnieszka L.",
+      rating: 5,
+      comment: "Apartament przestronny, taras z widokiem na jezioro rewelacyjny. Polecam na dłużej.",
+      ownerReply: "",
+    },
+  ];
+  for (const s of pastStays) {
+    const res = await prisma.reservation.create({
+      data: {
+        code: s.code,
+        unitId: s.unit,
+        checkIn: iso(addDays(today, -14)),
+        checkOut: iso(addDays(today, -11)),
+        guests: 2,
+        guestName: s.guestName,
+        email: "gosc@example.com",
+        totalGr: 108000,
+        depositGr: 32400,
+        status: "CONFIRMED",
+        source: "ONLINE",
+        reviewRequestedAt: new Date(),
+      },
+    });
+    await prisma.review.create({
+      data: {
+        reservationId: res.id,
+        propertyId: willa.id,
+        authorName: s.author,
+        rating: s.rating,
+        comment: s.comment,
+        ownerReply: s.ownerReply,
+      },
+    });
+  }
+
   await prisma.propertyFaq.createMany({
     data: [
       {
@@ -185,7 +259,7 @@ async function main() {
     data: {
       owner: {
         create: {
-          email: "marina@notelo.pl",
+          email: "marina@rezio.pl",
           name: "Marta Marina",
           passwordHash: hashPassword("marina123"),
         },
@@ -245,8 +319,8 @@ async function main() {
   });
 
   console.log("Seed OK:");
-  console.log("  demo@notelo.pl / demo1234   → Willa Notelo (/o/willa-notelo)");
-  console.log("  marina@notelo.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
+  console.log("  demo@rezio.pl / demo1234   → Willa Rezio (/o/willa-rezio)");
+  console.log("  marina@rezio.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
 }
 
 main()

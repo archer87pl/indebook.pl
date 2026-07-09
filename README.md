@@ -1,4 +1,4 @@
-# Notelo — platforma rezerwacji dla wielu obiektów (MVP) 
+# Rezio — platforma rezerwacji dla wielu obiektów (MVP) 
 
 Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, wille, apartamenty) rejestrują się samodzielnie, dostają własną stronę rezerwacji i panel recepcji. Inspirowany zestawieniem Profitroom / Hotres / IdoBooking.
 
@@ -22,9 +22,9 @@ Konta:
 
 | E-mail | Hasło | Rola |
 |---|---|---|
-| `demo@notelo.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa Notelo, plan Pro |
-| `marina@notelo.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
-| `admin@notelo.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
+| `demo@rezio.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa Rezio, plan Pro |
+| `marina@rezio.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
+| `admin@rezio.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
 
 Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 99 zł (bez limitu) — limit jednostek egzekwowany przy dodawaniu pokoi; plan zmienia superadmin.
 
@@ -41,14 +41,28 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 9
 - cennik sezonowy, min. długość pobytu, rezerwacja wstępna (30 min na zaliczkę),
 - symulacja bramki płatności (do podmiany na Przelewy24 / Tpay w `payDeposit`),
 - panel gościa `/r/[kod]`: status, zmiana terminu (requote + kontrola dostępności), anulowanie,
+- **meldunek online** `/r/[kod]/meldunek`: karta meldunkowa z e-podpisem (canvas), dane dokumentu bez skanów (RODO), dodatkowi goście, nr auta; po wypełnieniu gość widzi instrukcje przyjazdu (kody, WiFi) i jego e-mail uznajemy za potwierdzony,
+- **czat z obiektem** na stronie rezerwacji — obie strony dostają powiadomienia e-mail, nieprzeczytane oznaczane przy wejściu,
+- **SMS-y** (gdy gość podał telefon): potwierdzenie rezerwacji z linkiem do meldunku + przypomnienie dzień przed przyjazdem,
+- **opinie po pobycie** `/r/[kod]/opinia`: ocena 1–5 gwiazdek + komentarz (prośba e-mail/SMS dzień po wymeldowaniu, cron); publikacja na stronie obiektu pod imieniem i inicjałem,
 - wyszukiwanie rezerwacji `/moja-rezerwacja` (kod + e-mail), zgoda RODO.
 
 **Właściciel (`/admin`)**
 - onboarding po rejestracji („dodaj pierwszy typ pokoju"),
-- pulpit (przyjazdy/wyjazdy/goście/oczekujące wpłaty), rezerwacje z filtrami, rezerwacje ręczne,
+- pulpit (przyjazdy/wyjazdy/goście/oczekujące wpłaty + alert nieprzeczytanych wiadomości), rezerwacje z filtrami, rezerwacje ręczne,
+- **czat z gościem** przy rezerwacji (badge nieprzeczytanych na liście i pulpicie),
+- **opinie gości** (zakładka Opinie): moderacja (ukryj/przywróć), publiczna odpowiedź obiektu; średnia i `aggregateRating` (JSON-LD) na stronie obiektu,
 - kalendarz obłożenia + blokady, cennik z sezonami,
+- **ceny dynamiczne** (`lib/dynamic-pricing.ts`): reguły weekend / last minute / wysokie obłożenie per obiekt — korekty % za noc nakładane na cennik, spójnie we wszystkich wycenach (wyszukiwarka, rezerwacja, zmiana terminu),
+- **Meldunek online**: status na listach (badge „✓ meldunek"), podgląd/druk karty meldunkowej z podpisem, ręczna wysyłka linku do meldunku; karty (PII) kasowane automatycznie 12 mies. po wymeldowaniu (cron),
+- **Faktury** (zakładka Faktury): wystawianie z rezerwacji (VAT / zaliczkowa / proforma), numeracja kolejna per seria i rok (FV/FZ/PRO), rozbicie brutto→netto+VAT (8/23/5/0%), snapshot sprzedawcy i nabywcy, widok do druku/PDF (`window.print()`), rejestr z sumą; dane sprzedawcy (NIP, konto) w ustawieniach obiektu,
 - **Pokoje**: CRUD typów pokoi i jednostek (z linkami iCal per jednostka),
-- **Obiekt**: nazwa, opis, adres, godziny, % zaliczki; podgląd publicznego adresu.
+- **Obiekt**: nazwa, opis, adres, godziny, % zaliczki, instrukcje przyjazdu (widoczne po meldunku); podgląd publicznego adresu.
+
+**Superadmin (`/superadmin`)**
+- pulpit platformy: konta, obiekty, MRR wg planów, rezerwacje i GMV (30 dni / od początku), rozkład planów,
+- **karta obiektu** `/superadmin/obiekt/[id]`: edycja danych obiektu (nazwa, slug ze sprawdzeniem unikalności, plan bez limitu jednostek, % zaliczki, godziny, adres, opis) i konta właściciela (imię, e-mail), wysyłka linku do resetu hasła, statystyki (jednostki, rezerwacje, GMV, opinie),
+- **zawieszenie obiektu** (ukrycie z katalogu + blokada nowych rezerwacji, egzekwowane też w `createReservation`) i **trwałe usunięcie** obiektu wraz z kontem i całą historią (potwierdzenie slugiem, kaskada w transakcji).
 
 **Channel manager (zakładka Kanały)**
 - import iCal z Booking.com / Airbnb / Vrbo (presety z instrukcjami) + eksport iCal per jednostka z sekretnym tokenem w URL,
@@ -58,7 +72,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 9
 - pełne API dwukierunkowe (ceny, real-time) — faza 2, wymaga certyfikacji partnerskiej.
 
 **Pozostałe integracje**
-- płatności Przelewy24 (env `P24_*`, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola).
+- płatności Przelewy24 (env `P24_*`, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola), SMS-y SMSAPI (env `SMSAPI_TOKEN`, fallback: konsola) — potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem (z linkiem do meldunku, cron, wysyłka tylko 8–21).
 
 ## Konwencje
 
@@ -80,7 +94,7 @@ Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **
    ```
 2. **Blob** — w dashboardzie Vercel: Storage → Create → Blob; token `BLOB_READ_WRITE_TOKEN` wstrzyknie się automatycznie do deploymentu (`vercel env pull` do dev).
 3. **Zmienne środowiskowe** (Vercel → Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`, `APP_URL` (adres produkcyjny), `CRON_SECRET` (dowolny losowy ciąg), oraz opcjonalnie `RESEND_API_KEY`, `EMAIL_FROM`, `P24_*`. Pełna lista w `.env.example`.
-4. **Cron** — harmonogram w `vercel.json` (wygaszanie rezerwacji co 10 min, sync iCal co godzinę). Endpointy `app/api/cron/*` chroni `CRON_SECRET`. Uwaga: plan **Hobby** ogranicza cron do 1×/dobę — do częstszego harmonogramu potrzebny plan Pro.
+4. **Cron** — harmonogram w `vercel.json`: `expire-reservations` o 8:00 UTC (wygaszanie PENDING + retencja kart meldunkowych + przypomnienia o przyjeździe; pora dobrana pod SMS-y do gości), `sync-ical` o 4:00. Endpointy `app/api/cron/*` chroni `CRON_SECRET`. Uwaga: plan **Hobby** ogranicza do 2 cronów 1×/dobę — do częstszego harmonogramu potrzebny plan Pro.
 5. Deploy przez `git push` (integracja GitHub) lub `vercel --prod`. Build sam odpala `prisma generate` (`postinstall`).
 
 ## Wdrożenie na Docker (self-host)
@@ -97,4 +111,4 @@ APP_URL=https://twojadomena.pl docker compose up -d --build
 
 ## Poza MVP (faza 2)
 
-Dwukierunkowy channel manager, prawdziwe płatności (BLIK), wysyłka e-maili, kody promo / pakiety, dynamic pricing, self check-in, housekeeping, faktury, wiele obiektów na konto, role zespołu, weryfikacja e-mail / reset hasła.
+Dwukierunkowy channel manager, prawdziwe płatności (BLIK), pakiety, housekeeping, wiele obiektów na konto, role zespołu, upselling (dopłaty za usługi), vouchery, KSeF (e-faktury), kiosk / zamki hotelowe / POS gastro (wymagają integracji sprzętowych).

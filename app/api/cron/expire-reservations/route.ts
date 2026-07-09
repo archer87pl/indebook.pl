@@ -1,4 +1,9 @@
-import { expireReservations } from "@/lib/jobs";
+import {
+  expireReservations,
+  purgeExpiredCheckIns,
+  sendArrivalReminders,
+  sendReviewRequests,
+} from "@/lib/jobs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -11,5 +16,15 @@ export async function GET(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
   const count = await expireReservations();
-  return Response.json({ ok: true, expired: count });
+  // Vercel Hobby: maks. 2 crony — pozostałe dzienne zadania robimy przy okazji
+  const purged = await purgeExpiredCheckIns();
+  const reminders = await sendArrivalReminders();
+  const reviewRequests = await sendReviewRequests();
+  return Response.json({
+    ok: true,
+    expired: count,
+    purgedCheckIns: purged,
+    arrivalReminders: reminders,
+    reviewRequests,
+  });
 }

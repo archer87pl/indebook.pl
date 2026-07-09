@@ -113,7 +113,7 @@ export default async function ChannelsPage(props: {
 
               <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Eksport (Notelo → kanał)
+                  Eksport (Rezio → kanał)
                 </p>
                 <input
                   readOnly
@@ -129,7 +129,7 @@ export default async function ChannelsPage(props: {
 
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Import (kanał → Notelo)
+                  Import (kanał → Rezio)
                 </p>
                 {u.icalFeeds.map((f) => {
                   const ch = channelDef(f.channel);
@@ -230,10 +230,10 @@ export default async function ChannelsPage(props: {
             </summary>
             <ol className="list-decimal ml-5 mt-1 space-y-1 text-slate-600">
               <li>
-                <span className="font-medium">Import do Notelo:</span> {c.importHint}
+                <span className="font-medium">Import do Rezio:</span> {c.importHint}
               </li>
               <li>
-                <span className="font-medium">Eksport z Notelo:</span> {c.exportHint}
+                <span className="font-medium">Eksport z Rezio:</span> {c.exportHint}
               </li>
             </ol>
           </details>
