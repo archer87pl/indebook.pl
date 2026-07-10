@@ -593,7 +593,7 @@ export default async function HomePage() {
           </h2>
           <p className="text-slate-500">
             Przy 100 000 zł obrotu rocznie portale zabierają 15–25 tys. zł. Rezio —
-            od 0 do 1188 zł.
+            od 0 do 1788 zł rocznie.
           </p>
         </div>
         <div className="card overflow-hidden max-w-3xl mx-auto">

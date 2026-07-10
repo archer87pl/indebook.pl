@@ -27,7 +27,7 @@ export const PLANS: PlanDef[] = [
   {
     key: "STANDARD",
     label: "Standard",
-    priceZl: 49,
+    priceZl: 79,
     blurb: "Pełny warsztat recepcji — bez prowizji od rezerwacji.",
     maxUnits: 15,
     features: [
@@ -44,7 +44,7 @@ export const PLANS: PlanDef[] = [
   {
     key: "PRO",
     label: "Pro",
-    priceZl: 99,
+    priceZl: 149,
     blurb: "Dla większych obiektów — automatyzacja i pełna analityka.",
     maxUnits: null,
     features: [

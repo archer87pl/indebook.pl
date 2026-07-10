@@ -26,7 +26,7 @@ Konta:
 | `marina@rezio.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
 | `admin@rezio.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
 
-Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 49 zł (15) / Pro 99 zł (bez limitu) — limit jednostek egzekwowany przy dodawaniu pokoi; plan zmienia superadmin.
+Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 149 zł (bez limitu) — limit jednostek egzekwowany przy dodawaniu pokoi; plan zmienia superadmin.
 
 ## Architektura multi-tenant
 
