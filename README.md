@@ -2,6 +2,8 @@
 
 Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, wille, apartamenty) rejestrują się samodzielnie, dostają własną stronę rezerwacji i panel recepcji. Inspirowany zestawieniem Profitroom / Hotres / IdoBooking.
 
+> 📘 **Szczegółowa dokumentacja funkcji** — jak działa każdy moduł, trasy, pliki i dostępność per plan: [docs/FUNKCJE.md](docs/FUNKCJE.md). Żywy przewodnik design systemu: `/styleguide`.
+
 ## Stack
 
 - Next.js 16 (App Router, Server Actions, Turbopack) + React 19 + TypeScript
@@ -17,6 +19,8 @@ npm run db:push   # tworzy tabele wg prisma/schema.prisma
 npm run db:seed   # dwa demo obiekty (dane logowania poniżej)
 npm run dev
 ```
+
+Testy: `npm test` (Vitest, jednostkowe lib/) oraz `npm run test:e2e` (Playwright — pełny flow rezerwacji gościa z e-podpisem meldunku i panel recepcji; wymaga bazy z .env, dane testowe znakowane „E2E …”).
 
 Konta:
 
@@ -49,7 +53,8 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 
 **Właściciel (`/admin`)**
 - onboarding po rejestracji („dodaj pierwszy typ pokoju"),
-- pulpit (przyjazdy/wyjazdy/goście/oczekujące wpłaty + alert nieprzeczytanych wiadomości), rezerwacje z filtrami, rezerwacje ręczne,
+- pulpit 1c (KPI z przychodem i trendem m/m, plan dnia, obłożenie 14 dni, feed aktywności + alerty nieprzeczytanych wiadomości i konfliktów kanałów), rezerwacje z zakładkami statusów, wyszukiwarką i szczegółami ze stepperem, rezerwacje ręczne,
+- **Goście (CRM)**: baza budowana z rezerwacji (pobyty, wydatki, tagi VIP/Powracający/Nowy) i **Płatności**: rejestr zaliczek online, potwierdzeń ręcznych i oczekujących wpłat,
 - **czat z gościem** przy rezerwacji (badge nieprzeczytanych na liście i pulpicie),
 - **opinie gości** (zakładka Opinie): moderacja (ukryj/przywróć), publiczna odpowiedź obiektu; średnia i `aggregateRating` (JSON-LD) na stronie obiektu,
 - kalendarz obłożenia + blokady, cennik z sezonami,
