@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, List, Star } from "lucide-react";
+import { Building2, List, ScrollText, Settings, Star } from "lucide-react";
 
 const TABS = [
   { href: "/superadmin", label: "Pulpit", icon: Building2 },
   { href: "/superadmin/rezerwacje", label: "Rezerwacje", icon: List },
   { href: "/superadmin/opinie", label: "Opinie", icon: Star },
+  { href: "/superadmin/ustawienia", label: "Ustawienia", icon: Settings },
+  { href: "/superadmin/logi", label: "Logi", icon: ScrollText },
 ];
 
 /** Zakładki panelu platformy (karta obiektu podświetla Pulpit). */

@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import type { Reservation } from "@prisma/client";
+import { getSetting } from "./settings";
 
 // Przelewy24 REST API v1 (https://developers.przelewy24.pl).
-// Brak kompletu zmiennych P24_* => tryb symulacji (przycisk potwierdza od razu).
+// Konfiguracja z panelu superadmina (PlatformSetting) z fallbackiem na env.
+// Brak kompletu danych P24 => tryb symulacji (przycisk potwierdza od razu).
 
 type P24Config = {
   merchantId: number;
@@ -16,23 +18,29 @@ export function appUrl(): string {
   return (process.env.APP_URL ?? "http://localhost:3001").replace(/\/$/, "");
 }
 
-function config(): P24Config | null {
-  const { P24_MERCHANT_ID, P24_POS_ID, P24_API_KEY, P24_CRC } = process.env;
-  if (!P24_MERCHANT_ID || !P24_POS_ID || !P24_API_KEY || !P24_CRC) return null;
-  const sandbox = process.env.P24_SANDBOX !== "false";
+async function config(): Promise<P24Config | null> {
+  const [merchantId, posId, apiKey, crc, sandboxRaw] = await Promise.all([
+    getSetting("P24_MERCHANT_ID"),
+    getSetting("P24_POS_ID"),
+    getSetting("P24_API_KEY"),
+    getSetting("P24_CRC"),
+    getSetting("P24_SANDBOX"),
+  ]);
+  if (!merchantId || !posId || !apiKey || !crc) return null;
+  const sandbox = sandboxRaw !== "false";
   return {
-    merchantId: Number(P24_MERCHANT_ID),
-    posId: Number(P24_POS_ID),
-    apiKey: P24_API_KEY,
-    crc: P24_CRC,
+    merchantId: Number(merchantId),
+    posId: Number(posId),
+    apiKey,
+    crc,
     baseUrl: sandbox
       ? "https://sandbox.przelewy24.pl"
       : "https://secure.przelewy24.pl",
   };
 }
 
-export function p24Configured(): boolean {
-  return config() !== null;
+export async function p24Configured(): Promise<boolean> {
+  return (await config()) !== null;
 }
 
 function sign(payload: Record<string, unknown>, crc: string): string {
@@ -50,7 +58,7 @@ export async function createP24Payment(
   reservation: Reservation,
   propertyName: string
 ): Promise<string> {
-  const cfg = config();
+  const cfg = await config();
   if (!cfg) throw new Error("P24 nie jest skonfigurowane.");
 
   const body = {
@@ -103,8 +111,10 @@ export type P24Notification = {
 };
 
 /** Weryfikuje podpis powiadomienia urlStatus. */
-export function verifyP24NotificationSign(n: P24Notification): boolean {
-  const cfg = config();
+export async function verifyP24NotificationSign(
+  n: P24Notification
+): Promise<boolean> {
+  const cfg = await config();
   if (!cfg) return false;
   const expected = sign(
     {
@@ -125,7 +135,7 @@ export function verifyP24NotificationSign(n: P24Notification): boolean {
 
 /** Potwierdza transakcję w P24 (wymagane, żeby środki zostały zaksięgowane). */
 export async function verifyP24Transaction(n: P24Notification): Promise<boolean> {
-  const cfg = config();
+  const cfg = await config();
   if (!cfg) return false;
   const res = await fetch(`${cfg.baseUrl}/api/v1/transaction/verify`, {
     method: "PUT",

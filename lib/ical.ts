@@ -1,6 +1,7 @@
 import type { Block, IcalFeed, Reservation } from "@prisma/client";
 import { addDaysISO, todayISO } from "./dates";
 import { prisma } from "./db";
+import { logEvent } from "./log";
 
 export type ChannelConflict = {
   block: Block & { feed: IcalFeed | null };
@@ -117,6 +118,12 @@ export async function syncIcalFeed(
     await prisma.icalFeed.update({
       where: { id: feed.id },
       data: { lastSyncAt: new Date(), lastError: error },
+    });
+    await logEvent({
+      kind: "ICAL",
+      level: "ERROR",
+      message: `Błąd synchronizacji iCal: ${feed.name || feed.channel}`,
+      meta: error.slice(0, 200),
     });
     return { ok: false, imported: 0, error };
   }

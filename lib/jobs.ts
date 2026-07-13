@@ -129,6 +129,17 @@ export async function purgeExpiredCheckIns(): Promise<number> {
   return count;
 }
 
+/** Retencja dziennika zdarzeń: wpisy starsze niż 90 dni są kasowane. */
+export async function purgeOldEventLogs(): Promise<number> {
+  const cutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000);
+  const { count } = await prisma.eventLog.deleteMany({
+    where: { createdAt: { lt: cutoff } },
+  });
+  if (count > 0)
+    console.log(`[JOBS] usunięto ${count} starych wpisów dziennika zdarzeń`);
+  return count;
+}
+
 /** Synchronizuje wszystkie kanały iCal (import zajętych terminów jako bloki). */
 export async function syncAllIcalFeeds(): Promise<number> {
   const feeds = await prisma.icalFeed.findMany();

@@ -4,8 +4,10 @@ import { defineConfig } from "@playwright/test";
 // Dane testowe są znakowane unikalnym sufiksem czasu — patrz tests/e2e/helpers.ts.
 export default defineConfig({
   testDir: "./tests/e2e",
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  timeout: 60_000,
+  // zimny dev server kompiluje trasy przy pierwszym wejściu — asercje po
+  // akcjach serwerowych potrzebują zapasu
+  expect: { timeout: 20_000 },
   // baza jest współdzielona (pula połączeń = 1) — bez równoległości
   fullyParallel: false,
   workers: 1,

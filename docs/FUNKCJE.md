@@ -401,13 +401,27 @@ z zakładkami **Pulpit / Rezerwacje / Opinie**:
 - **impersonacja** — „Zaloguj jako właściciel”: administrator wchodzi do
   panelu recepcji obiektu na sesji właściciela (wsparcie techniczne);
   sesja admina jest zastępowana, nie można impersonować innych adminów,
+  każda impersonacja trafia do dziennika zdarzeń,
+- **konfiguracja bramek/integracji** (`/superadmin/ustawienia`): Przelewy24
+  (Merchant ID, POS ID, klucz API, CRC, sandbox), Resend (klucz API,
+  nadawca) i SMSAPI (token, pole nadawcy) — wartości zapisywane w bazie
+  (`PlatformSetting`) **mają pierwszeństwo nad zmiennymi środowiskowymi**
+  (ENV pozostaje fallbackiem); sekrety pokazywane wyłącznie jako maska
+  końcówki, puste pole przy zapisie = bez zmian, sekcję można wyczyścić
+  (powrót do ENV); przycisk „Wyślij testowy e-mail” weryfikuje konfigurację,
+- **dziennik zdarzeń** (`/superadmin/logi`): rezerwacje, płatności, wysyłki
+  e-mail/SMS (sukcesy i błędy), błędy synchronizacji iCal, nieudane
+  logowania i wszystkie akcje administratora (zmiana planu, zawieszenie,
+  usunięcie, impersonacja, zmiany konfiguracji) — filtry po rodzaju
+  i poziomie (INFO/WARN/ERROR), paginacja, retencja 90 dni (cron),
 - **zawieszenie obiektu** — znika z katalogu, strona rezerwacji niedostępna,
   nowe rezerwacje blokowane także w server action; odwracalne,
 - **trwałe usunięcie** — obiekt + konto właściciela + cała historia,
   z potwierdzeniem przez przepisanie sluga, kaskadowo w transakcji.
 
 *Pliki:* `app/(site)/superadmin/**`, `components/admin/SuperNav.tsx`,
-`lib/auth.ts` (`requireSuperadmin`), akcje `super*` w `lib/actions.ts`
+`lib/auth.ts` (`requireSuperadmin`), `lib/settings.ts` (odczyt baza→ENV),
+`lib/log.ts` (`logEvent`), akcje `super*` w `lib/actions.ts`
 
 ---
 
@@ -418,7 +432,7 @@ Endpointy `app/api/cron/*` chronione `CRON_SECRET`; harmonogram w
 
 | Zadanie | Kiedy | Co robi |
 |---|---|---|
-| `expire-reservations` | codziennie 8:00 UTC | wygasza PENDING po 30 min blokady; kasuje karty meldunkowe (PII) 12 mies. po wymeldowaniu; wysyła **przypomnienia o jutrzejszym przyjeździe** (e-mail + SMS, z linkiem do meldunku jeśli niewypełniony) i **prośby o opinię** dzień po wymeldowaniu (raz na rezerwację) |
+| `expire-reservations` | codziennie 8:00 UTC | wygasza PENDING po 30 min blokady; kasuje karty meldunkowe (PII) 12 mies. po wymeldowaniu; czyści dziennik zdarzeń (wpisy > 90 dni); wysyła **przypomnienia o jutrzejszym przyjeździe** (e-mail + SMS, z linkiem do meldunku jeśli niewypełniony) i **prośby o opinię** dzień po wymeldowaniu (raz na rezerwację) |
 | `sync-ical` | codziennie 4:00 UTC (+ co godzinę w runtime) | synchronizuje wszystkie feedy iCal |
 
 *Pliki:* `lib/jobs.ts`, `app/api/cron/**`, `instrumentation.ts`

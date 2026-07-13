@@ -12,6 +12,8 @@ import {
 } from "./auth";
 import { hashPassword, verifyPassword } from "./password";
 import { isValidISO, todayISO } from "./dates";
+import { logEvent } from "./log";
+import { SETTING_SECTIONS } from "./settings";
 import { prisma } from "./db";
 import { formatPln, parsePlnToGr } from "./format";
 import { syncIcalFeed } from "./ical";
@@ -101,7 +103,15 @@ export async function login(formData: FormData) {
   const email = str(formData, "email").toLowerCase();
   const password = str(formData, "password");
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !verifyPassword(password, user.passwordHash)) redirect("/login?error=1");
+  if (!user || !verifyPassword(password, user.passwordHash)) {
+    await logEvent({
+      kind: "AUTH",
+      level: "WARN",
+      message: "Nieudane logowanie",
+      meta: email,
+    });
+    redirect("/login?error=1");
+  }
   await createSession(user!.id);
   redirect(user!.isAdmin ? "/superadmin" : "/admin");
 }
@@ -274,6 +284,12 @@ export async function createReservation(formData: FormData) {
     throw e;
   }
 
+  await logEvent({
+    kind: "RESERVATION",
+    message: `Nowa rezerwacja ${code} — ${unitType.property.name}`,
+    propertyId: unitType.property.id,
+    meta: `${guestName} · ${from} → ${to} · ${formatPln(totalGr)}`,
+  });
   await sendMail({
     to: email,
     subject: `Rezerwacja ${code} — oczekuje na wpłatę zaliczki`,
@@ -300,7 +316,7 @@ export async function payDeposit(formData: FormData) {
     reservation.expiresAt > new Date();
   if (!payable) redirect(`/r/${code}`);
 
-  if (p24Configured()) {
+  if (await p24Configured()) {
     let gatewayUrl = "";
     let errorMsg = "";
     try {
@@ -323,6 +339,12 @@ export async function payDeposit(formData: FormData) {
     where: { id: reservation.id },
     data: { status: "CONFIRMED", expiresAt: null },
   });
+  await logEvent({
+    kind: "PAYMENT",
+    message: `Zaliczka ${formatPln(reservation.depositGr)} — rezerwacja ${code} potwierdzona (symulacja)`,
+    propertyId: reservation.unit.unitType.property.id,
+    meta: reservation.guestName,
+  });
   await sendMail({
     to: reservation.email,
     subject: `Rezerwacja ${code} potwierdzona`,
@@ -340,12 +362,22 @@ export async function payDeposit(formData: FormData) {
 
 export async function cancelByGuest(formData: FormData) {
   const code = str(formData, "code");
-  const reservation = await prisma.reservation.findUnique({ where: { code } });
+  const reservation = await prisma.reservation.findUnique({
+    where: { code },
+    include: { unit: { include: { unitType: true } } },
+  });
   if (!reservation) redirect("/");
   if (reservation.status !== "CANCELLED") {
     await prisma.reservation.update({
       where: { id: reservation.id },
       data: { status: "CANCELLED" },
+    });
+    await logEvent({
+      kind: "RESERVATION",
+      level: "WARN",
+      message: `Rezerwacja ${code} anulowana przez gościa`,
+      propertyId: reservation.unit.unitType.propertyId,
+      meta: reservation.guestName,
     });
     await sendMail({
       to: reservation.email,
@@ -1622,11 +1654,17 @@ export async function addUnit(formData: FormData) {
 // ---------- Superadmin ----------
 
 export async function superSetPlan(formData: FormData) {
-  await requireSuperadmin();
+  const admin = await requireSuperadmin();
   const propertyId = Number(str(formData, "propertyId"));
   const plan = str(formData, "plan");
   if (["FREE", "STANDARD", "PRO"].includes(plan)) {
     await prisma.property.update({ where: { id: propertyId }, data: { plan } });
+    await logEvent({
+      kind: "ADMIN",
+      message: `Zmieniono plan obiektu na ${plan}`,
+      propertyId,
+      meta: admin.email,
+    });
   }
   revalidatePath("/superadmin");
   redirect("/superadmin");
@@ -1671,13 +1709,20 @@ export async function superUpdateProperty(formData: FormData) {
 
 /** Zawieszenie / przywrócenie obiektu (ukrycie z katalogu, blokada rezerwacji). */
 export async function superToggleSuspend(formData: FormData) {
-  await requireSuperadmin();
+  const admin = await requireSuperadmin();
   const id = Number(str(formData, "id"));
   const property = await prisma.property.findUnique({ where: { id } });
   if (property) {
     await prisma.property.update({
       where: { id },
       data: { suspended: !property.suspended },
+    });
+    await logEvent({
+      kind: "ADMIN",
+      level: property.suspended ? "INFO" : "WARN",
+      message: `${property.suspended ? "Przywrócono" : "Zawieszono"} obiekt ${property.name}`,
+      propertyId: id,
+      meta: admin.email,
     });
   }
   revalidatePath(`/superadmin/obiekt/${id}`);
@@ -1736,7 +1781,7 @@ export async function superSendPasswordReset(formData: FormData) {
  * właściciela — powrót wymaga ponownego zalogowania na konto admina.
  */
 export async function superImpersonate(formData: FormData) {
-  await requireSuperadmin();
+  const admin = await requireSuperadmin();
   const userId = Number(str(formData, "userId"));
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -1744,8 +1789,14 @@ export async function superImpersonate(formData: FormData) {
   });
   // tylko konta właścicieli z obiektem — nie impersonujemy innych adminów
   if (!user || user.isAdmin || !user.property) redirect("/superadmin");
+  await logEvent({
+    kind: "ADMIN",
+    level: "WARN",
+    message: `Impersonacja: ${admin.email} zalogował się jako ${user!.email}`,
+    propertyId: user!.property!.id,
+  });
   await destroySession();
-  await createSession(user.id);
+  await createSession(user!.id);
   redirect("/admin");
 }
 
@@ -1818,8 +1869,72 @@ export async function superDeleteProperty(formData: FormData) {
       // pominięcie osieroconego pliku jest akceptowalne
     }
   }
+  await logEvent({
+    kind: "ADMIN",
+    level: "WARN",
+    message: `Trwale usunięto obiekt ${property!.name} (/o/${property!.slug}) wraz z kontem właściciela`,
+  });
   revalidatePath("/superadmin");
   redirect("/superadmin?deleted=1");
+}
+
+/**
+ * Zapis konfiguracji platformy (bramki/integracje) z panelu superadmina.
+ * Sekrety: puste pole = bez zmiany (nie nadpisujemy istniejącej wartości).
+ */
+export async function superSaveSettings(formData: FormData) {
+  const admin = await requireSuperadmin();
+  const sectionId = str(formData, "section");
+  const section = SETTING_SECTIONS.find((s) => s.id === sectionId);
+  if (!section) redirect("/superadmin/ustawienia");
+
+  for (const field of section!.fields) {
+    const value = str(formData, field.key);
+    if (value === "") continue; // puste = zostaw jak jest (istotne dla sekretów)
+    await prisma.platformSetting.upsert({
+      where: { key: field.key },
+      create: { key: field.key, value },
+      update: { value },
+    });
+  }
+  await logEvent({
+    kind: "ADMIN",
+    message: `Zaktualizowano konfigurację: ${section!.title}`,
+    meta: admin.email,
+  });
+  revalidatePath("/superadmin/ustawienia");
+  redirect(`/superadmin/ustawienia?saved=${section!.id}`);
+}
+
+/** Usuwa nadpisania sekcji z panelu — wracają wartości z ENV (lub brak). */
+export async function superClearSettings(formData: FormData) {
+  const admin = await requireSuperadmin();
+  const sectionId = str(formData, "section");
+  const section = SETTING_SECTIONS.find((s) => s.id === sectionId);
+  if (!section) redirect("/superadmin/ustawienia");
+
+  await prisma.platformSetting.deleteMany({
+    where: { key: { in: section!.fields.map((f) => f.key) } },
+  });
+  await logEvent({
+    kind: "ADMIN",
+    level: "WARN",
+    message: `Wyczyszczono konfigurację panelu: ${section!.title} (powrót do ENV)`,
+    meta: admin.email,
+  });
+  revalidatePath("/superadmin/ustawienia");
+  redirect(`/superadmin/ustawienia?cleared=${section!.id}`);
+}
+
+/** Wysyła testowy e-mail na adres administratora (weryfikacja konfiguracji). */
+export async function superSendTestMail() {
+  const admin = await requireSuperadmin();
+  await sendMail({
+    to: admin.email,
+    subject: "Rezio — test konfiguracji e-mail",
+    body: `Jeśli czytasz tę wiadomość, konfiguracja wysyłki e-maili działa poprawnie.\n\nWysłano z panelu superadmina (${appUrl()}/superadmin/ustawienia).`,
+  });
+  redirect("/superadmin/ustawienia?testmail=1");
 }
 
 export async function deleteUnit(formData: FormData) {

@@ -34,6 +34,19 @@ test("superadmin przegląda platformę i loguje się jako właściciel", async (
   await expect(page).toHaveURL(/\/superadmin\/opinie/);
   await expect(page.getByText("Opinie platformy")).toBeVisible();
 
+  // konfiguracja bramek/integracji
+  await page.getByRole("link", { name: "Ustawienia" }).first().click();
+  await expect(page).toHaveURL(/\/superadmin\/ustawienia/);
+  await expect(page.getByText("Bramka płatności — Przelewy24")).toBeVisible();
+  await expect(page.getByText("E-maile — Resend")).toBeVisible();
+  await expect(page.getByText("SMS-y — SMSAPI")).toBeVisible();
+
+  // dziennik zdarzeń (nieudane logowania z testów auth powinny tu trafiać)
+  await page.getByRole("link", { name: "Logi" }).first().click();
+  await expect(page).toHaveURL(/\/superadmin\/logi/);
+  await expect(page.getByText("Dziennik zdarzeń")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Akcje admina" })).toBeVisible();
+
   // karta obiektu → impersonacja właściciela
   await page.goto("/superadmin?q=willa");
   await page.getByRole("link", { name: "Zarządzaj →" }).first().click();

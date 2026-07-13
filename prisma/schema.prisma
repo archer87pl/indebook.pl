@@ -10,6 +10,31 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Konfiguracja platformy (bramki płatności, e-mail, SMS) edytowana z panelu
+// superadmina. Wartość z bazy ma pierwszeństwo nad zmienną środowiskową
+// o tym samym kluczu (ENV zostaje fallbackiem dla wdrożeń bez panelu).
+model PlatformSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Dziennik zdarzeń platformy: rezerwacje, płatności, wysyłki e-mail/SMS,
+// synchronizacje iCal, akcje administratora, nieudane logowania.
+// Retencja: wpisy starsze niż 90 dni kasuje cron (lib/jobs.ts).
+model EventLog {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  level      String   @default("INFO") // INFO | WARN | ERROR
+  kind       String // RESERVATION | PAYMENT | MAIL | SMS | ICAL | ADMIN | AUTH
+  message    String
+  propertyId Int? // kontekst obiektu (bez relacji — log przeżywa usunięcie obiektu)
+  meta       String   @default("") // dodatkowy kontekst (np. kod rezerwacji, e-mail)
+
+  @@index([createdAt])
+  @@index([kind, createdAt])
+}
+
 model User {
   id           Int       @id @default(autoincrement())
   email        String    @unique

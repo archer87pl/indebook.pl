@@ -78,6 +78,7 @@ export default async function ReservationPage(props: {
   const payable = r.status === "PENDING" && !expired;
   const active = r.status === "CONFIRMED" || payable;
   const changeable = active && r.checkIn > todayISO();
+  const p24Enabled = payable && (await p24Configured());
   const confirmed = r.status === "CONFIRMED";
 
   return (
@@ -216,12 +217,12 @@ export default async function ReservationPage(props: {
                 <form action={payDeposit} className="space-y-2">
                   <input type="hidden" name="code" value={r.code} />
                   <Button type="submit" size="lg" variant="accent" className="w-full">
-                    {p24Configured()
+                    {p24Enabled
                       ? `Zapłać zaliczkę ${formatPln(r.depositGr)} — Przelewy24`
                       : `Opłać zaliczkę ${formatPln(r.depositGr)} (symulacja płatności)`}
                   </Button>
                   <p className="text-center text-xs text-slate-500">
-                    {p24Configured()
+                    {p24Enabled
                       ? "Bezpieczna płatność Przelewy24: BLIK, karta, szybki przelew."
                       : "Tryb deweloperski: bramka płatności symulowana."}
                   </p>

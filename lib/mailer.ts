@@ -2,7 +2,9 @@
 // Body jest tekstowe; do Resend idzie też wariant HTML w szablonie 19/20:
 // zielony header z logo, biała karta treści, jeden primary CTA, stopka ≤560px.
 
+import { logEvent } from "./log";
 import { appUrl } from "./payments";
+import { getSetting } from "./settings";
 
 type Mail = {
   to: string;
@@ -65,7 +67,7 @@ function extractCta(body: string): { label: string; url: string } | null {
 }
 
 export async function sendMail(mail: Mail): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = await getSetting("RESEND_API_KEY");
   if (!apiKey) {
     console.log(
       `[MAIL] do: ${mail.to}\n[MAIL] temat: ${mail.subject}\n${mail.body}\n`
@@ -81,7 +83,7 @@ export async function sendMail(mail: Mail): Promise<void> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM ?? "Rezio <onboarding@resend.dev>",
+        from: (await getSetting("EMAIL_FROM")) || "Rezio <onboarding@resend.dev>",
         to: [mail.to],
         subject: mail.subject,
         text: mail.body,
@@ -90,10 +92,29 @@ export async function sendMail(mail: Mail): Promise<void> {
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) {
-      console.error(`[MAIL] Resend HTTP ${res.status}: ${await res.text()}`);
+      const detail = await res.text();
+      console.error(`[MAIL] Resend HTTP ${res.status}: ${detail}`);
+      await logEvent({
+        kind: "MAIL",
+        level: "ERROR",
+        message: `Błąd wysyłki e-maila (HTTP ${res.status}): ${mail.subject}`,
+        meta: `do: ${mail.to} · ${detail.slice(0, 200)}`,
+      });
+      return;
     }
+    await logEvent({
+      kind: "MAIL",
+      message: `Wysłano e-mail: ${mail.subject}`,
+      meta: `do: ${mail.to}`,
+    });
   } catch (e) {
     // e-mail nie może wywracać rezerwacji — logujemy i jedziemy dalej
     console.error("[MAIL] błąd wysyłki:", e);
+    await logEvent({
+      kind: "MAIL",
+      level: "ERROR",
+      message: `Błąd wysyłki e-maila: ${mail.subject}`,
+      meta: `do: ${mail.to} · ${e instanceof Error ? e.message : "nieznany błąd"}`,
+    });
   }
 }

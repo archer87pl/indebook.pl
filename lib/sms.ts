@@ -1,6 +1,10 @@
-// Wysyłka SMS: SMSAPI.pl (env SMSAPI_TOKEN), a bez tokenu — log do konsoli.
-// Nadawca: env SMS_FROM (zarejestrowane pole nadawcy w SMSAPI) albo "ECO"
-// (SMS ekonomiczny z losowego numeru — działa bez rejestracji nadpisu, taniej).
+// Wysyłka SMS: SMSAPI.pl (ustawienie SMSAPI_TOKEN z panelu superadmina lub
+// env), a bez tokenu — log do konsoli. Nadawca: SMS_FROM (zarejestrowane pole
+// nadawcy w SMSAPI) albo "ECO" (SMS ekonomiczny z losowego numeru — działa
+// bez rejestracji nadpisu, taniej).
+
+import { logEvent } from "./log";
+import { getSetting } from "./settings";
 
 type Sms = {
   to: string;
@@ -25,7 +29,7 @@ export async function sendSms(sms: Sms): Promise<void> {
   const phone = normalizePhone(sms.to);
   if (!phone) return;
 
-  const token = process.env.SMSAPI_TOKEN;
+  const token = await getSetting("SMSAPI_TOKEN");
   if (!token) {
     console.log(`[SMS] do: ${phone}\n${sms.body}\n`);
     return;
@@ -41,7 +45,7 @@ export async function sendSms(sms: Sms): Promise<void> {
       body: new URLSearchParams({
         to: phone,
         message: sms.body,
-        from: process.env.SMS_FROM || "ECO",
+        from: (await getSetting("SMS_FROM")) || "ECO",
         format: "json",
         encoding: "utf-8",
       }),
@@ -54,9 +58,27 @@ export async function sendSms(sms: Sms): Promise<void> {
       console.error(
         `[SMS] SMSAPI HTTP ${res.status}, błąd ${data?.error ?? "?"}: ${data?.message ?? ""}`
       );
+      await logEvent({
+        kind: "SMS",
+        level: "ERROR",
+        message: `Błąd wysyłki SMS (${data?.error ?? `HTTP ${res.status}`})`,
+        meta: `do: ${phone} · ${data?.message ?? ""}`,
+      });
+      return;
     }
+    await logEvent({
+      kind: "SMS",
+      message: "Wysłano SMS",
+      meta: `do: ${phone}`,
+    });
   } catch (e) {
     // SMS nie może wywracać rezerwacji — logujemy i jedziemy dalej
     console.error("[SMS] błąd wysyłki:", e);
+    await logEvent({
+      kind: "SMS",
+      level: "ERROR",
+      message: "Błąd wysyłki SMS",
+      meta: `do: ${phone} · ${e instanceof Error ? e.message : "nieznany błąd"}`,
+    });
   }
 }

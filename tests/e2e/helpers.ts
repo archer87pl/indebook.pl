@@ -6,10 +6,17 @@ export const RUN = Date.now().toString(36);
 export const DEMO = { email: "demo@rezio.pl", password: "demo1234" };
 export const PROPERTY_SLUG = "willa-rezio";
 
-/** Data ISO przesunięta o `days` dni od dziś (daleka przyszłość = wolne terminy). */
+/**
+ * Losowe okno dat per przebieg (120–4000 dni w przód): kolejne uruchomienia
+ * nie kumulują rezerwacji na tych samych datach (jednostek jest skończenie
+ * wiele, a powtarzalny stały offset wyczerpałby je po kilku przebiegach).
+ */
+const DAY_OFFSET = 120 + Math.floor(Math.random() * 3800);
+
+/** Data ISO przesunięta o `days` dni względem okna przebiegu. */
 export function futureISO(days: number): string {
   const d = new Date();
-  d.setDate(d.getDate() + days);
+  d.setDate(d.getDate() + DAY_OFFSET + days);
   return d.toISOString().slice(0, 10);
 }
 

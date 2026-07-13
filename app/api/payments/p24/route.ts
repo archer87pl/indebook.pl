@@ -1,6 +1,7 @@
 import { checkInUrl } from "@/lib/checkin";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
+import { logEvent } from "@/lib/log";
 import { sendMail } from "@/lib/mailer";
 import { sendSms } from "@/lib/sms";
 import {
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     return new Response("Bad request", { status: 400 });
   }
 
-  if (!verifyP24NotificationSign(notification)) {
+  if (!(await verifyP24NotificationSign(notification))) {
     return new Response("Invalid signature", { status: 400 });
   }
 
@@ -41,6 +42,11 @@ export async function POST(req: Request) {
       expiresAt: null,
       paymentOrderId: String(notification.orderId),
     },
+  });
+  await logEvent({
+    kind: "PAYMENT",
+    message: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana (Przelewy24) — rezerwacja ${reservation.code}`,
+    meta: `orderId: ${notification.orderId}`,
   });
   await sendMail({
     to: reservation.email,
