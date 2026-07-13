@@ -1,22 +1,40 @@
 import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
+import Logo from "@/components/Logo";
+import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
+import AdminTopbar from "@/components/admin/AdminTopbar";
+import Avatar from "@/components/ui/Avatar";
 import { logout } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
+import { todayISO } from "@/lib/dates";
+import { prisma } from "@/lib/db";
 import { planDef } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
-const NAV = [
-  { href: "/admin", label: "Pulpit" },
-  { href: "/admin/rezerwacje", label: "Rezerwacje" },
-  { href: "/admin/faktury", label: "Faktury" },
-  { href: "/admin/kalendarz", label: "Kalendarz" },
-  { href: "/admin/kanaly", label: "Kanały" },
-  { href: "/admin/pokoje", label: "Pokoje" },
-  { href: "/admin/cennik", label: "Cennik" },
-  { href: "/admin/opinie", label: "Opinie" },
-  { href: "/admin/raporty", label: "Raporty" },
-  { href: "/admin/obiekt", label: "Obiekt" },
+const NAV: AdminNavItem[] = [
+  { href: "/admin", label: "Pulpit", icon: "pulpit" },
+  { href: "/admin/kalendarz", label: "Kalendarz", icon: "kalendarz" },
+  { href: "/admin/rezerwacje", label: "Rezerwacje", icon: "rezerwacje" },
+  { href: "/admin/goscie", label: "Goście", icon: "goscie" },
+  { href: "/admin/platnosci", label: "Płatności", icon: "platnosci" },
+  { href: "/admin/faktury", label: "Faktury", icon: "faktury" },
+  { href: "/admin/kanaly", label: "Kanały", icon: "kanaly" },
+  { href: "/admin/pokoje", label: "Pokoje", icon: "pokoje" },
+  { href: "/admin/cennik", label: "Cennik", icon: "cennik" },
+  { href: "/admin/opinie", label: "Opinie", icon: "opinie" },
+  { href: "/admin/raporty", label: "Raporty", icon: "raporty" },
 ];
+
+function todayLabel() {
+  const label = new Date().toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
 
 export default async function AdminLayout({
   children,
@@ -24,52 +42,105 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user, property } = await requireOwner();
+  const activeReservations = await prisma.reservation.count({
+    where: {
+      unit: { unitType: { propertyId: property.id } },
+      status: { not: "CANCELLED" },
+      checkOut: { gte: todayISO() },
+    },
+  });
+
+  const items = NAV.map((item) =>
+    item.href === "/admin/rezerwacje"
+      ? { ...item, badge: activeReservations }
+      : item,
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-            Panel obiektu
-          </p>
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-brand-950">{property.name}</h2>
-            <Link
-              href="/admin/plan"
-              className="inline-block rounded-full bg-brand-100 text-brand-800 hover:bg-brand-200 px-2.5 py-0.5 text-xs font-semibold transition-colors"
-              title="Zobacz lub zmień plan"
-            >
+    <div className="min-h-screen w-full lg:flex">
+      {/* Rail nawigacji (desktop) wg 1c */}
+      <aside className="sticky top-0 z-20 hidden h-screen w-[216px] flex-none flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] lg:flex print:hidden">
+        <Link href="/admin" className="px-2 pb-5 pt-1" aria-label="Rezio — pulpit">
+          <Logo size={31} tone="dark" />
+        </Link>
+
+        <Link
+          href="/admin/plan"
+          className="mb-2 flex items-center gap-2.5 rounded-[10px] bg-white/[.06] px-2.5 py-2.5 transition-colors hover:bg-white/10"
+          title="Plan i abonament"
+        >
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-[7px] bg-brand-400/20 text-brand-400">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 21h18M6 21V8l6-4 6 4v13M10 12h4M10 16h4" />
+            </svg>
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-[12.5px] font-semibold text-white">
+              {property.name}
+            </span>
+            <span className="block text-[10px] font-semibold text-brand-400">
               {planDef(property.plan).label}
-            </Link>
+            </span>
+          </span>
+        </Link>
+
+        <AdminNav items={items} />
+
+        <div className="mt-auto space-y-0.5 border-t border-white/10 pt-3">
+          <AdminNav
+            items={[{ href: "/admin/obiekt", label: "Ustawienia", icon: "ustawienia" }]}
+          />
+          <div className="flex items-center gap-2.5 px-2.5 pt-2">
+            <Avatar name={property.name} size={30} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-semibold text-white">
+                {user.email}
+              </div>
+              <div className="text-[10.5px] text-[#8fb5a2]">Recepcja</div>
+            </div>
+            <form action={logout}>
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8fb5a2] transition-colors hover:bg-white/10 hover:text-white"
+                title="Wyloguj"
+              >
+                <LogOut size={14} strokeWidth={2} />
+              </button>
+            </form>
           </div>
         </div>
-        <div className="text-right text-sm">
-          <Link
-            href={`/o/${property.slug}`}
-            className="text-brand-700 font-semibold hover:underline"
-          >
-            Zobacz stronę obiektu →
+      </aside>
+
+      {/* Pasek mobilny: logo + nawigacja pozioma */}
+      <div className="sticky top-0 z-20 bg-brand-900 lg:hidden print:hidden">
+        <div className="flex items-center justify-between px-4 pt-3">
+          <Link href="/admin" aria-label="Rezio — pulpit">
+            <Logo size={26} tone="dark" />
           </Link>
-          <p className="text-xs text-slate-400">{user.email}</p>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/obiekt"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#cfe3d8] hover:bg-white/10"
+              title="Ustawienia"
+            >
+              <Settings size={15} strokeWidth={2} />
+            </Link>
+            <form action={logout}>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#cfe3d8] hover:bg-white/10"
+                title="Wyloguj"
+              >
+                <LogOut size={15} strokeWidth={2} />
+              </button>
+            </form>
+          </div>
         </div>
+        <AdminNav items={items} variant="bar" />
       </div>
-      <nav className="flex flex-wrap items-center gap-1 bg-white rounded-xl border border-slate-200 p-2 print:hidden">
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-brand-50 hover:text-brand-800"
-          >
-            {item.label}
-          </Link>
-        ))}
-        <div className="flex-1" />
-        <form action={logout}>
-          <button className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-red-600">
-            Wyloguj
-          </button>
-        </form>
-      </nav>
-      {children}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AdminTopbar today={todayLabel()} />
+        <main className="flex-1 px-4 py-4 lg:px-6 lg:py-5">{children}</main>
+      </div>
     </div>
   );
 }

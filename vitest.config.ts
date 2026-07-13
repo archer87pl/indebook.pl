@@ -7,5 +7,7 @@ export default defineConfig({
   },
   test: {
     globalSetup: "./tests/global-setup.ts",
+    // testy e2e (Playwright) mają własny runner — nie mieszamy runnerów
+    exclude: ["**/node_modules/**", "tests/e2e/**"],
   },
 });

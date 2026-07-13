@@ -60,6 +60,19 @@ export function formatDatePl(iso: string): string {
   });
 }
 
+/** Zakres pobytu po polsku: "10–13 lip" lub "30 cze – 2 lip". */
+export function formatRangeShortPl(from: string, to: string): string {
+  const short = (iso: string) =>
+    new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
+      day: "numeric",
+      month: "short",
+    });
+  if (from.slice(0, 7) === to.slice(0, 7)) {
+    return `${Number(from.slice(8, 10))}–${short(to)}`;
+  }
+  return `${short(from)} – ${short(to)}`;
+}
+
 export function formatDateShortPl(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
     day: "2-digit",

@@ -1,6 +1,8 @@
-import Link from "next/link";
+import { ArrowLeft, Check } from "lucide-react";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import PrintButton from "@/components/PrintButton";
+import Button from "@/components/ui/Button";
 import { requireOwner } from "@/lib/auth";
 import { type AdditionalGuest, docTypeLabel } from "@/lib/checkin";
 import { formatDatePl, formatDateShortPl } from "@/lib/dates";
@@ -39,79 +41,106 @@ export default async function CheckInCardPage(props: {
   }
 
   const row = (label: string, value: string) => (
-    <div className="grid grid-cols-[160px_1fr] gap-2 py-1.5 border-b border-slate-100 text-sm">
+    <div className="grid grid-cols-[160px_1fr] gap-2 border-b border-slate-100 py-1.5 text-sm last:border-0">
       <span className="text-slate-500">{label}</span>
       <span className="font-medium">{value || "—"}</span>
     </div>
   );
 
+  const section = (title: string, children: ReactNode) => (
+    <div className="rounded-[10px] border border-slate-200 px-4 pb-1.5 pt-3">
+      <p className="th pb-1">{title}</p>
+      {children}
+    </div>
+  );
+
   return (
     <div className="max-w-xl space-y-4">
-      <div className="flex items-center justify-between print:hidden">
-        <h1 className="text-2xl font-bold">Karta meldunkowa</h1>
-        <div className="flex items-center gap-3">
-          <PrintButton />
-          <Link
-            href={`/admin/rezerwacje/${reservation.id}`}
-            className="text-sm text-slate-500 hover:underline"
-          >
-            ← Wróć do rezerwacji
-          </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <div>
+          <h2 className="text-[15px] font-bold">Karta meldunkowa</h2>
+          <p className="tnum text-[11.5px] text-slate-400">{reservation.code}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button href={`/admin/rezerwacje/${reservation.id}`} variant="quiet" size="sm">
+            <ArrowLeft size={13} strokeWidth={2} />
+            Wróć do rezerwacji
+          </Button>
+          <PrintButton label="Drukuj" />
         </div>
       </div>
 
-      <div className="card p-8 space-y-5 print:shadow-none print:border-0 print:p-0">
-        <div className="text-center space-y-1">
-          <p className="text-lg font-bold text-brand-950">{property.name}</p>
-          {property.address && (
-            <p className="text-xs text-slate-500">{property.address}</p>
-          )}
-          <p className="text-sm font-semibold uppercase tracking-widest pt-2">
-            Karta meldunkowa
-          </p>
-        </div>
-
-        <div>
-          {row("Rezerwacja", reservation.code)}
-          {row(
-            "Pobyt",
-            `${formatDatePl(reservation.checkIn)} → ${formatDatePl(reservation.checkOut)}`
-          )}
-          {row(
-            "Pokój",
-            `${reservation.unit.unitType.name} (${reservation.unit.name})`
-          )}
-          {row("Imię i nazwisko", card.fullName)}
-          {row("Adres zamieszkania", card.address)}
-          {row("Obywatelstwo", card.citizenship)}
-          {row(
-            "Dokument tożsamości",
-            card.docNumber
-              ? `${docTypeLabel(card.docType)} nr ${card.docNumber}`
-              : "nie podano"
-          )}
-          {row("Nr rejestracyjny auta", card.carPlate)}
-          {row("Planowany przyjazd", card.arrivalTime)}
-          {row("E-mail", reservation.email)}
-          {row("Telefon", reservation.phone)}
-        </div>
-
-        {additionalGuests.length > 0 && (
+      <div className="card space-y-5 p-8 print:border-0 print:p-0 print:shadow-none">
+        {/* Nagłówek dokumentu */}
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
-            <p className="text-sm font-semibold pb-1">Pozostali goście</p>
-            {additionalGuests.map((g, i) =>
+            <p className="text-[17px] font-bold leading-tight text-brand-950">
+              {property.name}
+            </p>
+            {property.address && (
+              <p className="text-xs text-slate-500">{property.address}</p>
+            )}
+          </div>
+          <div className="flex-none text-right">
+            <p className="text-sm font-bold tracking-[-0.02em]">Rezio</p>
+            <p className="tnum text-xs text-slate-500">{reservation.code}</p>
+          </div>
+        </div>
+
+        <p className="text-center text-sm font-bold uppercase tracking-[0.18em]">
+          Karta meldunkowa
+        </p>
+
+        {section(
+          "Pobyt",
+          <>
+            {row("Rezerwacja", reservation.code)}
+            {row(
+              "Pobyt",
+              `${formatDatePl(reservation.checkIn)} → ${formatDatePl(reservation.checkOut)}`
+            )}
+            {row(
+              "Pokój",
+              `${reservation.unit.unitType.name} (${reservation.unit.name})`
+            )}
+            {row("Planowany przyjazd", card.arrivalTime)}
+          </>
+        )}
+
+        {section(
+          "Gość główny",
+          <>
+            {row("Imię i nazwisko", card.fullName)}
+            {row("Adres zamieszkania", card.address)}
+            {row("Obywatelstwo", card.citizenship)}
+            {row(
+              "Dokument tożsamości",
+              card.docNumber
+                ? `${docTypeLabel(card.docType)} nr ${card.docNumber}`
+                : "nie podano"
+            )}
+            {row("Nr rejestracyjny auta", card.carPlate)}
+            {row("E-mail", reservation.email)}
+            {row("Telefon", reservation.phone)}
+          </>
+        )}
+
+        {additionalGuests.length > 0 &&
+          section(
+            "Pozostali goście",
+            additionalGuests.map((g, i) =>
               row(
                 `Gość ${i + 2}`,
                 `${g.name}${g.birthDate ? ` (ur. ${formatDateShortPl(g.birthDate)})` : ""}`
               )
-            )}
-          </div>
-        )}
+            )
+          )}
 
-        <div className="text-xs text-slate-500 space-y-1">
-          <p>
-            ✓ Gość zaakceptował regulamin obiektu i wyraził zgodę na
-            przetwarzanie danych (RODO).
+        <div className="space-y-1 text-xs text-slate-500">
+          <p className="flex items-start gap-1.5">
+            <Check size={13} strokeWidth={2.5} className="mt-px flex-none" />
+            Gość zaakceptował regulamin obiektu i wyraził zgodę na przetwarzanie
+            danych (RODO).
           </p>
           <p>
             Kartę wypełniono online{" "}
@@ -123,8 +152,8 @@ export default async function CheckInCardPage(props: {
           </p>
         </div>
 
-        <div className="pt-4">
-          <p className="text-xs text-slate-500 pb-1">Podpis gościa</p>
+        <div className="pt-2">
+          <p className="th pb-1.5">Podpis gościa</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={card.signaturePng}

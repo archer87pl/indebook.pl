@@ -1,29 +1,62 @@
 @import "tailwindcss";
 
 @theme {
-  /* marka: elektryczny błękit + granat, bursztynowy akcent */
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-brand-950: #172554;
-  --color-accent-100: #fef3c7;
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-700: #b45309;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* marka: kierunek 1c „Zieleń wiodąca" — ciemna zieleń + mint */
+  --color-brand-50: #eef7f1;
+  --color-brand-100: #e6f3ec;
+  --color-brand-200: #cfe8da;
+  --color-brand-300: #8fc7a9;
+  --color-brand-400: #4ade9b; /* mint — akcenty na ciemnym tle, logo */
+  --color-brand-500: #2aa96b;
+  --color-brand-600: #1f7a4d; /* primary na jasnym tle: statusy, linki, wykresy */
+  --color-brand-700: #17603d;
+  --color-brand-800: #144a30;
+  --color-brand-900: #123829; /* rail nawigacji, ciemne hero, przyciski primary */
+  --color-brand-950: #0d2b1e; /* hover primary, tekst na mint */
+
+  /* neutralne z zielonym podtonem (zastępują domyślny slate) */
+  --color-slate-50: #f7faf8;
+  --color-slate-100: #f2f6f4;
+  --color-slate-200: #e6ede9;
+  --color-slate-300: #d5ddd8;
+  --color-slate-400: #8ba498;
+  --color-slate-500: #6b8377;
+  --color-slate-600: #4d6459;
+  --color-slate-700: #3b5044;
+  --color-slate-800: #23372c;
+  --color-slate-900: #132a20;
+  --color-slate-950: #0d2016;
+
+  /* status: ostrzeżenie (bursztyn) */
+  --color-accent-100: #faf1df;
+  --color-accent-200: #f0e2c4;
+  --color-accent-400: #c9992b;
+  --color-accent-500: #b5720e;
+  --color-accent-700: #7a5a15;
+
+  /* status: info */
+  --color-info-100: #e9f1f7;
+  --color-info-600: #5a8fb0;
+
+  /* status: błąd / zwrot */
+  --color-danger-100: #f7ebe8;
+  --color-danger-500: #e0563f;
+  --color-danger-600: #b0655a;
+
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 body {
-  background: #f5f7fb;
-  color: #0f172a;
+  background: #f7faf8;
+  color: #132a20;
   font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
 }
 
 ::selection {
@@ -33,31 +66,44 @@ body {
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl border border-slate-200/70 shadow-sm shadow-slate-900/[0.04];
+    @apply bg-white rounded-[14px] border border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.04)];
   }
   .btn-primary {
-    @apply inline-flex items-center justify-center bg-gradient-to-b from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-semibold rounded-xl px-6 py-2.5 transition-all shadow-md shadow-brand-600/25 hover:shadow-lg hover:shadow-brand-600/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 bg-brand-900 hover:bg-brand-950 text-white font-bold rounded-[11px] px-5 py-2.5 text-sm transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2;
   }
   .btn-accent {
-    @apply inline-flex items-center justify-center bg-gradient-to-b from-accent-400 to-accent-500 hover:from-accent-400 hover:to-accent-400 text-brand-950 font-semibold rounded-xl px-6 py-2.5 transition-all shadow-md shadow-accent-500/30 hover:shadow-lg hover:shadow-accent-500/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 bg-brand-400 hover:bg-brand-300 text-brand-950 font-bold rounded-[11px] px-5 py-2.5 text-sm transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2;
   }
   .btn-quiet {
-    @apply inline-flex items-center justify-center bg-white border border-slate-200 hover:border-brand-400 hover:text-brand-700 hover:bg-brand-50/60 text-slate-700 font-semibold rounded-xl px-4 py-2 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+    @apply inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-brand-600 hover:text-brand-700 hover:bg-brand-50 text-slate-600 font-semibold rounded-[11px] px-4 py-2 text-sm transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2;
   }
   .input {
-    @apply border border-slate-300 rounded-xl px-3 py-2 bg-white transition hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/15 focus:border-brand-500;
+    @apply border border-slate-300 rounded-[11px] px-3 py-2 bg-white transition hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-600/15 focus:border-brand-600;
   }
   .label {
-    @apply flex flex-col gap-1 text-sm font-medium text-slate-700;
+    @apply flex flex-col gap-1 text-sm font-medium text-slate-600;
   }
   .alert-error {
-    @apply bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm;
+    @apply bg-danger-100 border border-danger-600/30 text-danger-600 rounded-[11px] px-4 py-3 text-sm;
   }
   .alert-success {
-    @apply bg-brand-50 border border-brand-200 text-brand-800 rounded-xl px-4 py-3 text-sm;
+    @apply bg-brand-50 border border-brand-200 text-brand-700 rounded-[11px] px-4 py-3 text-sm;
   }
   .alert-warning {
-    @apply bg-accent-100 border border-accent-400/50 text-accent-700 rounded-xl px-4 py-3 text-sm;
+    @apply bg-accent-100 border border-accent-200 text-accent-500 rounded-[11px] px-4 py-3 text-sm;
+  }
+  /* nagłówek kolumny tabeli */
+  .th {
+    @apply text-[10.5px] font-bold uppercase tracking-[0.04em] text-slate-400;
+  }
+  /* liczby tabelaryczne (kwoty, kody) — JetBrains Mono */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  /* liczby tabelaryczne bez zmiany kroju (duże wartości KPI) */
+  .nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
@@ -118,7 +164,7 @@ body {
 }
 
 .text-gradient {
-  background: linear-gradient(100deg, #fbbf24 0%, #fde68a 45%, #93c5fd 100%);
+  background: linear-gradient(100deg, #4ade9b 0%, #b7f0d4 55%, #8fc7a9 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

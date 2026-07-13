@@ -1,6 +1,6 @@
 "use client";
 
-export default function PrintButton({ label = "🖨 Drukuj" }: { label?: string }) {
+export default function PrintButton({ label = "Drukuj" }: { label?: string }) {
   return (
     <button
       type="button"

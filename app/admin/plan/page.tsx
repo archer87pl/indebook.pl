@@ -1,3 +1,6 @@
+import { Check } from "lucide-react";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import { ownerSetPlan } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -16,21 +19,23 @@ export default async function PlanPage(props: {
   const current = planDef(property.plan);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold">Twój plan</h1>
-        <p className="text-sm text-slate-500">
-          Aktualnie: <span className="font-semibold text-brand-800">{current.label}</span>{" "}
-          ({current.priceZl} zł/mc) · wykorzystanie:{" "}
-          <span className="font-semibold">
+        <p className="text-[15px] font-bold">Twój abonament</p>
+        <p className="text-[12.5px] text-slate-500">
+          Aktualnie:{" "}
+          <span className="font-semibold text-brand-700">{current.label}</span>{" "}
+          (<span className="nums">{current.priceZl}</span> zł/mc) · wykorzystanie:{" "}
+          <span className="nums font-semibold text-slate-900">
             {units}
-            {current.maxUnits !== null ? ` / ${current.maxUnits}` : ""} jednostek
-          </span>
+            {current.maxUnits !== null ? ` / ${current.maxUnits}` : ""}
+          </span>{" "}
+          jednostek
         </p>
       </div>
 
       {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">✓ Plan zmieniony.</p>}
+      {sp.saved && <p className="alert-success">Plan zmieniony.</p>}
 
       <div className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => {
@@ -39,40 +44,51 @@ export default async function PlanPage(props: {
           return (
             <div
               key={p.key}
-              className={`card p-6 flex flex-col space-y-4 ${
-                isCurrent ? "border-brand-600 border-2 shadow-md relative" : ""
+              className={`relative flex flex-col space-y-4 rounded-[14px] border p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ${
+                isCurrent
+                  ? "border-brand-600 bg-brand-50"
+                  : "border-slate-200 bg-white"
               }`}
             >
               {isCurrent && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-700 text-white text-xs font-bold rounded-full px-3 py-1">
+                <Badge
+                  tone="dark"
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1"
+                >
                   Twój obecny plan
-                </span>
+                </Badge>
               )}
               <div>
-                <h2 className="font-bold text-lg text-brand-950">{p.label}</h2>
-                <p className="text-sm text-slate-500">{p.blurb}</p>
+                <h2 className="text-[15px] font-bold text-brand-950">{p.label}</h2>
+                <p className="text-[12.5px] text-slate-500">{p.blurb}</p>
               </div>
-              <p className="text-4xl font-black text-brand-950">
+              <p className="nums text-4xl font-bold tracking-[-0.02em] text-brand-950">
                 {p.priceZl}
                 <span className="text-base font-semibold text-slate-400"> zł/mc</span>
               </p>
-              <ul className="text-sm text-slate-600 space-y-2 flex-1">
+              <ul className="flex-1 space-y-2 text-[12.5px] text-slate-600">
                 {p.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-brand-600 font-bold">✓</span> {f}
+                    <Check
+                      size={14}
+                      strokeWidth={2.5}
+                      className="mt-0.5 flex-none text-brand-600"
+                    />
+                    {f}
                   </li>
                 ))}
               </ul>
               {isCurrent ? (
-                <span className="btn-quiet w-full opacity-50 pointer-events-none">
+                <span className="btn-quiet pointer-events-none w-full opacity-50">
                   Obecny plan
                 </span>
               ) : (
                 <form action={ownerSetPlan}>
                   <input type="hidden" name="plan" value={p.key} />
-                  <button
+                  <Button
                     type="submit"
-                    className={overLimit ? "btn-quiet w-full opacity-60" : "btn-primary w-full"}
+                    variant={overLimit ? "quiet" : "primary"}
+                    className={`w-full ${overLimit ? "opacity-60" : ""}`}
                     title={
                       overLimit
                         ? `Masz ${units} jednostek — za dużo dla tego planu`
@@ -82,7 +98,7 @@ export default async function PlanPage(props: {
                     {overLimit
                       ? `Wymaga maks. ${p.maxUnits} jednostek`
                       : `Przejdź na ${p.label}`}
-                  </button>
+                  </Button>
                 </form>
               )}
             </div>
