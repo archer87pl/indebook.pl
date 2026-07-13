@@ -53,12 +53,35 @@ plan zmienia superadmin (zmiana przez administratora pomija limit).
 ### 2.1 Katalog i landing (`/`)
 
 Strona główna łączy landing produktu (hero z podglądem panelu, funkcje, cennik
-planów z pełną macierzą, porównanie z OTA, FAQ) z **katalogiem obiektów** —
-każdy niezawieszony obiekt z co najmniej jednym typem pokoju dostaje kartę
-z okładką, opisem i ceną „od”. SEO: JSON-LD (FAQPage, SoftwareApplication
-z ofertami planów, Organization), sitemap i robots generowane dynamicznie.
+planów z pełną macierzą, porównanie z OTA, **sekcja najnowszych artykułów
+z bloga**, FAQ) z **katalogiem obiektów** — każdy niezawieszony obiekt z co
+najmniej jednym typem pokoju dostaje kartę z okładką, opisem i ceną „od”. SEO:
+JSON-LD (FAQPage, SoftwareApplication z ofertami planów, Organization), sitemap
+i robots generowane dynamicznie.
 
 *Pliki:* `app/(site)/page.tsx`, `app/sitemap.ts`, `app/robots.ts`
+
+### 2.2 Blog / poradnik (`/blog`)
+
+Blog marketingowy oparty na **plikach Markdown** w `content/blog/*.md` — jeden
+plik = jeden artykuł, nazwa pliku = slug (`/blog/slug`). Każdy plik ma nagłówek
+(frontmatter: `title`, `date`, `excerpt`, opcjonalnie `tag`, `author`, `cover`,
+`draft`) i treść w Markdown (nagłówki, listy, tabele, cytaty, kod, linki).
+
+- **Strony generowane statycznie** przy `next build` (`generateStaticParams`) —
+  najlepsza wydajność i SEO; dodanie artykułu = commit pliku `.md` + wdrożenie,
+  bez zmian w kodzie,
+- indeks `/blog` z wyróżnionym najnowszym wpisem i siatką pozostałych (tag,
+  data, czas czytania liczony z długości tekstu),
+- artykuł `/blog/[slug]`: treść w stylu `.prose` (renderowana przez `marked`),
+  metadane Open Graph, **JSON-LD `BlogPosting`**, blok CTA („Zarejestruj obiekt”)
+  i „Czytaj dalej”,
+- `draft: true` ukrywa wpis na produkcji; artykuły trafiają do `sitemap.xml`,
+  a najnowsze trzy — do sekcji na landingu,
+- instrukcja dla autorów: `content/blog/README.md`.
+
+*Pliki:* `lib/blog.ts` (parser frontmatteru + `marked`), `content/blog/*.md`,
+`app/(site)/blog/**`, style `.prose` w `app/globals.css`
 
 ### 2.2 Strona obiektu (`/o/[slug]`)
 
@@ -525,6 +548,7 @@ i wszystkie komponenty z przykładami.
 | Trasa | Opis |
 |---|---|
 | `/` | landing + katalog obiektów |
+| `/blog` (+ `/[slug]`) | blog / poradnik (pliki .md, SSG) |
 | `/styleguide` | żywy przewodnik design systemu (noindex) |
 | `/login`, `/rejestracja`, `/zapomniane-haslo`, `/reset-hasla/[token]` | auth (split-layout) |
 | `/o/[slug]` (+ `/pokoj/[id]`, `/wyniki`, `/regulamin`) | publiczna strona obiektu |

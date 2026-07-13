@@ -23,6 +23,9 @@ export default function SiteLayout({
             <Link href="/#cennik" className="rounded-[9px] px-3 py-2 hover:bg-slate-100">
               Cennik
             </Link>
+            <Link href="/blog" className="rounded-[9px] px-3 py-2 hover:bg-slate-100">
+              Blog
+            </Link>
             <Link href="/#faq" className="rounded-[9px] px-3 py-2 hover:bg-slate-100">
               FAQ
             </Link>
@@ -63,6 +66,7 @@ export default function SiteLayout({
             <ul className="space-y-1.5">
               <li><Link href="/rejestracja" className="hover:text-white">Zarejestruj obiekt</Link></li>
               <li><Link href="/#cennik" className="hover:text-white">Cennik</Link></li>
+              <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
               <li><Link href="/#faq" className="hover:text-white">Najczęstsze pytania</Link></li>
               <li><Link href="/login" className="hover:text-white">Panel obiektu</Link></li>
             </ul>

@@ -51,6 +51,9 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **opinie po pobycie** `/r/[kod]/opinia`: ocena 1–5 gwiazdek + komentarz (prośba e-mail/SMS dzień po wymeldowaniu, cron); publikacja na stronie obiektu pod imieniem i inicjałem,
 - wyszukiwanie rezerwacji `/moja-rezerwacja` (kod + e-mail), zgoda RODO.
 
+**Blog / poradnik (`/blog`)**
+- artykuły jako pliki Markdown w `content/blog/*.md` (frontmatter: tytuł, data, zajawka, tag, okładka, `draft`), generowane statycznie; treść przez `marked`, JSON-LD `BlogPosting`, sekcja najnowszych na landingu i wpisy w `sitemap.xml`. Instrukcja dla autorów: `content/blog/README.md`.
+
 **Właściciel (`/admin`)**
 - onboarding po rejestracji („dodaj pierwszy typ pokoju"),
 - pulpit 1c (KPI z przychodem i trendem m/m, plan dnia, obłożenie 14 dni, feed aktywności + alerty nieprzeczytanych wiadomości i konfliktów kanałów), rezerwacje z zakładkami statusów, wyszukiwarką i szczegółami ze stepperem, rezerwacje ręczne,

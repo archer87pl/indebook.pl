@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Logo from "@/components/Logo";
 import { demoLogin } from "@/lib/actions";
+import { getLatestPosts, formatBlogDate } from "@/lib/blog";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
 import { appUrl } from "@/lib/payments";
@@ -311,6 +312,7 @@ export default async function HomePage() {
     },
     orderBy: { id: "asc" },
   });
+  const latestPosts = getLatestPosts(3);
 
   const base = appUrl();
   const jsonLd = [
@@ -864,6 +866,70 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ---------- BLOG / PORADNIK ---------- */}
+      {latestPosts.length > 0 && (
+        <section className="reveal space-y-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-bold text-brand-900">Z poradnika Rezio</h2>
+              <p className="mt-1 text-slate-500">
+                Praktyczna wiedza o rezerwacjach bez prowizji i prowadzeniu obiektu.
+              </p>
+            </div>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline"
+            >
+              Wszystkie artykuły
+              <ArrowRight size={15} strokeWidth={2} />
+            </Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {latestPosts.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="card group flex flex-col overflow-hidden transition-all hover:border-brand-600 hover:shadow-md"
+              >
+                <div
+                  className="h-36 bg-cover bg-center"
+                  style={
+                    post.cover
+                      ? { backgroundImage: `url(${post.cover})` }
+                      : {
+                          background:
+                            "repeating-linear-gradient(45deg,#eef3f0,#eef3f0 10px,#e6ede9 10px,#e6ede9 20px)",
+                        }
+                  }
+                />
+                <div className="flex flex-1 flex-col gap-2 p-5">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    {post.tag && (
+                      <span className="rounded-full bg-brand-100 px-2 py-0.5 font-semibold text-brand-700">
+                        {post.tag}
+                      </span>
+                    )}
+                    <span className="tnum">{formatBlogDate(post.date)}</span>
+                  </div>
+                  <h3 className="font-bold leading-snug text-brand-900">{post.title}</h3>
+                  <p className="line-clamp-2 flex-1 text-[13px] leading-relaxed text-slate-600">
+                    {post.excerpt}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-brand-600">
+                    Czytaj
+                    <ArrowRight
+                      size={14}
+                      strokeWidth={2}
+                      className="transition-transform group-hover:translate-x-0.5"
+                    />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ---------- CTA BAND (4a: ciemna zieleń + duże logo D) ---------- */}
       <section className="reveal">
