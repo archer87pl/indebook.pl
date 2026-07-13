@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Logo from "@/components/Logo";
 import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
 import AdminTopbar from "@/components/admin/AdminTopbar";
+import MobileAdminNav from "@/components/admin/MobileAdminNav";
 import Avatar from "@/components/ui/Avatar";
 import { logout } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
@@ -110,31 +111,15 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      {/* Pasek mobilny: logo + nawigacja pozioma */}
-      <div className="sticky top-0 z-20 bg-brand-900 lg:hidden print:hidden">
-        <div className="flex items-center justify-between px-4 pt-3">
-          <Link href="/admin" aria-label="Rezio — pulpit">
-            <Logo size={26} tone="dark" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/admin/obiekt"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-[#cfe3d8] hover:bg-white/10"
-              title="Ustawienia"
-            >
-              <Settings size={15} strokeWidth={2} />
-            </Link>
-            <form action={logout}>
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-[#cfe3d8] hover:bg-white/10"
-                title="Wyloguj"
-              >
-                <LogOut size={15} strokeWidth={2} />
-              </button>
-            </form>
-          </div>
-        </div>
-        <AdminNav items={items} variant="bar" />
+      {/* Pasek mobilny: logo + menu hamburger (drawer w stylu railu) */}
+      <div className="sticky top-0 z-20 lg:hidden print:hidden">
+        <MobileAdminNav
+          items={items}
+          propertyName={property.name}
+          planLabel={planDef(property.plan).label}
+          userEmail={user.email}
+          logout={logout}
+        />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">

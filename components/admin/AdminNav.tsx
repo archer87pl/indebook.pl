@@ -45,42 +45,11 @@ function isActive(pathname: string, href: string) {
 }
 
 /**
- * Pozycje nawigacji railu (desktop) lub poziomego paska (mobile).
+ * Pozycje nawigacji railu (desktop i drawer mobilny).
  * Aktywna pozycja: tło mint + ciemny tekst; pozostałe: hover białe 6%.
  */
-export default function AdminNav({
-  items,
-  variant = "rail",
-}: {
-  items: AdminNavItem[];
-  variant?: "rail" | "bar";
-}) {
+export default function AdminNav({ items }: { items: AdminNavItem[] }) {
   const pathname = usePathname();
-
-  if (variant === "bar") {
-    return (
-      <nav className="flex items-center gap-1 overflow-x-auto px-3 py-2">
-        {items.map((item) => {
-          const Icon = ICONS[item.icon];
-          const active = isActive(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-none items-center gap-1.5 rounded-[10px] px-3 py-2 text-xs font-semibold transition-colors ${
-                active
-                  ? "bg-brand-400 text-brand-950"
-                  : "text-slate-300 hover:bg-white/10"
-              }`}
-            >
-              <Icon size={14} strokeWidth={2} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-    );
-  }
 
   return (
     <nav className="flex flex-col gap-0.5">
