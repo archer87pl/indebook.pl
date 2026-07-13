@@ -1731,6 +1731,40 @@ export async function superSendPasswordReset(formData: FormData) {
 }
 
 /**
+ * Impersonacja: administrator platformy loguje się na konto właściciela
+ * (wsparcie techniczne). Sesja administratora jest zastępowana sesją
+ * właściciela — powrót wymaga ponownego zalogowania na konto admina.
+ */
+export async function superImpersonate(formData: FormData) {
+  await requireSuperadmin();
+  const userId = Number(str(formData, "userId"));
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { property: true },
+  });
+  // tylko konta właścicieli z obiektem — nie impersonujemy innych adminów
+  if (!user || user.isAdmin || !user.property) redirect("/superadmin");
+  await destroySession();
+  await createSession(user.id);
+  redirect("/admin");
+}
+
+/** Moderacja globalna: ukrycie / przywrócenie opinii przez administratora. */
+export async function superToggleReviewHidden(formData: FormData) {
+  await requireSuperadmin();
+  const id = Number(str(formData, "id"));
+  const review = await prisma.review.findUnique({ where: { id } });
+  if (review) {
+    await prisma.review.update({
+      where: { id },
+      data: { hidden: !review.hidden },
+    });
+  }
+  revalidatePath("/superadmin/opinie");
+  redirect("/superadmin/opinie");
+}
+
+/**
  * Trwałe usunięcie obiektu wraz z całą jego historią i kontem właściciela.
  * Wymaga wpisania sluga obiektu jako potwierdzenia.
  */

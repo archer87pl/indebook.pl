@@ -12,14 +12,15 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:3000",
+    // dedykowany port — 3000 bywa zajęty przez inne projekty dev
+    baseURL: "http://localhost:3100",
     locale: "pl-PL",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    command: "npm run dev -- -p 3100",
+    url: "http://localhost:3100",
     reuseExistingServer: true,
     timeout: 60_000,
   },

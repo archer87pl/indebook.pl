@@ -377,21 +377,37 @@ certyfikacji partnerskiej u OTA.
 
 ## 5. Superadmin
 
-Panel platformy (`/superadmin`, konto z `isAdmin`):
+Panel platformy (`/superadmin`, konto z `isAdmin`) — wspólny layout
+z zakładkami **Pulpit / Rezerwacje / Opinie**:
 
 - **pulpit**: MRR wg planów, liczba kont i obiektów, rezerwacje i GMV
-  (30 dni / od początku), rozkład planów,
-- **tabela obiektów** ze zmianą planu inline (pomija limity jednostek),
+  (30 dni / od początku), **trend wzrostu 6 miesięcy** (GMV + liczba
+  rezerwacji + nowe obiekty per miesiąc, wykres słupkowy), **zdrowie
+  platformy** (aktywne rezerwacje oczekujące, zawieszone obiekty, feedy
+  iCal z błędami — z linkami do kart obiektów), rozkład planów,
+- **tabela obiektów** z wyszukiwarką (nazwa / slug / e-mail właściciela)
+  i zmianą planu inline (pomija limity jednostek),
+- **rezerwacje platformy** (`/superadmin/rezerwacje`): globalny podgląd
+  wszystkich rezerwacji — zakładki statusów, wyszukiwarka (kod, gość,
+  e-mail, nazwa obiektu), filtr per obiekt (`?pid=`), paginacja,
+- **opinie platformy** (`/superadmin/opinie`): globalna moderacja ponad
+  moderacją obiektu — podgląd wszystkich opinii łącznie z ukrytymi,
+  ukrywanie/przywracanie, filtr „tylko ukryte”,
 - **karta obiektu** (`/superadmin/obiekt/[id]`): edycja danych obiektu
   (nazwa, slug z kontrolą unikalności, plan, % zaliczki, godziny, adres,
   opis) i konta właściciela (imię, e-mail), wysyłka linku resetu hasła,
-  statystyki obiektu,
+  statystyki, **5 ostatnich rezerwacji** (z przejściem do pełnej listy),
+  alert o feedach iCal z błędami,
+- **impersonacja** — „Zaloguj jako właściciel”: administrator wchodzi do
+  panelu recepcji obiektu na sesji właściciela (wsparcie techniczne);
+  sesja admina jest zastępowana, nie można impersonować innych adminów,
 - **zawieszenie obiektu** — znika z katalogu, strona rezerwacji niedostępna,
   nowe rezerwacje blokowane także w server action; odwracalne,
 - **trwałe usunięcie** — obiekt + konto właściciela + cała historia,
   z potwierdzeniem przez przepisanie sluga, kaskadowo w transakcji.
 
-*Pliki:* `app/(site)/superadmin/**`, `lib/auth.ts` (`requireSuperadmin`)
+*Pliki:* `app/(site)/superadmin/**`, `components/admin/SuperNav.tsx`,
+`lib/auth.ts` (`requireSuperadmin`), akcje `super*` w `lib/actions.ts`
 
 ---
 
@@ -475,15 +491,18 @@ i wszystkie komponenty z przykładami.
 
 - **Jednostkowe** (`npm test`, Vitest — 44 testy): daty, wyceny, faktury,
   meldunek, SMS-y, opinie (`lib/*.test.ts`).
-- **E2E** (`npm run test:e2e`, Playwright — 8 scenariuszy,
+- **E2E** (`npm run test:e2e`, Playwright — 9 scenariuszy,
   `tests/e2e/`):
   - pełna ścieżka gościa: strona obiektu → dostępność → rezerwacja →
     zaliczka (symulacja) → **meldunek z rysowanym e-podpisem**,
   - panel recepcji: login, pulpit, ręczna rezerwacja → lista → szczegóły,
     wyszukiwarka, Goście/Płatności/Kalendarz,
+  - superadmin: pulpit z trendem, globalne rezerwacje i opinie,
+    **impersonacja właściciela**,
   - auth: błędne hasło, ochrona panelu przed niezalogowanymi.
-  Testy chodzą na dev serwerze i bazie z `.env` (dane znakowane `E2E …`),
-  jeden worker (limit puli połączeń).
+  Testy chodzą na dedykowanym porcie **3100** (dev server startowany przez
+  Playwright) i bazie z `.env` (dane znakowane `E2E …`), jeden worker
+  (limit puli połączeń).
 
 ---
 
@@ -507,5 +526,5 @@ i wszystkie komponenty z przykładami.
 | `/admin/pokoje`, `/admin/cennik` | oferta i ceny |
 | `/admin/opinie`, `/admin/raporty` | opinie (moderacja), raporty (Pro) |
 | `/admin/obiekt`, `/admin/plan` | ustawienia, abonament |
-| `/superadmin` (+ `/obiekt/[id]`) | panel platformy |
+| `/superadmin` (+ `/rezerwacje`, `/opinie`, `/obiekt/[id]`) | panel platformy |
 | `/api/ical/[unitId]`, `/api/payments/p24`, `/api/cron/*`, `/api/admin/export` | integracje |

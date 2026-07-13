@@ -65,7 +65,9 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **Obiekt**: nazwa, opis, adres, godziny, % zaliczki, instrukcje przyjazdu (widoczne po meldunku); podgląd publicznego adresu.
 
 **Superadmin (`/superadmin`)**
-- pulpit platformy: konta, obiekty, MRR wg planów, rezerwacje i GMV (30 dni / od początku), rozkład planów,
+- pulpit platformy: konta, obiekty, MRR wg planów, rezerwacje i GMV (30 dni / od początku), rozkład planów, **trend wzrostu 6 miesięcy** (GMV/rezerwacje/nowe obiekty), **zdrowie platformy** (feedy iCal z błędami, zawieszone, oczekujące płatności), wyszukiwarka obiektów,
+- **globalne widoki**: rezerwacje całej platformy (`/superadmin/rezerwacje` — statusy, wyszukiwarka, filtr per obiekt) i moderacja opinii ponad obiektami (`/superadmin/opinie`),
+- **impersonacja**: „Zaloguj jako właściciel" — wejście do panelu recepcji obiektu w celach wsparcia (sesja admina zastępowana),
 - **karta obiektu** `/superadmin/obiekt/[id]`: edycja danych obiektu (nazwa, slug ze sprawdzeniem unikalności, plan bez limitu jednostek, % zaliczki, godziny, adres, opis) i konta właściciela (imię, e-mail), wysyłka linku do resetu hasła, statystyki (jednostki, rezerwacje, GMV, opinie),
 - **zawieszenie obiektu** (ukrycie z katalogu + blokada nowych rezerwacji, egzekwowane też w `createReservation`) i **trwałe usunięcie** obiektu wraz z kontem i całą historią (potwierdzenie slugiem, kaskada w transakcji).
 
