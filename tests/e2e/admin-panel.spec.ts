@@ -8,6 +8,30 @@ test.describe("panel recepcji", () => {
     await loginAsOwner(page);
   });
 
+  test("kliknięcie w menu natychmiast pokazuje loader (loading.tsx + spinner)", async ({
+    page,
+  }) => {
+    // sztuczne opóźnienie odpowiedzi dla trasy docelowej — bez tego test byłby
+    // wyścigiem z szybkim renderem i bywałby migotliwy
+    await page.route(/\/admin\/raporty/, async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.continue();
+    });
+
+    const link = page.locator("aside").getByRole("link", { name: "Raporty" });
+    await link.click();
+
+    // 1) szkielet ładowania z loading.tsx
+    await expect(page.getByRole("status")).toBeVisible();
+    // 2) spinner na ikonie klikniętej pozycji (useLinkStatus)
+    await expect(link.locator(".animate-spin")).toBeVisible();
+    // 3) rail pozostaje interaktywny (jest w layoucie, nie przeładowuje się)
+    await expect(page.getByText("Willa Rezio").first()).toBeVisible();
+
+    // finalnie wchodzi treść
+    await expect(page.getByText("Przychód bezpośredni")).toBeVisible();
+  });
+
   test("pulpit pokazuje KPI, plan dnia i najbliższe rezerwacje", async ({ page }) => {
     await expect(page.getByText("Plan dnia · dziś")).toBeVisible();
     await expect(page.getByText("Najbliższe rezerwacje")).toBeVisible();

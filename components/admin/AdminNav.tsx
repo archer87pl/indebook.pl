@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -10,12 +10,14 @@ import {
   FileText,
   LayoutGrid,
   List,
+  Loader2,
   Settings,
   Share2,
   Star,
   Tags,
   Users,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const ICONS = {
   pulpit: LayoutGrid,
@@ -45,6 +47,20 @@ function isActive(pathname: string, href: string) {
 }
 
 /**
+ * Ikona pozycji menu, która na czas nawigacji zamienia się w spinner.
+ * Musi być osobnym komponentem — useLinkStatus działa tylko wewnątrz <Link>.
+ * Podmiana ikony (a nie dokładanie elementu) nie powoduje przeskoku layoutu.
+ */
+function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+  ) : (
+    <Icon size={16} strokeWidth={2} />
+  );
+}
+
+/**
  * Pozycje nawigacji railu (desktop i drawer mobilny).
  * Aktywna pozycja: tło mint + ciemny tekst; pozostałe: hover białe 6%.
  */
@@ -66,7 +82,7 @@ export default function AdminNav({ items }: { items: AdminNavItem[] }) {
                 : "font-medium text-[#cfe3d8] hover:bg-white/[.06]"
             }`}
           >
-            <Icon size={16} strokeWidth={2} />
+            <NavIcon icon={Icon} />
             {item.label}
             {item.badge != null && item.badge > 0 && (
               <span
