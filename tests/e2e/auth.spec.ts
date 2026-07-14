@@ -26,3 +26,27 @@ test("panel wymaga zalogowania", async ({ page }) => {
   await page.goto("/admin/rezerwacje");
   await expect(page).toHaveURL(/\/login/);
 });
+
+// Formularze: przycisk wysyłki pokazuje spinner i blokuje się na czas
+// server action (useFormStatus) — chroni też przed podwójnym wysłaniem.
+test("przycisk formularza pokazuje stan wysyłki i blokuje się", async ({ page }) => {
+  await page.goto("/login");
+  // opóźnienie server action, żeby stan pending był obserwowalny
+  await page.route(/\/login/, async (route) => {
+    if (route.request().method() === "POST") {
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    await route.continue();
+  });
+
+  await page.getByLabel("E-mail").fill(DEMO.email);
+  await page.getByLabel(/^Hasło/).fill(DEMO.password);
+  const submit = page.getByRole("button", { name: "Zaloguj się" });
+  await submit.click();
+
+  await expect(submit).toBeDisabled();
+  await expect(submit).toHaveAttribute("aria-busy", "true");
+  await expect(submit.locator(".animate-spin")).toBeVisible();
+
+  await expect(page).toHaveURL(/\/admin$/);
+});

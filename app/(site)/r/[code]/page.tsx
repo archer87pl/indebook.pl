@@ -15,6 +15,7 @@ import {
 import ChatThread from "@/components/ChatThread";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import SubmitButton from "@/components/ui/SubmitButton";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import {
   cancelByGuest,
@@ -378,13 +379,14 @@ export default async function ReservationPage(props: {
                   placeholder="np. Będziemy około 18:00, czy możemy zostawić bagaże wcześniej?"
                   className="min-h-[32px] w-full resize-y bg-transparent py-1.5 text-[12.5px] focus:outline-none"
                 />
-                <button
-                  type="submit"
+                <SubmitButton
                   className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-brand-900 text-white transition-colors hover:bg-brand-950"
                   title="Wyślij wiadomość"
+                  // przycisk ma stałe 32px — spinner zastępuje ikonę
+                  pendingMode="replace"
                 >
                   <Send size={15} strokeWidth={2} />
-                </button>
+                </SubmitButton>
               </form>
             </CardBody>
           </Card>
@@ -392,9 +394,12 @@ export default async function ReservationPage(props: {
           {active && (
             <form action={cancelByGuest} className="text-center">
               <input type="hidden" name="code" value={r.code} />
-              <button type="submit" className="text-sm text-danger-600 hover:underline">
+              <SubmitButton
+                className="inline-flex items-center gap-1.5 text-sm text-danger-600 hover:underline"
+                spinnerSize={13}
+              >
                 Anuluj rezerwację
-              </button>
+              </SubmitButton>
             </form>
           )}
         </div>

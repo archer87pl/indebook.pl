@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
+import { useFormStatus } from "react-dom";
+import { Loader2 } from "lucide-react";
 
 type Variant = "primary" | "accent" | "quiet" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
@@ -27,6 +31,8 @@ const SIZES: Record<Size, string> = {
   lg: "h-11 px-6 text-sm rounded-[13px] gap-2",
 };
 
+const SPINNER: Record<Size, number> = { sm: 13, md: 14, lg: 15 };
+
 type BaseProps = {
   variant?: Variant;
   size?: Size;
@@ -40,7 +46,15 @@ type ButtonProps = BaseProps &
     | ({ href?: undefined } & Omit<ComponentProps<"button">, "className">)
   );
 
-/** Przycisk design systemu 1c. Z `href` renderuje się jako <Link>. */
+/**
+ * Przycisk design systemu 1c. Z `href` renderuje się jako <Link>.
+ *
+ * Przyciski `type="submit"` same pokazują stan wysyłki formularza
+ * (useFormStatus): spinner + blokada, dopóki server action nie wróci.
+ * Blokada chroni też przed podwójnym wysłaniem (np. dwiema rezerwacjami)
+ * przy wolnym łączu. Poza formularzem hook zwraca pending=false, więc
+ * zwykłe przyciski i linki działają bez zmian.
+ */
 export default function Button({
   variant = "primary",
   size = "md",
@@ -48,7 +62,8 @@ export default function Button({
   children,
   ...rest
 }: ButtonProps) {
-  const cls = `inline-flex items-center justify-center font-bold transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
+  const { pending } = useFormStatus();
+  const cls = `inline-flex items-center justify-center font-bold transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-70 ${VARIANTS[variant]} ${SIZES[size]} ${className}`;
 
   if ("href" in rest && rest.href !== undefined) {
     const { href, ...linkRest } = rest;
@@ -58,8 +73,24 @@ export default function Button({
       </Link>
     );
   }
+
+  const buttonRest = rest as ComponentProps<"button">;
+  const busy = pending && buttonRest.type === "submit";
   return (
-    <button className={cls} {...(rest as ComponentProps<"button">)}>
+    <button
+      className={cls}
+      aria-busy={busy || undefined}
+      {...buttonRest}
+      disabled={busy || buttonRest.disabled}
+    >
+      {busy && (
+        <Loader2
+          size={SPINNER[size]}
+          strokeWidth={2.4}
+          className="animate-spin"
+          aria-hidden
+        />
+      )}
       {children}
     </button>
   );

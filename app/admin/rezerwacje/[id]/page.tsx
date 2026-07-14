@@ -13,6 +13,7 @@ import {
 import ChatThread from "@/components/ChatThread";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import SubmitButton from "@/components/ui/SubmitButton";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import ProgressBar from "@/components/ui/ProgressBar";
 import {
@@ -359,13 +360,14 @@ export default async function EditReservationPage(props: {
                     placeholder="Napisz wiadomość…"
                     className="min-h-[32px] w-full resize-y bg-transparent py-1.5 text-[12.5px] focus:outline-none"
                   />
-                  <button
-                    type="submit"
+                  <SubmitButton
                     className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-brand-900 text-white transition-colors hover:bg-brand-950"
                     title="Wyślij do gościa"
+                    // przycisk ma stałe 32px — spinner zastępuje ikonę
+                    pendingMode="replace"
                   >
                     <Send size={15} strokeWidth={2} />
-                  </button>
+                  </SubmitButton>
                 </form>
               ) : (
                 <p className="text-xs text-accent-500">

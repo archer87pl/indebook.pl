@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import Logo from "@/components/Logo";
+import SubmitButton from "@/components/ui/SubmitButton";
 import { demoLogin } from "@/lib/actions";
 import { getLatestPosts, formatBlogDate } from "@/lib/blog";
 import { prisma } from "@/lib/db";
@@ -393,13 +394,10 @@ export default async function HomePage() {
                 Zarejestruj obiekt za darmo
               </Link>
               <form action={demoLogin}>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold text-brand-900 transition-colors hover:bg-slate-100"
-                >
+                <SubmitButton className="inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold text-brand-900 transition-colors hover:bg-slate-100">
                   Zobacz demo panelu
                   <ArrowRight size={16} strokeWidth={2} />
-                </button>
+                </SubmitButton>
               </form>
             </div>
             <div className="mt-9 flex gap-9 border-t border-slate-200 pt-7">
@@ -952,13 +950,10 @@ export default async function HomePage() {
                 Zarejestruj obiekt za darmo
               </Link>
               <form action={demoLogin}>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-white/10"
-                >
+                <SubmitButton className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-white/10">
                   Zobacz demo panelu
                   <ArrowRight size={16} strokeWidth={2} />
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </div>
