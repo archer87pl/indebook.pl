@@ -28,7 +28,8 @@ import { formatPln } from "@/lib/format";
 import { appUrl } from "@/lib/payments";
 import { PLANS } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
+// ISR: landing (katalog obiektów + blog) cache'owany, odświeżany co 5 min
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Rezio — system rezerwacji online bez prowizji dla obiektów noclegowych",

@@ -3,6 +3,7 @@
 import { randomBytes, randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { freeUnits, isUnitFree } from "./availability";
 import {
   createSession,
@@ -44,6 +45,16 @@ import { planDef } from "./plans";
 import { sendMail } from "./mailer";
 import { sendSms } from "./sms";
 import { slugify, uniquePropertySlug } from "./slug";
+
+// Powiadomienia (e-mail/SMS) odpalane przez next/after() — po odesłaniu
+// odpowiedzi, poza ścieżką żądania. Dostawca (Resend/SMSAPI) nie blokuje
+// już czasu odpowiedzi akcji; sendMail/sendSms same łapią błędy i logują.
+// Uwaga: after() działa tylko w kontekście żądania — wszystkie funkcje w tym
+// pliku są server actions ("use server"), więc kontekst zawsze istnieje.
+const mailAfter = (mail: Parameters<typeof sendMail>[0]) =>
+  after(() => sendMail(mail));
+const smsAfter = (sms: Parameters<typeof sendSms>[0]) =>
+  after(() => sendSms(sms));
 
 const PENDING_TTL_MS = 30 * 60 * 1000; // 30 min na opłacenie zaliczki
 
@@ -140,7 +151,7 @@ export async function requestPasswordReset(formData: FormData) {
         data: { token, userId: user.id, expiresAt: new Date(Date.now() + 3600_000) },
       }),
     ]);
-    await sendMail({
+    mailAfter({
       to: user.email,
       subject: "Rezio — reset hasła",
       body: `Cześć ${user.name},\n\nAby ustawić nowe hasło, otwórz link (ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}\n\nJeśli to nie Ty prosiłeś o reset — zignoruj tę wiadomość.`,
@@ -290,7 +301,7 @@ export async function createReservation(formData: FormData) {
     propertyId: unitType.property.id,
     meta: `${guestName} · ${from} → ${to} · ${formatPln(totalGr)}`,
   });
-  await sendMail({
+  mailAfter({
     to: email,
     subject: `Rezerwacja ${code} — oczekuje na wpłatę zaliczki`,
     body: `Dziękujemy za rezerwację w ${unitType.property.name}. Kwota pobytu: ${formatPln(totalGr)}${discountGr > 0 ? ` (rabat ${formatPln(discountGr)})` : ""}. Zaliczka: ${formatPln(depositGr)}. Rezerwacja: /r/${code}`,
@@ -345,13 +356,13 @@ export async function payDeposit(formData: FormData) {
     propertyId: reservation.unit.unitType.property.id,
     meta: reservation.guestName,
   });
-  await sendMail({
+  mailAfter({
     to: reservation.email,
     subject: `Rezerwacja ${code} potwierdzona`,
     body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana. Do zobaczenia ${reservation.checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}`,
   });
   if (reservation.phone) {
-    await sendSms({
+    smsAfter({
       to: reservation.phone,
       body: `Rezerwacja ${code} w ${reservation.unit.unitType.property.name} potwierdzona. Przyjazd ${reservation.checkIn}. Meldunek online: ${checkInUrl(code)}`,
     });
@@ -379,7 +390,7 @@ export async function cancelByGuest(formData: FormData) {
       propertyId: reservation.unit.unitType.propertyId,
       meta: reservation.guestName,
     });
-    await sendMail({
+    mailAfter({
       to: reservation.email,
       subject: `Rezerwacja ${code} anulowana`,
       body: "Twoja rezerwacja została anulowana.",
@@ -482,7 +493,7 @@ export async function changeReservationDates(formData: FormData) {
     throw e;
   }
 
-  await sendMail({
+  mailAfter({
     to: r.email,
     subject: `Rezerwacja ${code} — termin zmieniony`,
     body: `Nowy termin pobytu: ${from} → ${to} (${guests} os.). Kwota pobytu: ${formatPln(totalGr)}.`,
@@ -569,7 +580,7 @@ export async function submitCheckIn(formData: FormData) {
   ]);
 
   const property = r.unit.unitType.property;
-  await sendMail({
+  mailAfter({
     to: r.email,
     subject: `Meldunek online przyjęty — rezerwacja ${code}`,
     body: `Dziękujemy, ${fullName}! Karta meldunkowa została wypełniona.${
@@ -579,7 +590,7 @@ export async function submitCheckIn(formData: FormData) {
     }\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
   });
   if (!property.owner.email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: property.owner.email,
       subject: `Gość wypełnił meldunek online — ${code}`,
       body: `${fullName} wypełnił(a) kartę meldunkową dla rezerwacji ${code} (${r.checkIn} → ${r.checkOut}).\nKarta: ${appUrl()}/admin/rezerwacje/${r.id}/karta`,
@@ -636,7 +647,7 @@ export async function submitReview(formData: FormData) {
     },
   });
   if (!property.owner.email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: property.owner.email,
       subject: `Nowa opinia (${rating}/5) — rezerwacja ${r.code}`,
       body: `${displayAuthor(r.guestName)} wystawił(a) ocenę ${rating}/5${
@@ -708,7 +719,7 @@ export async function sendGuestMessage(formData: FormData) {
   });
   const property = r.unit.unitType.property;
   if (!property.owner.email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: property.owner.email,
       subject: `Nowa wiadomość od gościa — ${r.code}`,
       body: `${r.guestName} (rezerwacja ${r.code}, ${r.checkIn} → ${r.checkOut}) napisał(a):\n\n${body}\n\nOdpowiedz w panelu: ${appUrl()}/admin/rezerwacje/${r.id}#czat`,
@@ -737,7 +748,7 @@ export async function sendOwnerMessage(formData: FormData) {
     data: { reservationId: r.id, sender: "OWNER", body },
   });
   if (r.email && !r.email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: r.email,
       subject: `Wiadomość od ${property.name} — rezerwacja ${r.code}`,
       body: `${body}\n\nOdpowiedz na stronie rezerwacji: ${appUrl()}/r/${r.code}#czat`,
@@ -796,14 +807,14 @@ export async function adminSetStatus(formData: FormData) {
   });
   if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
     if (reservation.email && !reservation.email.endsWith("@rezio.local")) {
-      await sendMail({
+      mailAfter({
         to: reservation.email,
         subject: `Rezerwacja ${reservation.code} potwierdzona`,
         body: `Obiekt potwierdził Twoją rezerwację (${reservation.checkIn} → ${reservation.checkOut}).\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(reservation.code)}`,
       });
     }
     if (reservation.phone) {
-      await sendSms({
+      smsAfter({
         to: reservation.phone,
         body: `Rezerwacja ${reservation.code} potwierdzona. Przyjazd ${reservation.checkIn}. Meldunek online: ${checkInUrl(reservation.code)}`,
       });
@@ -828,7 +839,7 @@ export async function adminSendCheckInInvite(formData: FormData) {
   if (!r.email || r.email.endsWith("@rezio.local"))
     fail("Uzupełnij e-mail gościa, aby wysłać link do meldunku.");
 
-  await sendMail({
+  mailAfter({
     to: r.email,
     subject: `Meldunek online — rezerwacja ${r.code}`,
     body: `${property.name} zaprasza do wypełnienia meldunku online przed przyjazdem (${r.checkIn}).\nZajmie to 2 minuty i przyspieszy zameldowanie na miejscu:\n${checkInUrl(r.code)}`,
@@ -892,14 +903,14 @@ export async function adminCreateReservation(formData: FormData) {
   }
   // rezerwacje telefoniczne/ręczne: od razu zaproś gościa do meldunku online
   if (!email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: email,
       subject: `Rezerwacja ${code} w ${property.name}`,
       body: `Twoja rezerwacja (${from} → ${to}) została zapisana.\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
     });
   }
   if (phone) {
-    await sendSms({
+    smsAfter({
       to: phone,
       body: `Rezerwacja ${code} w ${property.name} zapisana (${from} - ${to}). Meldunek online: ${checkInUrl(code)}`,
     });
@@ -966,7 +977,7 @@ export async function adminUpdateReservation(formData: FormData) {
   }
 
   if (datesChanged && email && !email.endsWith("@rezio.local")) {
-    await sendMail({
+    mailAfter({
       to: email,
       subject: `Rezerwacja ${r.code} — zmiana terminu`,
       body: `Obiekt zmienił termin Twojej rezerwacji na: ${from} → ${to}. W razie pytań odpowiedz na tę wiadomość.`,
@@ -1319,6 +1330,8 @@ export async function updateProperty(formData: FormData) {
     },
   });
   revalidatePath("/admin/obiekt");
+  revalidatePath(`/o/${property.slug}`); // publiczna strona obiektu (ISR)
+  revalidatePath(`/o/${property.slug}/regulamin`);
   redirect("/admin/obiekt?saved=1");
 }
 
@@ -1416,6 +1429,7 @@ export async function uploadPropertyPhoto(formData: FormData) {
   }
   await prisma.photo.create({ data: { propertyId: property.id, path } });
   revalidatePath("/admin/obiekt");
+  revalidatePath(`/o/${property.slug}`); // galeria na publicznej stronie (ISR)
   redirect("/admin/obiekt?saved=1");
 }
 
@@ -1455,6 +1469,7 @@ export async function deletePhoto(formData: FormData) {
     await prisma.photo.delete({ where: { id } });
   }
   revalidatePath(back);
+  revalidatePath(`/o/${property.slug}`); // galeria/zdjęcia pokoi (ISR)
   redirect(back);
 }
 
@@ -1766,7 +1781,7 @@ export async function superSendPasswordReset(formData: FormData) {
         data: { token, userId: user.id, expiresAt: new Date(Date.now() + 3600_000) },
       }),
     ]);
-    await sendMail({
+    mailAfter({
       to: user.email,
       subject: "Rezio — reset hasła",
       body: `Cześć ${user.name},\n\nAdministrator platformy zainicjował reset hasła. Ustaw nowe hasło (link ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}`,
@@ -1929,7 +1944,7 @@ export async function superClearSettings(formData: FormData) {
 /** Wysyła testowy e-mail na adres administratora (weryfikacja konfiguracji). */
 export async function superSendTestMail() {
   const admin = await requireSuperadmin();
-  await sendMail({
+  mailAfter({
     to: admin.email,
     subject: "Rezio — test konfiguracji e-mail",
     body: `Jeśli czytasz tę wiadomość, konfiguracja wysyłki e-maili działa poprawnie.\n\nWysłano z panelu superadmina (${appUrl()}/superadmin/ustawienia).`,

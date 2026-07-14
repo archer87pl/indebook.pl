@@ -52,6 +52,9 @@ model Session {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   expiresAt DateTime
+
+  @@index([userId])
+  @@index([expiresAt]) // retencja: cron kasuje wygasłe sesje
 }
 
 model PasswordResetToken {
@@ -117,6 +120,8 @@ model PropertyFaq {
   question   String
   answer     String
   sort       Int      @default(0)
+
+  @@index([propertyId])
 }
 
 model PromoCode {
@@ -142,6 +147,9 @@ model Photo {
   unitType   UnitType? @relation(fields: [unitTypeId], references: [id])
   path       String // ścieżka względem /public, np. /uploads/p1/abc.jpg
   createdAt  DateTime  @default(now())
+
+  @@index([propertyId])
+  @@index([unitTypeId])
 }
 
 model UnitType {
@@ -157,6 +165,8 @@ model UnitType {
   units       Unit[]
   seasons     RateSeason[]
   photos      Photo[]
+
+  @@index([propertyId])
 }
 
 model Unit {
@@ -169,6 +179,8 @@ model Unit {
   reservations Reservation[]
   blocks       Block[]
   icalFeeds    IcalFeed[]
+
+  @@index([unitTypeId])
 }
 
 // Zewnętrzny kalendarz (np. eksport iCal z Booking.com/Airbnb) — zajęte
@@ -183,6 +195,8 @@ model IcalFeed {
   lastSyncAt DateTime?
   lastError  String    @default("")
   blocks     Block[]
+
+  @@index([unitId])
 }
 
 model RateSeason {
@@ -194,6 +208,8 @@ model RateSeason {
   endDate    String // YYYY-MM-DD, ostatnia noc sezonu (inclusive)
   priceGr    Int
   minStay    Int      @default(1)
+
+  @@index([unitTypeId])
 }
 
 model Block {
@@ -206,6 +222,9 @@ model Block {
   source    String    @default("MANUAL") // MANUAL | ICAL
   feedId    Int?
   feed      IcalFeed? @relation(fields: [feedId], references: [id])
+
+  @@index([unitId, startDate, endDate]) // dostępność i kalendarz obłożenia
+  @@index([feedId]) // delete+recreate przy synchronizacji iCal
 }
 
 model Reservation {
@@ -241,6 +260,10 @@ model Reservation {
   messages        Message[]
   review          Review?
   invoices        Invoice[]
+
+  @@index([unitId, checkIn, checkOut]) // dostępność, kalendarz, plan dnia
+  @@index([status, expiresAt]) // wygaszanie PENDING, filtry statusów
+  @@index([createdAt]) // listy i eksport (orderBy desc)
 }
 
 // Faktura wystawiona z rezerwacji. Dane sprzedawcy i nabywcy są zapisane
@@ -272,6 +295,7 @@ model Invoice {
   createdAt     DateTime     @default(now())
 
   @@unique([propertyId, kind, year, seq])
+  @@index([reservationId])
 }
 
 // Opinia gościa po pobycie — jedna na rezerwację. propertyId zdenormalizowany
@@ -288,6 +312,8 @@ model Review {
   ownerReply    String      @default("") // publiczna odpowiedź obiektu
   hidden        Boolean     @default(false) // moderacja: ukryj nadużycie
   createdAt     DateTime    @default(now())
+
+  @@index([propertyId, hidden]) // listy opinii per obiekt (bez ukrytych)
 }
 
 // Wiadomość w czacie gość <-> obiekt przypiętym do rezerwacji.
@@ -299,6 +325,8 @@ model Message {
   body          String
   createdAt     DateTime    @default(now())
   readAt        DateTime? // kiedy przeczytała druga strona (nieprzeczytane = null)
+
+  @@index([reservationId, readAt]) // wątek czatu + badge nieprzeczytanych
 }
 
 // Karta meldunkowa (meldunek online) — dane osobowe gościa + e-podpis.

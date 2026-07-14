@@ -5,7 +5,8 @@ import { Card, CardBody } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import { prisma } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
+// ISR: regulamin to statyczny tekst — cache z odświeżaniem co 10 min
+export const revalidate = 600;
 
 export default async function TermsPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;

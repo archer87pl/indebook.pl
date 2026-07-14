@@ -21,6 +21,7 @@ export async function register() {
   const {
     expireReservations,
     purgeExpiredCheckIns,
+    purgeExpiredSessions,
     sendArrivalReminders,
     sendReviewRequests,
     syncAllIcalFeeds,
@@ -41,6 +42,9 @@ export async function register() {
   setInterval(() => {
     purgeExpiredCheckIns().catch((e) =>
       console.error("[JOBS] błąd retencji kart meldunkowych:", e),
+    );
+    purgeExpiredSessions().catch((e) =>
+      console.error("[JOBS] błąd retencji sesji:", e),
     );
   }, PURGE_INTERVAL_MS).unref();
 

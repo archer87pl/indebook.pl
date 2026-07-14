@@ -21,7 +21,8 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "npm run dev -- -p 3100",
+    // bezpośrednio `next dev` — `npm run dev -- -p 3100` na tym npm gubi flagę portu
+    command: "npx next dev -p 3100",
     url: "http://localhost:3100",
     reuseExistingServer: true,
     timeout: 60_000,

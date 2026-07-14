@@ -28,7 +28,8 @@ import { addDaysISO, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
+// ISR: strona pokoju (opis, udogodnienia, cennik sezonowy) cache'owana 5 min
+export const revalidate = 300;
 
 const PHOTO_TEXTURE =
   "repeating-linear-gradient(45deg,#eef3f0,#eef3f0 8px,#e6ede9 8px,#e6ede9 16px)";

@@ -129,6 +129,22 @@ export async function purgeExpiredCheckIns(): Promise<number> {
   return count;
 }
 
+/**
+ * Retencja artefaktów uwierzytelniania: kasuje wygasłe sesje i tokeny resetu
+ * hasła. `getSessionUser` tylko ignoruje wygasłe sesje, więc bez tego tabela
+ * `Session` rosłaby monotonicznie z każdym logowaniem.
+ */
+export async function purgeExpiredSessions(): Promise<number> {
+  const now = new Date();
+  const [sessions] = await prisma.$transaction([
+    prisma.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+    prisma.passwordResetToken.deleteMany({ where: { expiresAt: { lt: now } } }),
+  ]);
+  if (sessions.count > 0)
+    console.log(`[JOBS] usunięto ${sessions.count} wygasłych sesji`);
+  return sessions.count;
+}
+
 /** Retencja dziennika zdarzeń: wpisy starsze niż 90 dni są kasowane. */
 export async function purgeOldEventLogs(): Promise<number> {
   const cutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000);

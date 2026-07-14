@@ -1,6 +1,7 @@
 import {
   expireReservations,
   purgeExpiredCheckIns,
+  purgeExpiredSessions,
   purgeOldEventLogs,
   sendArrivalReminders,
   sendReviewRequests,
@@ -19,6 +20,7 @@ export async function GET(req: Request) {
   const count = await expireReservations();
   // Vercel Hobby: maks. 2 crony — pozostałe dzienne zadania robimy przy okazji
   const purged = await purgeExpiredCheckIns();
+  const purgedSessions = await purgeExpiredSessions();
   const purgedLogs = await purgeOldEventLogs();
   const reminders = await sendArrivalReminders();
   const reviewRequests = await sendReviewRequests();
@@ -26,6 +28,7 @@ export async function GET(req: Request) {
     ok: true,
     expired: count,
     purgedCheckIns: purged,
+    purgedSessions,
     purgedEventLogs: purgedLogs,
     arrivalReminders: reminders,
     reviewRequests,

@@ -10,7 +10,10 @@ import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
 import { averageRating } from "@/lib/reviews";
 
-export const dynamic = "force-dynamic";
+// ISR: publiczna strona obiektu cache'owana, odświeżana co 2 min
+// (dostępność liczona jest osobno w /wyniki, które pozostaje dynamiczne).
+// updateProperty woła revalidatePath(`/o/${slug}`) dla natychmiastowej zmiany.
+export const revalidate = 120;
 
 const TEXTURE =
   "repeating-linear-gradient(45deg,#eef3f0,#eef3f0 10px,#e6ede9 10px,#e6ede9 20px)";
