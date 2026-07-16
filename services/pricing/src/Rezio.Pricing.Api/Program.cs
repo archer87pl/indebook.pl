@@ -3,6 +3,7 @@ using HealthChecks.UI.Client;
 using Rezio.Pricing.Api;
 using Rezio.Pricing.Domain;
 using Serilog;
+using Serilog.Events;
 using Serilog.Sinks.Grafana.Loki;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSerilog(lc =>
 {
     lc.MinimumLevel.Information()
+      .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
       .Enrich.FromLogContext()
       .WriteTo.Console();
     var lokiUrl = builder.Configuration["LOKI_URL"];
@@ -38,7 +40,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 app.MapGet("/v1/listings/{id}/prices",
     (string id, DateOnly from, DateOnly to, IListingStore store, TimeProvider clock) =>
 {
-    if (to < from || to.DayNumber - from.DayNumber > 365)
+    if (to < from || to.DayNumber - from.DayNumber >= 365)
         return Results.Problem(statusCode: 400, title: "Invalid date range",
             detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
 

@@ -48,4 +48,24 @@ public class PricingEngineTests
         Assert.Equal(850m, rec.RecommendedPrice);
         Assert.Equal("max_price", rec.ClampedBy);
     }
+
+    [Fact]
+    public void Throws_when_base_price_not_positive()
+    {
+        var settings = new ListingSettings(0m, 200m, 800m, MarketType.Seaside);
+        var day = new MarketDaySnapshot(new DateOnly(2026, 8, 15), 0.90, 80, []);
+
+        Assert.Throws<ArgumentException>(() =>
+            PricingEngine.Recommend(settings, day, today: new DateOnly(2026, 7, 16)));
+    }
+
+    [Fact]
+    public void Throws_when_min_price_exceeds_max_price()
+    {
+        var settings = new ListingSettings(350m, 500m, 400m, MarketType.Seaside);
+        var day = new MarketDaySnapshot(new DateOnly(2026, 8, 15), 0.90, 80, []);
+
+        Assert.Throws<ArgumentException>(() =>
+            PricingEngine.Recommend(settings, day, today: new DateOnly(2026, 7, 16)));
+    }
 }

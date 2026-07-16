@@ -7,6 +7,15 @@ public static class PricingEngine
     public static PriceRecommendation Recommend(
         ListingSettings settings, MarketDaySnapshot day, DateOnly today)
     {
+        if (settings.BasePrice <= 0)
+            throw new ArgumentException("BasePrice must be greater than zero.", nameof(settings));
+        if (settings.MinPrice < 0)
+            throw new ArgumentException("MinPrice must not be negative.", nameof(settings));
+        if (settings.MinPrice > settings.MaxPrice)
+            throw new ArgumentException(
+                $"MinPrice ({settings.MinPrice}) must not exceed MaxPrice ({settings.MaxPrice}).",
+                nameof(settings));
+
         var season = SeasonFactor.For(settings.MarketType, day.Date);
         var dayOfWeek = DayOfWeekFactor.For(day.Date);
         var leadTime = LeadTimeFactor.For(day.Date.DayNumber - today.DayNumber);

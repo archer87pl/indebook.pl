@@ -19,6 +19,8 @@ public class MarketFactorsTests
     [InlineData(50, 1.00)]
     [InlineData(80, 1.15)]
     [InlineData(100, 1.25)]
+    [InlineData(-10, 0.75)]
+    [InlineData(150, 1.25)]
     public void Demand_maps_linearly(int score, double expected) =>
         Assert.Equal(expected, DemandFactor.For(score), precision: 10);
 }
