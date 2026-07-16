@@ -6,11 +6,11 @@
 
 **Architecture:** Czysta logika domenowa w `Rezio.Pricing.Domain` (funkcje statyczne, bez I/O), minimal API w `Rezio.Pricing.Api` z in-memory store (Postgres/RabbitMQ dojdą w kolejnych planach). Silnik: `cena = base × sezon × dzień_tygodnia × lead_time × obłożenie × popyt`, zaokrąglenie do pełnych PLN, potem clamp [min,max].
 
-**Tech Stack:** .NET 9, C#, ASP.NET Core minimal APIs, xUnit, Microsoft.AspNetCore.Mvc.Testing, Serilog (+ sink Loki), ASP.NET Core HealthChecks, Docker Compose (z Grafana/Loki/HealthChecks UI), GitHub Actions.
+**Tech Stack:** .NET 10, C#, ASP.NET Core minimal APIs, xUnit, Microsoft.AspNetCore.Mvc.Testing, Serilog (+ sink Loki), ASP.NET Core HealthChecks, Docker Compose (z Grafana/Loki/HealthChecks UI), GitHub Actions.
 
 ## Global Constraints
 
-- TargetFramework: `net9.0`; `Nullable=enable`, `ImplicitUsings=enable`, `TreatWarningsAsErrors=true` (w `Directory.Build.props`)
+- TargetFramework: `net10.0`; `Nullable=enable`, `ImplicitUsings=enable`, `TreatWarningsAsErrors=true` (w `Directory.Build.props`)
 - Testy: xUnit; komenda: `dotnet test`
 - JSON w API: snake_case (`JsonNamingPolicy.SnakeCaseLower`), błędy jako problem+json (`AddProblemDetails`)
 - Pieniądze: `decimal`, waluta PLN, zaokrąglanie do pełnych złotych `MidpointRounding.AwayFromZero`
@@ -51,7 +51,7 @@ dotnet add services/pricing/tests/Rezio.Pricing.Api.Tests package Microsoft.AspN
 ```xml
 <Project>
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -804,12 +804,12 @@ git commit -m "feat: health endpoint and structured logging with optional Loki s
 - [ ] **Step 1: `services/pricing/Dockerfile`**
 
 ```dockerfile
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet publish services/pricing/src/Rezio.Pricing.Api -c Release -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app .
 ENV ASPNETCORE_URLS=http://+:8080
@@ -896,7 +896,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 10.0.x
       - run: dotnet build --configuration Release
       - run: dotnet test --configuration Release --no-build --verbosity normal
 ```

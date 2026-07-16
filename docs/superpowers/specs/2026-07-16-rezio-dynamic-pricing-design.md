@@ -219,7 +219,7 @@ te same obrazy Dockera pozwalają na migrację do AWS bez zmian w kodzie).
 
 | Warstwa | Wybór | Uzasadnienie |
 |---|---|---|
-| Serwisy backend | C# / .NET 9, ASP.NET Core minimal APIs, kontenery Linux | automatyczny OpenAPI, silne typowanie; silnik cen czytelny i testowalny |
+| Serwisy backend | C# / .NET 10, ASP.NET Core minimal APIs, kontenery Linux | automatyczny OpenAPI, silne typowanie; silnik cen czytelny i testowalny |
 | ORM / migracje | EF Core + migracje EF | standard .NET, obsługa jsonb przez Npgsql |
 | Baza danych | PostgreSQL 16 self-hosted (dedykowana VM), osobna baza logiczna per serwis | jsonb dla `components`/`drivers`; backupy wal-g → zewnętrzny S3/B2, **odtwarzanie testowane cyklicznie** |
 | Szyna zdarzeń | RabbitMQ + MassTransit | dojrzały klient .NET, fan-out + DLQ per serwis |
@@ -267,5 +267,5 @@ nie compute. Hetzner przestaje wystarczać dopiero przy ekspansji multi-country
 | Dane rynkowe | Własny scraping Airbnb/Booking + sygnały popytu |
 | Silnik | Hybryda: reguły + demand score (docelowo ML) |
 | Architektura | Mikroserwisy od początku |
-| Stack | C#/.NET 9 + Hetzner (Docker, RabbitMQ, Postgres self-hosted); ML: SageMaker→ONNX; dashboard Next.js/TS |
+| Stack | C#/.NET 10 + Hetzner (Docker, RabbitMQ, Postgres self-hosted); ML: SageMaker→ONNX; dashboard Next.js/TS |
 | Zakres sesji | Spec; implementacja później na bazie planu |
