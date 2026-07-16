@@ -16,10 +16,10 @@ na składniki (sezon, dzień tygodnia, popyt, eventy), żeby host rozumiał i uf
 
 ## 2. Architektura
 
-Mikroserwisy od początku (decyzja użytkownika). Komunikacja: szyna zdarzeń
-(NATS lub RabbitMQ) + synchroniczne wywołania wewnętrzne (gRPC/REST) tam, gdzie
-potrzebna odpowiedź natychmiastowa. Każdy serwis ma własną bazę (Postgres) —
-brak współdzielonych tabel między serwisami.
+Mikroserwisy od początku (decyzja użytkownika). Komunikacja: zdarzenia przez
+SNS + SQS (fan-out, DLQ per serwis) + synchroniczne wywołania wewnętrzne (REST)
+tam, gdzie potrzebna odpowiedź natychmiastowa. Każdy serwis ma własną bazę
+(Postgres na RDS) — brak współdzielonych tabel między serwisami.
 
 ```
                      ┌──────────────┐
@@ -210,27 +210,29 @@ zbiór treningowy dla ML (V2 demand-service) i podstawa metryk pickup.
 
 ## 9. Stack technologiczny
 
-Zasada: jeden język backendu (Python) — demand-service (ML) i scraper i tak go
-wymagają, a polyglot przy zespole 1–2 osób to czysty koszt.
+Zasada: jeden język backendu (C#/.NET) — zgodny z kompetencjami zespołu; biegłość
+bije teoretycznie bogatszy ekosystem. Python nie występuje w produkcji — tylko
+w notebookach treningowych ML (SageMaker), model serwowany przez ONNX w .NET.
 
 | Warstwa | Wybór | Uzasadnienie |
 |---|---|---|
-| Serwisy backend | Python 3.12 + FastAPI + Pydantic | szybki development, automatyczny OpenAPI (publiczne API to produkt) |
-| ORM / migracje | SQLAlchemy 2 + Alembic | standard, dobra obsługa jsonb |
-| Baza danych | PostgreSQL 16, osobna baza per serwis | jsonb dla `components`/`drivers`; TimescaleDB opcjonalnie później |
-| Szyna zdarzeń | NATS JetStream | persystencja zdarzeń + request-reply, prostszy operacyjnie niż Kafka/RabbitMQ |
-| Zadania cykliczne | APScheduler per serwis | NATS jest kolejką zdarzeń; Celery byłby duplikacją brokera |
-| Scraper | Playwright + httpx + proxy residential | Booking wymaga JS; Airbnb ma endpointy JSON pod httpx |
-| ML (faza 3) | LightGBM + MLflow | gradient boosting na danych tabelarycznych |
+| Serwisy backend | C# / .NET 9, ASP.NET Core minimal APIs | automatyczny OpenAPI, silne typowanie, wydajność; silnik cen czytelny i testowalny |
+| ORM / migracje | EF Core + migracje EF | standard .NET, obsługa jsonb przez Npgsql |
+| Baza danych | PostgreSQL (RDS, eu-central-1), osobna baza per serwis | jsonb dla `components`/`drivers` |
+| Szyna zdarzeń | SNS + SQS (fan-out per serwis) | managed, DLQ za darmo; EventBridge Scheduler do zadań cyklicznych |
+| Scraper | Playwright for .NET + HttpClient/Polly + proxy residential | oficjalny SDK .NET; kontener na Fargate, NIE Lambda (długo żyjące sesje, proxy) |
+| ML (faza 3) | trening: SageMaker (LightGBM, notebooki Python); serwowanie: ONNX Runtime w .NET | zero serwisów pythonowych w produkcji; LightGBM eksportuje się do ONNX |
 | Dashboard | Next.js + TypeScript + Tailwind + shadcn/ui | interaktywny kalendarz cen; SSR dla strony marketingowej |
-| Auth | klucze API + Auth.js (dashboard) | bez Keycloak/Ory (za ciężkie) i bez Clerka (dane w UE) |
-| Object storage | MinIO (dev) → Cloudflare R2 (prod) | surowe zrzuty scrapingu — R2 bez opłat za egress |
-| Hosting | Hetzner (UE) + Docker Compose → k3s przy skali | tani, RODO-friendly; Kubernetes dopiero gdy zaboli |
-| Observability | OpenTelemetry + Grafana/Loki/Prometheus, Sentry | scraping i sync będą się psuć — widoczność od dnia 1 |
-| CI/CD | GitHub Actions | monorepo, build per katalog serwisu |
+| Auth | klucze API + Auth.js (dashboard); sekrety w Secrets Manager | credentials do CM szyfrowane KMS |
+| Object storage | S3 (surowe zrzuty scrapingu) | + VPC endpoint dla S3 — ruch scrapera omija NAT Gateway |
+| Compute | ECS Fargate (kontenery per serwis) | bez zarządzania hostami; Lambda tylko do lekkich zadań |
+| Region | eu-central-1 (Frankfurt) | dane w UE (RODO) |
+| Observability | CloudWatch + OpenTelemetry, Sentry na błędy | scraping i sync będą się psuć — widoczność od dnia 1 |
+| CI/CD | GitHub Actions → ECR → ECS; IaC: Terraform lub CDK (C#) | monorepo, build per katalog serwisu |
 
-Świadomie odłożone: Kubernetes (Compose uniesie MVP), Kafka (JetStream wystarczy
-przy tej skali zdarzeń).
+Uwagi kosztowe: MVP ~$150–300/mies. (RDS, Fargate, NAT); pilnować NAT Gateway przy
+ruchu scrapera (VPC endpoints), proxy residential to osobny, znaczący koszt.
+Świadomie odłożone: Kubernetes/EKS, Kafka/MSK (SNS+SQS wystarczy przy tej skali).
 
 ## 10. Decyzje projektowe (zapis ustaleń)
 
@@ -240,5 +242,5 @@ przy tej skali zdarzeń).
 | Dane rynkowe | Własny scraping Airbnb/Booking + sygnały popytu |
 | Silnik | Hybryda: reguły + demand score (docelowo ML) |
 | Architektura | Mikroserwisy od początku |
-| Stack | Python/FastAPI + NATS + Postgres; dashboard Next.js |
+| Stack | C#/.NET 9 + AWS (Fargate, SNS/SQS, RDS); ML: SageMaker→ONNX; dashboard Next.js/TS |
 | Zakres sesji | Spec; implementacja później na bazie planu |
