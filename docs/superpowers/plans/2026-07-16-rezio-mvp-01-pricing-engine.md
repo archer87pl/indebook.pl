@@ -6,7 +6,7 @@
 
 **Architecture:** Czysta logika domenowa w `Rezio.Pricing.Domain` (funkcje statyczne, bez I/O), minimal API w `Rezio.Pricing.Api` z in-memory store (Postgres/RabbitMQ dojdą w kolejnych planach). Silnik: `cena = base × sezon × dzień_tygodnia × lead_time × obłożenie × popyt`, zaokrąglenie do pełnych PLN, potem clamp [min,max].
 
-**Tech Stack:** .NET 9, C#, ASP.NET Core minimal APIs, xUnit, Microsoft.AspNetCore.Mvc.Testing, Docker, GitHub Actions.
+**Tech Stack:** .NET 9, C#, ASP.NET Core minimal APIs, xUnit, Microsoft.AspNetCore.Mvc.Testing, Serilog (+ sink Loki), ASP.NET Core HealthChecks, Docker Compose (z Grafana/Loki/HealthChecks UI), GitHub Actions.
 
 ## Global Constraints
 
@@ -662,16 +662,144 @@ git commit -m "feat: prices endpoint with in-memory listing store"
 
 ---
 
-### Task 6: Dockerfile, docker-compose, CI
+### Task 6: Healthcheck `/health` i logowanie strukturalne (Serilog)
+
+**Files:**
+- Modify: `services/pricing/src/Rezio.Pricing.Api/Program.cs` (całość poniżej)
+- Test: `services/pricing/tests/Rezio.Pricing.Api.Tests/HealthEndpointTests.cs`
+
+**Interfaces:**
+- Consumes: `Program.cs` z Task 5
+- Produces: `GET /health` → 200 + JSON `{"status":"Healthy",…}` (format HealthChecks UI); logi strukturalne na konsolę zawsze, do Loki gdy ustawiona zmienna środowiskowa `LOKI_URL`
+
+- [ ] **Step 1: Dodaj pakiety**
+
+```bash
+dotnet add services/pricing/src/Rezio.Pricing.Api package Serilog.AspNetCore
+dotnet add services/pricing/src/Rezio.Pricing.Api package Serilog.Sinks.Grafana.Loki
+dotnet add services/pricing/src/Rezio.Pricing.Api package AspNetCore.HealthChecks.UI.Client
+```
+
+- [ ] **Step 2: Failing test**
+
+```csharp
+using System.Net;
+using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.Testing;
+
+namespace Rezio.Pricing.Api.Tests;
+
+public class HealthEndpointTests(WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HttpClient _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Health_returns_healthy_status_json()
+    {
+        var resp = await _client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        Assert.Equal("Healthy", (string)json["status"]!);
+    }
+}
+```
+
+- [ ] **Step 3: Uruchom — FAIL (404 na /health)**
+
+Run: `dotnet test services/pricing/tests/Rezio.Pricing.Api.Tests`
+Expected: FAIL — `Health_returns_healthy_status_json`
+
+- [ ] **Step 4: Implementacja — `Program.cs` (całość)**
+
+```csharp
+using System.Text.Json;
+using HealthChecks.UI.Client;
+using Rezio.Pricing.Api;
+using Rezio.Pricing.Domain;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog(lc =>
+{
+    lc.MinimumLevel.Information()
+      .Enrich.FromLogContext()
+      .WriteTo.Console();
+    var lokiUrl = builder.Configuration["LOKI_URL"];
+    if (!string.IsNullOrWhiteSpace(lokiUrl))
+        lc.WriteTo.GrafanaLoki(lokiUrl,
+            labels: [new LokiLabel { Key = "service", Value = "pricing-api" }]);
+});
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
+builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
+
+var app = builder.Build();
+app.UseExceptionHandler();
+app.UseStatusCodePages();
+app.UseSerilogRequestLogging();
+
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapGet("/v1/listings/{id}/prices",
+    (string id, DateOnly from, DateOnly to, IListingStore store, TimeProvider clock) =>
+{
+    if (to < from || to.DayNumber - from.DayNumber > 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    var settings = store.FindSettings(id);
+    if (settings is null)
+        return Results.Problem(statusCode: 404, title: "Listing not found");
+
+    var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    var prices = store.MarketDays(id, from, to)
+        .Select(day => PricingEngine.Recommend(settings, day, today))
+        .ToList();
+
+    return Results.Ok(new PricesResponse(id, "PLN", prices));
+});
+
+app.Run();
+
+public partial class Program;
+```
+
+- [ ] **Step 5: Testy zielone (całość)**
+
+Run: `dotnet test`
+Expected: PASS — w tym nowy test `/health`
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add -A
+git commit -m "feat: health endpoint and structured logging with optional Loki sink"
+```
+
+---
+
+### Task 7: Docker Compose ze stosem monitoringu, CI, README
 
 **Files:**
 - Create: `services/pricing/Dockerfile`
 - Create: `docker-compose.yml`
+- Create: `infra/grafana/provisioning/datasources/loki.yml`
 - Create: `.github/workflows/ci.yml`
+- Create: `README.md`
 
 **Interfaces:**
-- Consumes: publikowalny projekt `Rezio.Pricing.Api` (Task 5)
-- Produces: obraz `rezio-pricing-api` nasłuchujący na `:8080`; CI budujące i testujące całą solucję na push/PR
+- Consumes: publikowalny projekt `Rezio.Pricing.Api` z `/health` i sinkiem Loki (Task 6)
+- Produces: `docker compose up` podnosi cały lokalny system: API `:8080`, Grafana (logi) `:3000`, HealthChecks UI (dashboard zdrowia) `:8090`, Loki `:3100`; CI na push/PR
 
 - [ ] **Step 1: `services/pricing/Dockerfile`**
 
@@ -689,7 +817,7 @@ EXPOSE 8080
 ENTRYPOINT ["dotnet", "Rezio.Pricing.Api.dll"]
 ```
 
-- [ ] **Step 2: `docker-compose.yml`**
+- [ ] **Step 2: `docker-compose.yml` — system + monitoring**
 
 ```yaml
 services:
@@ -699,15 +827,62 @@ services:
       dockerfile: services/pricing/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      LOKI_URL: http://loki:3100
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:3.1.0
+    ports:
+      - "3100:3100"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+
+  healthchecks-ui:
+    image: xabarilcoding/healthchecksui:5.0.0
+    ports:
+      - "8090:80"
+    environment:
+      HealthChecksUI__HealthChecks__0__Name: pricing-api
+      HealthChecksUI__HealthChecks__0__Uri: http://pricing-api:8080/health
+    depends_on:
+      - pricing-api
 ```
 
-- [ ] **Step 3: Zbuduj i sprawdź kontener**
+- [ ] **Step 3: Provisioning datasource'a Loki — `infra/grafana/provisioning/datasources/loki.yml`**
 
-Run: `docker compose up --build -d` a potem
-`curl "http://localhost:8080/v1/listings/lst_demo/prices?from=2026-08-14&to=2026-08-16"`
-Expected: 200 + JSON; potem `docker compose down`
+```yaml
+apiVersion: 1
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+```
 
-- [ ] **Step 4: `.github/workflows/ci.yml`**
+- [ ] **Step 4: Odpal cały system lokalnie i zweryfikuj**
+
+Run: `docker compose up --build -d`, potem:
+- `curl "http://localhost:8080/v1/listings/lst_demo/prices?from=2026-08-14&to=2026-08-16"` → 200 + JSON
+- `curl http://localhost:8080/health` → `{"status":"Healthy",…}`
+- przeglądarka `http://localhost:8090` → HealthChecks UI pokazuje pricing-api jako Healthy
+- przeglądarka `http://localhost:3000` → Grafana → Explore → Loki → zapytanie `{service="pricing-api"}` pokazuje logi requestów
+
+Na koniec: `docker compose down`
+
+- [ ] **Step 5: `.github/workflows/ci.yml`**
 
 ```yaml
 name: ci
@@ -726,11 +901,35 @@ jobs:
       - run: dotnet test --configuration Release --no-build --verbosity normal
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: `README.md`**
+
+```markdown
+# Rezio
+
+Dynamic pricing dla najmu krótkoterminowego (rynek PL).
+
+## Szybki start (lokalnie)
+
+    docker compose up --build
+
+| Usługa | Adres |
+|---|---|
+| Pricing API | http://localhost:8080 (przykład: `/v1/listings/lst_demo/prices?from=2026-08-14&to=2026-08-16`) |
+| HealthChecks UI (zdrowie systemu) | http://localhost:8090 |
+| Grafana (logi, datasource Loki) | http://localhost:3000 |
+
+## Development
+
+    dotnet build && dotnet test
+
+Spec: `docs/superpowers/specs/`, plany: `docs/superpowers/plans/`.
+```
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "chore: dockerize pricing api and add CI workflow"
+git commit -m "chore: local compose stack with Grafana/Loki/HealthChecks UI, CI, README"
 ```
 
 ---

@@ -231,7 +231,8 @@ te same obrazy Dockera pozwalają na migrację do AWS bez zmian w kodzie).
 | Object storage | S3-kompatybilny zewnętrzny: Backblaze B2 lub Cloudflare R2 | surowe zrzuty scrapingu + backupy poza Hetznerem (offsite) |
 | Hosting | Hetzner Cloud, Norymberga/Falkenstein: VM app (5 kontenerów + RabbitMQ), VM Postgres, VM scraper, LB | UE/RODO, ~20–30 ms do Polski, ~€50–55/mies. |
 | Deploy | Docker Compose + GitHub Actions → GHCR → `compose pull && up -d` przez SSH (opcjonalnie Coolify) | prosty, odtwarzalny; k3s dopiero gdy zaboli |
-| Observability | Grafana + Prometheus + Loki (self-hosted), Sentry na błędy | scraping i sync będą się psuć — widoczność od dnia 1 |
+| Observability | Grafana + Prometheus + Loki (self-hosted), Sentry na błędy; każdy serwis: ASP.NET Core HealthChecks (`/health`) + Serilog (structured, sink Loki); HealthChecks UI jako dashboard zdrowia systemu | scraping i sync będą się psuć — widoczność od dnia 1 |
+| Dev lokalny | `docker compose up` podnosi cały system: serwisy + Grafana/Loki + HealthChecks UI | pełne środowisko lokalne jedną komendą; parytet dev/prod |
 | CI/CD | GitHub Actions, monorepo | build per katalog serwisu |
 
 Świadome kompromisy: brak automatycznego failovera Postgresa (odtwarzanie
