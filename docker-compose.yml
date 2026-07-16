@@ -10,6 +10,17 @@ services:
     depends_on:
       - loki
 
+  demand-api:
+    build:
+      context: .
+      dockerfile: services/demand/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      LOKI_URL: http://loki:3100
+    depends_on:
+      - loki
+
   loki:
     image: grafana/loki:3.1.0
     ports:
@@ -34,5 +45,8 @@ services:
     environment:
       HealthChecksUI__HealthChecks__0__Name: pricing-api
       HealthChecksUI__HealthChecks__0__Uri: http://pricing-api:8080/health
+      HealthChecksUI__HealthChecks__1__Name: demand-api
+      HealthChecksUI__HealthChecks__1__Uri: http://demand-api:8080/health
     depends_on:
       - pricing-api
+      - demand-api
