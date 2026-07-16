@@ -940,3 +940,6 @@ git commit -m "chore: local compose stack with Grafana/Loki/HealthChecks UI, CI,
 - demand-service (heurystyka świąt/ferii/eventów) — teraz `DemandScore` przychodzi w snapshotcie
 - market-scraper, channel-sync (Beds24/Smoobu), api-gateway (auth), dashboard
 - Reguły usera (weekend uplift własny, orphan gap), limit dziennej zmiany ceny, overrides
+- Comp sets i segmentacja (kategoria/tagi/pojemność) — w tym planie `MarketDaySnapshot`
+  reprezentuje agregaty otoczenia obiektu; w planie scrapera te agregaty zaczną
+  pochodzić z comp setu obiektu zamiast z całego rynku (silnik bez zmian)

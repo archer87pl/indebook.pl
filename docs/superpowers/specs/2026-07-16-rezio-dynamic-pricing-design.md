@@ -46,9 +46,14 @@ między serwisami.
 - Publikuje `market.stats.updated`.
 - Infrastruktura: pula proxy residential, rate limiting, rotacja fingerprintów,
   harmonogram per rynek (duże rynki codziennie, małe co 2–3 dni).
-- Zgodność: przechowujemy wyłącznie agregaty i anonimowe atrybuty ofert; żadnych
-  danych osobowych hostów (RODO). Ryzyko ToS platform zaakceptowane świadomie
-  (standard branżowy), izolowane w tym jednym serwisie.
+- **Klasyfikacja ofert:** każda zescrapowana oferta dostaje kategorię, tagi
+  atrybutów i pojemność (słownik reguł na typie oferty, amenities i tytule/opisie
+  PL/EN; docelowo klasyfikator ML). Patrz „Segmentacja i comp sets" w §4.
+- Przechowujemy obserwacje per oferta (cena/dostępność per dzień + atrybuty),
+  bo własne comp sety wymagają agregacji na żądanie; identyfikatory ofert
+  pseudonimizowane, zero danych osobowych hostów — bez nazwisk, zdjęć, opisów
+  profilu (RODO). Ryzyko ToS platform zaakceptowane świadomie (standard
+  branżowy), izolowane w tym jednym serwisie.
 
 ### 2.2 demand-service
 - Ingestuje sygnały popytu i produkuje `demand_score` (0–100) per rynek per data,
@@ -74,6 +79,9 @@ między serwisami.
   → limit maksymalnej zmiany dziennej (%)
   ```
 - Każdy czynnik zapisany osobno w `components` (jsonb) — pełne rozbicie w API.
+- `f_obłożenie_rynku` i mediana ADR liczone z **comp setu obiektu** (patrz §4
+  „Segmentacja i comp sets"); fallback do agregatów całego rynku, gdy comp set
+  za mały lub dane nieświeże.
 - Przelicza kalendarz 365 dni do przodu przy każdym zdarzeniu wejściowym
   (nowe staty rynku, nowy demand score, zmiana ustawień, nowa rezerwacja).
 - Publikuje `price.updated`.
@@ -108,6 +116,9 @@ między serwisami.
 | `POST /v1/listings/{id}/overrides` | Nadpisania `{date_from, date_to, price \| multiplier}` |
 | `DELETE /v1/listings/{id}/overrides/{oid}` | Usunięcie nadpisania |
 | `POST /v1/listings/{id}/sync` | Natychmiastowy push cen |
+| `GET /v1/listings/{id}/comp-set` | Definicja comp setu + podgląd (liczność, mediana ADR, obłożenie) |
+| `PUT /v1/listings/{id}/comp-set` | Własny comp set: geo, kategorie, tagi, pojemność |
+| `POST /v1/comp-sets/preview` | Podgląd comp setu przed zapisem (ile obiektów, staty) |
 | `GET /v1/markets/{id}/stats?from=&to=` | Agregaty rynku: obłożenie, mediana ADR, pickup |
 | `POST /v1/webhooks` | Rejestracja endpointu webhooków |
 
@@ -153,6 +164,41 @@ błędy w formacie problem+json, wersjonowanie w ścieżce.
 - `demand_scores(market_id, date, score, drivers jsonb, model_version)`
 - `reservations(listing_id, dates, price, booked_at, source)` — zbiór treningowy ML
 - `scrape_jobs(market_id, status, started_at, listings_seen)`
+- `scraped_listings(external_ref_hash, market_id, category, tags jsonb, guests, bedrooms, geo)`
+- `scraped_listing_daily(scraped_listing_id, date, price, available)`
+- `comp_sets(listing_id, mode, geo jsonb, categories, tags_all, tags_any, capacity jsonb)`
+
+### Segmentacja obiektów i comp sets
+
+Obiekt ma **lokalizację** (lat/lng → automatyczne przypisanie do rynku, edytowalne)
+i **comp set** — definicję tego, z czym jest porównywany. Statystyki wejściowe do
+silnika (obłożenie, mediana ADR) liczone są z comp setu, nie z całego rynku;
+`market_daily_stats` zostaje jako fallback i widok rynkowy.
+
+**Taksonomia (klasyfikacja każdej oferty — własnej i zescrapowanej):**
+
+| Wymiar | Wartości |
+|---|---|
+| Kategoria (jedna) | `apartament`, `dom_domek`, `pokoj`, `hotel_aparthotel`, `pensjonat_willa`, `agroturystyka`, `glamping_nietypowe` |
+| Tagi (wiele) | `widok_gory`, `widok_woda`, `przy_stoku`, `blisko_plazy`, `sauna_balia`, `jacuzzi`, `kominek`, `zwierzeta_ok`, `agro_zwierzeta`, … (słownik otwarty) |
+| Pojemność | liczba gości, liczba sypialni |
+| Standard | 1–5 (heurystyka: cena/amenities/oceny) |
+
+Przykład: „domek z widokiem na góry" = kategoria `dom_domek` + tag `widok_gory`;
+agroturystyka to osobna kategoria (inna elastyczność cenowa i sezonowość niż
+domki wypoczynkowe, mimo podobnej fizycznej formy).
+
+**Comp set per obiekt:**
+- `mode: auto` (domyślny) — rynek obiektu + jego kategoria + pojemność ±2 gości.
+- `mode: custom` — użytkownik określa: zasięg geo (rynek albo promień N km od
+  obiektu), kategorie (jedna lub więcej), `tags_all` (muszą mieć wszystkie),
+  `tags_any` (dowolny z), zakres pojemności.
+- **Minimalna liczebność:** comp set poniżej 15 obiektów jest automatycznie
+  poszerzany (kolejno: drop tagów → szerszy promień → cała kategoria) i oznaczany
+  flagą `comp_set_diluted` w odpowiedzi API — host widzi, że porównanie jest
+  przybliżone.
+- Agregaty comp setów liczone z `scraped_listing_daily` na żądanie i cache'owane;
+  zmiana comp setu odpala przeliczenie kalendarza (event do pricing-service).
 
 ## 5. Źródła danych (specyfika rynku polskiego)
 
