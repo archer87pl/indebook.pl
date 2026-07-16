@@ -1,17 +1,39 @@
 using System.Text.Json;
+using HealthChecks.UI.Client;
 using Rezio.Pricing.Api;
 using Rezio.Pricing.Domain;
+using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog(lc =>
+{
+    lc.MinimumLevel.Information()
+      .Enrich.FromLogContext()
+      .WriteTo.Console();
+    var lokiUrl = builder.Configuration["LOKI_URL"];
+    if (!string.IsNullOrWhiteSpace(lokiUrl))
+        lc.WriteTo.GrafanaLoki(lokiUrl,
+            labels: [new LokiLabel { Key = "service", Value = "pricing-api" }]);
+});
+
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
 builder.Services.AddProblemDetails();
+builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseSerilogRequestLogging();
+
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.MapGet("/v1/listings/{id}/prices",
     (string id, DateOnly from, DateOnly to, IListingStore store, TimeProvider clock) =>
