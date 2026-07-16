@@ -13,6 +13,10 @@ public class WinterBreakCalendarTests
     [InlineData(Voivodeship.Slaskie, "2026-03-01", true)]       // ostatni dzień tury 3
     [InlineData(Voivodeship.Pomorskie, "2026-02-20", false)]    // pomorskie było w turze 1
     [InlineData(Voivodeship.Malopolskie, "2026-07-15", false)]  // lato — nie ferie zimowe
+    [InlineData(Voivodeship.Mazowieckie, "2026-01-19", true)]   // pierwszy dzień tury 1
+    [InlineData(Voivodeship.Malopolskie, "2026-02-02", true)]   // pierwszy dzień tury 2
+    [InlineData(Voivodeship.Malopolskie, "2026-02-01", false)]  // dzień przed turą 2
+    [InlineData(Voivodeship.Slaskie, "2026-02-16", true)]       // pierwszy dzień tury 3
     public void Covers_matches_men_2026_schedule(Voivodeship v, string date, bool expected) =>
         Assert.Equal(expected, WinterBreakCalendar.Covers(v, DateOnly.Parse(date)));
 

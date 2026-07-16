@@ -4,6 +4,9 @@ public static class CalendarSignals
 {
     public static IReadOnlyList<DaySignals> ForRange(DateOnly from, DateOnly to)
     {
+        // Okno ±7 dni wystarcza, bo najdłuższy realny ciąg wolnych+mostków w polskim
+        // kalendarzu to ~5 dni; run-walk poza okno widzi tylko weekendy (słownik świąt
+        // obejmuje wyłącznie lata z okna kontekstu).
         var contextStart = from.AddDays(-7);
         var contextEnd = to.AddDays(7);
         var holidays = Enumerable.Range(contextStart.Year, contextEnd.Year - contextStart.Year + 1)
