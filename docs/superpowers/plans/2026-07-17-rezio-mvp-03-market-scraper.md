@@ -95,7 +95,7 @@ Tagi (niezależne od kategorii; tag dodawany, gdy tekst zawiera którekolwiek s�
 - `blisko_plazy`: `przy plaży`, `blisko plaży`, `beachfront`, `dostęp do plaży`
 - `sauna_balia`: `sauna`, `balia`
 - `jacuzzi`: `jacuzzi`, `hot tub`, `whirlpool`
-- `kominek`: `kominek`, `fireplace`
+- `kominek`: `kominek`, `komink` (rdzeń odmian: kominkiem/kominka), `fireplace`
 - `zwierzeta_ok`: `pets allowed`, `zwierzęta mile widziane`, `akceptujemy zwierzęta`
 - `agro_zwierzeta`: `alpaki`, `kozy`, `kucyki`, `mini zoo`, `zwierzęta gospodarskie`
 
@@ -239,7 +239,7 @@ public static class ListingClassifier
         ("blisko_plazy",  ["przy plaży", "blisko plaży", "beachfront", "dostęp do plaży"]),
         ("sauna_balia",   ["sauna", "balia"]),
         ("jacuzzi",       ["jacuzzi", "hot tub", "whirlpool"]),
-        ("kominek",       ["kominek", "fireplace"]),
+        ("kominek",       ["kominek", "komink", "fireplace"]),
         ("zwierzeta_ok",  ["pets allowed", "zwierzęta mile widziane", "akceptujemy zwierzęta"]),
         ("agro_zwierzeta", ["alpaki", "kozy", "kucyki", "mini zoo", "zwierzęta gospodarskie"]),
     ];
