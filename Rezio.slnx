@@ -1,5 +1,14 @@
 <Solution>
   <Folder Name="/services/" />
+  <Folder Name="/services/demand/" />
+  <Folder Name="/services/demand/src/">
+    <Project Path="services/demand/src/Rezio.Demand.Api/Rezio.Demand.Api.csproj" />
+    <Project Path="services/demand/src/Rezio.Demand.Domain/Rezio.Demand.Domain.csproj" />
+  </Folder>
+  <Folder Name="/services/demand/tests/">
+    <Project Path="services/demand/tests/Rezio.Demand.Api.Tests/Rezio.Demand.Api.Tests.csproj" />
+    <Project Path="services/demand/tests/Rezio.Demand.Domain.Tests/Rezio.Demand.Domain.Tests.csproj" />
+  </Folder>
   <Folder Name="/services/pricing/" />
   <Folder Name="/services/pricing/src/">
     <Project Path="services/pricing/src/Rezio.Pricing.Api/Rezio.Pricing.Api.csproj" />
