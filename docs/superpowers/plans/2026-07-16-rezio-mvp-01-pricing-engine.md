@@ -15,7 +15,7 @@
 - JSON w API: snake_case (`JsonNamingPolicy.SnakeCaseLower`), błędy jako problem+json (`AddProblemDetails`)
 - Pieniądze: `decimal`, waluta PLN, zaokrąglanie do pełnych złotych `MidpointRounding.AwayFromZero`
 - Daty: `DateOnly`; "dziś" zawsze z wstrzykniętego `TimeProvider` (nigdy `DateTime.Now` w logice)
-- Układ monorepo: `services/pricing/src/*`, `services/pricing/tests/*`; solution `Rezio.sln` w korzeniu
+- Układ monorepo: `services/pricing/src/*`, `services/pricing/tests/*`; solution `Rezio.slnx` w korzeniu
 - Commit po każdym tasku; komunikaty `feat:`/`chore:`/`test:`
 
 ---
@@ -23,7 +23,7 @@
 ### Task 1: Scaffold monorepo i solution
 
 **Files:**
-- Create: `Rezio.sln`, `Directory.Build.props`, `.gitignore`
+- Create: `Rezio.slnx`, `Directory.Build.props`, `.gitignore`
 - Create (szablonami): `services/pricing/src/Rezio.Pricing.Domain/`, `services/pricing/src/Rezio.Pricing.Api/`, `services/pricing/tests/Rezio.Pricing.Domain.Tests/`, `services/pricing/tests/Rezio.Pricing.Api.Tests/`
 
 **Interfaces:**
@@ -39,7 +39,7 @@ dotnet new classlib -n Rezio.Pricing.Domain -o services/pricing/src/Rezio.Pricin
 dotnet new web      -n Rezio.Pricing.Api    -o services/pricing/src/Rezio.Pricing.Api
 dotnet new xunit    -n Rezio.Pricing.Domain.Tests -o services/pricing/tests/Rezio.Pricing.Domain.Tests
 dotnet new xunit    -n Rezio.Pricing.Api.Tests    -o services/pricing/tests/Rezio.Pricing.Api.Tests
-dotnet sln Rezio.sln add services/pricing/src/Rezio.Pricing.Domain services/pricing/src/Rezio.Pricing.Api services/pricing/tests/Rezio.Pricing.Domain.Tests services/pricing/tests/Rezio.Pricing.Api.Tests
+dotnet sln Rezio.slnx add services/pricing/src/Rezio.Pricing.Domain services/pricing/src/Rezio.Pricing.Api services/pricing/tests/Rezio.Pricing.Domain.Tests services/pricing/tests/Rezio.Pricing.Api.Tests
 dotnet add services/pricing/src/Rezio.Pricing.Api reference services/pricing/src/Rezio.Pricing.Domain
 dotnet add services/pricing/tests/Rezio.Pricing.Domain.Tests reference services/pricing/src/Rezio.Pricing.Domain
 dotnet add services/pricing/tests/Rezio.Pricing.Api.Tests reference services/pricing/src/Rezio.Pricing.Api
