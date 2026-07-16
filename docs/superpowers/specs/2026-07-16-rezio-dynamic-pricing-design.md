@@ -17,9 +17,10 @@ na składniki (sezon, dzień tygodnia, popyt, eventy), żeby host rozumiał i uf
 ## 2. Architektura
 
 Mikroserwisy od początku (decyzja użytkownika). Komunikacja: zdarzenia przez
-SNS + SQS (fan-out, DLQ per serwis) + synchroniczne wywołania wewnętrzne (REST)
-tam, gdzie potrzebna odpowiedź natychmiastowa. Każdy serwis ma własną bazę
-(Postgres na RDS) — brak współdzielonych tabel między serwisami.
+RabbitMQ (fan-out, DLQ per serwis; w .NET przez MassTransit) + synchroniczne
+wywołania wewnętrzne (REST) tam, gdzie potrzebna odpowiedź natychmiastowa.
+Każdy serwis ma własną bazę logiczną Postgres — brak współdzielonych tabel
+między serwisami.
 
 ```
                      ┌──────────────┐
@@ -212,27 +213,31 @@ zbiór treningowy dla ML (V2 demand-service) i podstawa metryk pickup.
 
 Zasada: jeden język backendu (C#/.NET) — zgodny z kompetencjami zespołu; biegłość
 bije teoretycznie bogatszy ekosystem. Python nie występuje w produkcji — tylko
-w notebookach treningowych ML (SageMaker), model serwowany przez ONNX w .NET.
+w notebookach treningowych ML (SageMaker, punktowo), model serwowany przez ONNX
+w .NET. Infrastruktura: Hetzner Cloud (~4× taniej niż AWS przy tej skali;
+te same obrazy Dockera pozwalają na migrację do AWS bez zmian w kodzie).
 
 | Warstwa | Wybór | Uzasadnienie |
 |---|---|---|
-| Serwisy backend | C# / .NET 9, ASP.NET Core minimal APIs | automatyczny OpenAPI, silne typowanie, wydajność; silnik cen czytelny i testowalny |
+| Serwisy backend | C# / .NET 9, ASP.NET Core minimal APIs, kontenery Linux | automatyczny OpenAPI, silne typowanie; silnik cen czytelny i testowalny |
 | ORM / migracje | EF Core + migracje EF | standard .NET, obsługa jsonb przez Npgsql |
-| Baza danych | PostgreSQL (RDS, eu-central-1), osobna baza per serwis | jsonb dla `components`/`drivers` |
-| Szyna zdarzeń | SNS + SQS (fan-out per serwis) | managed, DLQ za darmo; EventBridge Scheduler do zadań cyklicznych |
-| Scraper | Playwright for .NET + HttpClient/Polly + proxy residential | oficjalny SDK .NET; kontener na Fargate, NIE Lambda (długo żyjące sesje, proxy) |
-| ML (faza 3) | trening: SageMaker (LightGBM, notebooki Python); serwowanie: ONNX Runtime w .NET | zero serwisów pythonowych w produkcji; LightGBM eksportuje się do ONNX |
+| Baza danych | PostgreSQL 16 self-hosted (dedykowana VM), osobna baza logiczna per serwis | jsonb dla `components`/`drivers`; backupy wal-g → zewnętrzny S3/B2, **odtwarzanie testowane cyklicznie** |
+| Szyna zdarzeń | RabbitMQ + MassTransit | dojrzały klient .NET, fan-out + DLQ per serwis |
+| Zadania cykliczne | Quartz.NET per serwis | harmonogramy scrapingu, przeliczeń, syncu |
+| Scraper | Playwright for .NET + HttpClient/Polly + proxy residential | oficjalny SDK .NET; osobna VM (20 TB transferu w cenie Hetznera) |
+| ML (faza 3) | trening: SageMaker punktowo (LightGBM, notebooki Python); serwowanie: ONNX Runtime w .NET | płatność tylko za godziny treningu; zero Pythona w produkcji |
 | Dashboard | Next.js + TypeScript + Tailwind + shadcn/ui | interaktywny kalendarz cen; SSR dla strony marketingowej |
-| Auth | klucze API + Auth.js (dashboard); sekrety w Secrets Manager | credentials do CM szyfrowane KMS |
-| Object storage | S3 (surowe zrzuty scrapingu) | + VPC endpoint dla S3 — ruch scrapera omija NAT Gateway |
-| Compute | ECS Fargate (kontenery per serwis) | bez zarządzania hostami; Lambda tylko do lekkich zadań |
-| Region | eu-central-1 (Frankfurt) | dane w UE (RODO) |
-| Observability | CloudWatch + OpenTelemetry, Sentry na błędy | scraping i sync będą się psuć — widoczność od dnia 1 |
-| CI/CD | GitHub Actions → ECR → ECS; IaC: Terraform lub CDK (C#) | monorepo, build per katalog serwisu |
+| Auth | klucze API + Auth.js (dashboard); sekrety: SOPS/age w repo + Docker secrets | credentials do CM szyfrowane w spoczynku |
+| Object storage | S3-kompatybilny zewnętrzny: Backblaze B2 lub Cloudflare R2 | surowe zrzuty scrapingu + backupy poza Hetznerem (offsite) |
+| Hosting | Hetzner Cloud, Norymberga/Falkenstein: VM app (5 kontenerów + RabbitMQ), VM Postgres, VM scraper, LB | UE/RODO, ~20–30 ms do Polski, ~€50–55/mies. |
+| Deploy | Docker Compose + GitHub Actions → GHCR → `compose pull && up -d` przez SSH (opcjonalnie Coolify) | prosty, odtwarzalny; k3s dopiero gdy zaboli |
+| Observability | Grafana + Prometheus + Loki (self-hosted), Sentry na błędy | scraping i sync będą się psuć — widoczność od dnia 1 |
+| CI/CD | GitHub Actions, monorepo | build per katalog serwisu |
 
-Uwagi kosztowe: MVP ~$150–300/mies. (RDS, Fargate, NAT); pilnować NAT Gateway przy
-ruchu scrapera (VPC endpoints), proxy residential to osobny, znaczący koszt.
-Świadomie odłożone: Kubernetes/EKS, Kafka/MSK (SNS+SQS wystarczy przy tej skali).
+Świadome kompromisy: brak automatycznego failovera Postgresa (odtwarzanie
+z backupu, przestój ~1 h — akceptowalne w MVP; replika lub migracja na RDS,
+gdy pojawią się płacący klienci). Odłożone: Kubernetes, Kafka. Największy koszt
+zmienny to proxy residential ($5–15/GB) — niezależny od dostawcy infrastruktury.
 
 ## 10. Decyzje projektowe (zapis ustaleń)
 
@@ -242,5 +247,5 @@ ruchu scrapera (VPC endpoints), proxy residential to osobny, znaczący koszt.
 | Dane rynkowe | Własny scraping Airbnb/Booking + sygnały popytu |
 | Silnik | Hybryda: reguły + demand score (docelowo ML) |
 | Architektura | Mikroserwisy od początku |
-| Stack | C#/.NET 9 + AWS (Fargate, SNS/SQS, RDS); ML: SageMaker→ONNX; dashboard Next.js/TS |
+| Stack | C#/.NET 9 + Hetzner (Docker, RabbitMQ, Postgres self-hosted); ML: SageMaker→ONNX; dashboard Next.js/TS |
 | Zakres sesji | Spec; implementacja później na bazie planu |
