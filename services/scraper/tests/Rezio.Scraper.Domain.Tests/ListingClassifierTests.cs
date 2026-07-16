@@ -71,4 +71,11 @@ public class ListingClassifierTests
         Assert.Equal(ListingCategory.DomDomek, c.Category);
         Assert.Contains("kominek", c.Tags);
     }
+
+    [Fact]
+    public void Apartment_with_living_room_amenity_is_not_pokoj()
+    {
+        var c = ListingClassifier.Classify(Listing("Apartament Skałka", "entire_home/apartment", "pokój dzienny z aneksem"));
+        Assert.Equal(ListingCategory.Apartament, c.Category);
+    }
 }

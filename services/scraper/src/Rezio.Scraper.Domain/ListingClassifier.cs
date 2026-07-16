@@ -7,7 +7,7 @@ public static class ListingClassifier
         (ListingCategory.Agroturystyka,     ["agroturystyka", "gospodarstwo", "farm stay"]),
         (ListingCategory.GlampingNietypowe, ["glamping", "jurta", "yurt", "treehouse", "domek na drzewie", "tent"]),
         (ListingCategory.HotelAparthotel,   ["hotel", "aparthotel"]),
-        (ListingCategory.Pokoj,             ["private_room", "shared_room", "pokój"]),
+        (ListingCategory.Pokoj,             ["private_room", "shared_room"]),
         (ListingCategory.PensjonatWilla,    ["willa", "villa", "pensjonat", "guesthouse"]),
         (ListingCategory.DomDomek,          ["domek", "domku", "chata", "chałupa", "chalet", "cabin", "cottage", "house"]),
     ];
