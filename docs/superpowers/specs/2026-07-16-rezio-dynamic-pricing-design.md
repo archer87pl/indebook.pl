@@ -239,7 +239,26 @@ z backupu, przestój ~1 h — akceptowalne w MVP; replika lub migracja na RDS,
 gdy pojawią się płacący klienci). Odłożone: Kubernetes, Kafka. Największy koszt
 zmienny to proxy residential ($5–15/GB) — niezależny od dostawcy infrastruktury.
 
-## 10. Decyzje projektowe (zapis ustaleń)
+## 10. Skalowanie
+
+Obciążenie rośnie liniowo z liczbą rynków (scraping) i ofert (przeliczenia) —
+brak ryzyka nagłych skoków ruchu. Punkt odniesienia: 5 000 ofert × 365 dni
+przeliczane codziennie ≈ 1,8 mln upsertów/dzień — w zasięgu jednej VM Postgresa.
+
+Ścieżka skalowania (w kolejności):
+1. **Wertykalnie:** resize VM-ek (Hetzner do 48 vCPU/192 GB, dalej dedyki) —
+   10–20× zapasu bez żadnych zmian.
+2. **Horyzontalnie:** serwisy bezstanowe za LB; scraping i pricing to konsumenci
+   RabbitMQ — skalowanie = więcej kontenerów-workerów, zero zmian w kodzie.
+3. **Postgres (pierwsze wąskie gardło):** partycjonowanie tabel czasowych
+   (`price_recommendations`, `market_daily_stats`) po dacie → replika do
+   odczytów → ewentualnie managed (RDS) przy płacących klientach.
+
+Realny limit wzrostu to koszt proxy residential (liniowy z liczbą rynków),
+nie compute. Hetzner przestaje wystarczać dopiero przy ekspansji multi-country
+(setki tysięcy ofert) — wtedy k3s lub migracja na AWS z tymi samymi obrazami.
+
+## 11. Decyzje projektowe (zapis ustaleń)
 
 | Decyzja | Wybór |
 |---|---|
