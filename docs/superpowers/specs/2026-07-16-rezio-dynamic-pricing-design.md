@@ -208,7 +208,31 @@ zbiór treningowy dla ML (V2 demand-service) i podstawa metryk pickup.
 3. **ML:** model popytu na zebranych danych, backtesting jako bramka wdrożenia,
    heurystyka jako fallback.
 
-## 9. Decyzje projektowe (zapis ustaleń)
+## 9. Stack technologiczny
+
+Zasada: jeden język backendu (Python) — demand-service (ML) i scraper i tak go
+wymagają, a polyglot przy zespole 1–2 osób to czysty koszt.
+
+| Warstwa | Wybór | Uzasadnienie |
+|---|---|---|
+| Serwisy backend | Python 3.12 + FastAPI + Pydantic | szybki development, automatyczny OpenAPI (publiczne API to produkt) |
+| ORM / migracje | SQLAlchemy 2 + Alembic | standard, dobra obsługa jsonb |
+| Baza danych | PostgreSQL 16, osobna baza per serwis | jsonb dla `components`/`drivers`; TimescaleDB opcjonalnie później |
+| Szyna zdarzeń | NATS JetStream | persystencja zdarzeń + request-reply, prostszy operacyjnie niż Kafka/RabbitMQ |
+| Zadania cykliczne | APScheduler per serwis | NATS jest kolejką zdarzeń; Celery byłby duplikacją brokera |
+| Scraper | Playwright + httpx + proxy residential | Booking wymaga JS; Airbnb ma endpointy JSON pod httpx |
+| ML (faza 3) | LightGBM + MLflow | gradient boosting na danych tabelarycznych |
+| Dashboard | Next.js + TypeScript + Tailwind + shadcn/ui | interaktywny kalendarz cen; SSR dla strony marketingowej |
+| Auth | klucze API + Auth.js (dashboard) | bez Keycloak/Ory (za ciężkie) i bez Clerka (dane w UE) |
+| Object storage | MinIO (dev) → Cloudflare R2 (prod) | surowe zrzuty scrapingu — R2 bez opłat za egress |
+| Hosting | Hetzner (UE) + Docker Compose → k3s przy skali | tani, RODO-friendly; Kubernetes dopiero gdy zaboli |
+| Observability | OpenTelemetry + Grafana/Loki/Prometheus, Sentry | scraping i sync będą się psuć — widoczność od dnia 1 |
+| CI/CD | GitHub Actions | monorepo, build per katalog serwisu |
+
+Świadomie odłożone: Kubernetes (Compose uniesie MVP), Kafka (JetStream wystarczy
+przy tej skali zdarzeń).
+
+## 10. Decyzje projektowe (zapis ustaleń)
 
 | Decyzja | Wybór |
 |---|---|
@@ -216,4 +240,5 @@ zbiór treningowy dla ML (V2 demand-service) i podstawa metryk pickup.
 | Dane rynkowe | Własny scraping Airbnb/Booking + sygnały popytu |
 | Silnik | Hybryda: reguły + demand score (docelowo ML) |
 | Architektura | Mikroserwisy od początku |
+| Stack | Python/FastAPI + NATS + Postgres; dashboard Next.js |
 | Zakres sesji | Spec; implementacja później na bazie planu |
