@@ -83,7 +83,7 @@ Reguły klasyfikacji (wiążące; dopasowanie: `Contains` na złączonym, zlower
 1. `Agroturystyka`: tekst zawiera `agroturystyka`, `gospodarstwo` lub `farm stay`
 2. `GlampingNietypowe`: `glamping`, `jurta`, `yurt`, `treehouse`, `domek na drzewie` lub `tent`
 3. `HotelAparthotel`: `hotel` lub `aparthotel`
-4. `Pokoj`: `private_room`, `shared_room` lub `pokój`
+4. `Pokoj`: `private_room` lub `shared_room` (bez gołego `pokój` — false positive na „pokój dzienny" w opisach apartamentów)
 5. `PensjonatWilla`: `willa`, `villa`, `pensjonat` lub `guesthouse`
 6. `DomDomek`: `domek`, `domku`, `chata`, `chałupa`, `chalet`, `cabin`, `cottage` lub `house`
 7. domyślnie: `Apartament`
@@ -95,7 +95,7 @@ Tagi (niezależne od kategorii; tag dodawany, gdy tekst zawiera którekolwiek s�
 - `blisko_plazy`: `przy plaży`, `blisko plaży`, `beachfront`, `dostęp do plaży`
 - `sauna_balia`: `sauna`, `balia`
 - `jacuzzi`: `jacuzzi`, `hot tub`, `whirlpool`
-- `kominek`: `kominek`, `fireplace`
+- `kominek`: `kominek`, `komink` (rdzeń odmian: kominkiem/kominka), `fireplace`
 - `zwierzeta_ok`: `pets allowed`, `zwierzęta mile widziane`, `akceptujemy zwierzęta`
 - `agro_zwierzeta`: `alpaki`, `kozy`, `kucyki`, `mini zoo`, `zwierzęta gospodarskie`
 
@@ -226,7 +226,7 @@ public static class ListingClassifier
         (ListingCategory.Agroturystyka,     ["agroturystyka", "gospodarstwo", "farm stay"]),
         (ListingCategory.GlampingNietypowe, ["glamping", "jurta", "yurt", "treehouse", "domek na drzewie", "tent"]),
         (ListingCategory.HotelAparthotel,   ["hotel", "aparthotel"]),
-        (ListingCategory.Pokoj,             ["private_room", "shared_room", "pokój"]),
+        (ListingCategory.Pokoj,             ["private_room", "shared_room"]),
         (ListingCategory.PensjonatWilla,    ["willa", "villa", "pensjonat", "guesthouse"]),
         (ListingCategory.DomDomek,          ["domek", "domku", "chata", "chałupa", "chalet", "cabin", "cottage", "house"]),
     ];
@@ -239,7 +239,7 @@ public static class ListingClassifier
         ("blisko_plazy",  ["przy plaży", "blisko plaży", "beachfront", "dostęp do plaży"]),
         ("sauna_balia",   ["sauna", "balia"]),
         ("jacuzzi",       ["jacuzzi", "hot tub", "whirlpool"]),
-        ("kominek",       ["kominek", "fireplace"]),
+        ("kominek",       ["kominek", "komink", "fireplace"]),
         ("zwierzeta_ok",  ["pets allowed", "zwierzęta mile widziane", "akceptujemy zwierzęta"]),
         ("agro_zwierzeta", ["alpaki", "kozy", "kucyki", "mini zoo", "zwierzęta gospodarskie"]),
     ];

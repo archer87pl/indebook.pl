@@ -18,4 +18,13 @@
     <Project Path="services/pricing/tests/Rezio.Pricing.Api.Tests/Rezio.Pricing.Api.Tests.csproj" />
     <Project Path="services/pricing/tests/Rezio.Pricing.Domain.Tests/Rezio.Pricing.Domain.Tests.csproj" />
   </Folder>
+  <Folder Name="/services/scraper/" />
+  <Folder Name="/services/scraper/src/">
+    <Project Path="services/scraper/src/Rezio.Scraper.Api/Rezio.Scraper.Api.csproj" />
+    <Project Path="services/scraper/src/Rezio.Scraper.Domain/Rezio.Scraper.Domain.csproj" />
+  </Folder>
+  <Folder Name="/services/scraper/tests/">
+    <Project Path="services/scraper/tests/Rezio.Scraper.Api.Tests/Rezio.Scraper.Api.Tests.csproj" />
+    <Project Path="services/scraper/tests/Rezio.Scraper.Domain.Tests/Rezio.Scraper.Domain.Tests.csproj" />
+  </Folder>
 </Solution>
