@@ -8,6 +8,8 @@ Modularny monolit `rezio-api` (:8080) — moduły pricing, demand i channel-sync
 
 ## Szybki start (lokalnie)
 
+Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazowa i daty → wycena z backendu (`POST /v1/quote`).
+
     docker compose up --build
 
 | Usługa | Adres |
