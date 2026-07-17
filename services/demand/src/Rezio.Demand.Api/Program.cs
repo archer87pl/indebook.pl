@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
+using MassTransit;
 using Rezio.Demand.Api;
 using Rezio.Demand.Domain;
 using Serilog;
@@ -25,6 +26,15 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IMarketRegistry, InMemoryMarketRegistry>();
+builder.Services.AddScoped<DemandPublisher>();
+builder.Services.AddMassTransit(x =>
+{
+    var rabbit = builder.Configuration["RABBITMQ_URL"];
+    if (!string.IsNullOrWhiteSpace(rabbit))
+        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
+    else
+        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
+});
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -52,6 +62,19 @@ app.MapGet("/v1/markets/{id}/demand",
         .ToList();
 
     return Results.Ok(new DemandResponse(id, scores));
+});
+
+app.MapPost("/v1/markets/{id}/publish-demand",
+    async (string id, PublishDemandRequest request, DemandPublisher publisher, CancellationToken ct) =>
+{
+    if (request.To < request.From || request.To.DayNumber - request.From.DayNumber >= 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    var days = await publisher.PublishAsync(id, request.From, request.To, ct);
+    return days == 0
+        ? Results.Problem(statusCode: 404, title: "Market not found")
+        : Results.Accepted($"/v1/markets/{id}/demand", new PublishDemandResponse(days));
 });
 
 app.Run();
