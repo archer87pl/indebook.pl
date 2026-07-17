@@ -76,7 +76,15 @@ if (StoreSelection.UsesPostgres(databaseUrl))
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
-app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging(options =>
+    // Keep the HealthChecks-UI poller hitting /health out of Loki: log it at Debug,
+    // while preserving the default elevation of errors and 5xx responses.
+    options.GetLevel = (httpContext, _, ex) =>
+        ex is not null || httpContext.Response.StatusCode >= 500
+            ? LogEventLevel.Error
+            : httpContext.Request.Path.StartsWithSegments("/health")
+                ? LogEventLevel.Debug
+                : LogEventLevel.Information);
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
