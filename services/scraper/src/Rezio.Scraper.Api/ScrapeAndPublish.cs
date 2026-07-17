@@ -7,7 +7,8 @@ namespace Rezio.Scraper.Api;
 public sealed record MarketStatsIngestLine(DateOnly Date, decimal MedianPrice, double OccupancyRate, int ActiveListings);
 public sealed record MarketStatsIngestRequest(string MarketId, IReadOnlyList<MarketStatsIngestLine> Stats);
 
-public sealed class ScrapeAndPublish(ScrapeRunner runner, IStatsStore store, HttpClient monolith)
+public sealed class ScrapeAndPublish(
+    ScrapeRunner runner, IStatsStore store, HttpClient monolith, ILogger<ScrapeAndPublish> logger)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -22,8 +23,16 @@ public sealed class ScrapeAndPublish(ScrapeRunner runner, IStatsStore store, Htt
             var stats = store.Get(marketId, from, to)
                 .Select(s => new MarketStatsIngestLine(s.Date, s.MedianPrice, s.OccupancyRate, s.ActiveListings))
                 .ToList();
-            await monolith.PostAsJsonAsync(
-                "/v1/internal/market-stats", new MarketStatsIngestRequest(marketId, stats), JsonOptions, ct);
+            try
+            {
+                using var resp = await monolith.PostAsJsonAsync(
+                    "/v1/internal/market-stats", new MarketStatsIngestRequest(marketId, stats), JsonOptions, ct);
+                resp.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to POST market stats to monolith for {MarketId}", marketId);
+            }
         }
         return result;
     }

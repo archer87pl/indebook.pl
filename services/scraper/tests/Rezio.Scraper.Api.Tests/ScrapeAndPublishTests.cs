@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging.Abstractions;
 using Rezio.Scraper.Domain;
 
 namespace Rezio.Scraper.Api.Tests;
@@ -16,6 +17,18 @@ internal sealed class RecordingHandler : HttpMessageHandler
     }
 }
 
+internal sealed class ThrowingHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+        throw new HttpRequestException("connection refused");
+}
+
+internal sealed class ServerErrorHandler : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+        Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+}
+
 public class ScrapeAndPublishTests
 {
     private static (ScrapeAndPublish Sut, RecordingHandler Handler) Build()
@@ -26,8 +39,20 @@ public class ScrapeAndPublishTests
         var sut = new ScrapeAndPublish(
             new ScrapeRunner(new SyntheticListingSource(), store),
             store,
-            http);
+            http,
+            NullLogger<ScrapeAndPublish>.Instance);
         return (sut, handler);
+    }
+
+    private static ScrapeAndPublish BuildWithHandler(HttpMessageHandler handler)
+    {
+        var store = new InMemoryStatsStore();
+        var http = new HttpClient(handler) { BaseAddress = new Uri("http://monolith.test") };
+        return new ScrapeAndPublish(
+            new ScrapeRunner(new SyntheticListingSource(), store),
+            store,
+            http,
+            NullLogger<ScrapeAndPublish>.Instance);
     }
 
     [Fact]
@@ -63,5 +88,29 @@ public class ScrapeAndPublishTests
 
         Assert.Equal(0, result.DaysAggregated);
         Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
+    public async Task Scrape_result_returned_when_monolith_is_unreachable()
+    {
+        var sut = BuildWithHandler(new ThrowingHandler());
+
+        var result = await sut.RunAsync("mkt_gdansk",
+            new DateOnly(2026, 6, 4), new DateOnly(2026, 6, 10), CancellationToken.None);
+
+        Assert.Equal(30, result.ListingsScraped);
+        Assert.Equal(7, result.DaysAggregated);
+    }
+
+    [Fact]
+    public async Task Scrape_result_returned_when_monolith_responds_with_error_status()
+    {
+        var sut = BuildWithHandler(new ServerErrorHandler());
+
+        var result = await sut.RunAsync("mkt_gdansk",
+            new DateOnly(2026, 6, 4), new DateOnly(2026, 6, 10), CancellationToken.None);
+
+        Assert.Equal(30, result.ListingsScraped);
+        Assert.Equal(7, result.DaysAggregated);
     }
 }
