@@ -32,7 +32,7 @@ public class PricePublisherTests
             Assert.Equal(3, days);
             Assert.True(await harness.Published.Any<PriceComputed>());
 
-            var published = harness.Published.Select<PriceComputed>().First().Message!;
+            var published = harness.Published.Select<PriceComputed>().First().Context.Message!;
             Assert.Equal("lst_demo", published.ListingId);
             Assert.Equal("con_beds24_1", published.ConnectionId);
             Assert.Equal("PLN", published.Currency);
