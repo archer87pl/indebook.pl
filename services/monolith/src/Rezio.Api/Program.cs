@@ -49,6 +49,7 @@ builder.Services.AddSingleton<SyncRunner>();
 builder.Services.AddSingleton<IAdapterFactory, SyntheticAdapterFactory>();
 builder.Services.AddSingleton(new RatePushService((delay, ct) => Task.Delay(delay, ct)));
 builder.Services.AddScoped<PricePusher>();
+builder.Services.AddScoped<QuoteService>();
 
 var app = builder.Build();
 
@@ -61,6 +62,8 @@ if (StoreSelection.UsesPostgres(databaseUrl))
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
@@ -127,6 +130,26 @@ app.MapPost("/v1/internal/market-stats",
     return Results.Accepted(value: new { ingested_days = request.Stats.Count });
 });
 
+app.MapPost("/v1/quote",
+    async (QuoteRequest req, QuoteService quotes, IMarketRegistry registry, TimeProvider clock, CancellationToken ct) =>
+{
+    if (req.To < req.From || req.To.DayNumber - req.From.DayNumber >= 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    if (req.BasePrice <= 0 || req.MinPrice < 0 || req.MinPrice > req.MaxPrice)
+        return Results.Problem(statusCode: 400, title: "Invalid pricing",
+            detail: "base_price must be > 0, min_price >= 0, and min_price <= max_price.");
+
+    var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    var days = await quotes.QuoteAsync(req.MarketId, req.BasePrice, req.MinPrice, req.MaxPrice, req.From, req.To, today, ct);
+    if (days is null)
+        return Results.Problem(statusCode: 404, title: "Market not found");
+
+    var market = registry.Find(req.MarketId)!;
+    return Results.Ok(new QuoteResponse(req.MarketId, market.Name, market.Type.ToString(), "PLN", days));
+});
+
 app.MapPost("/v1/connections", (CreateConnectionRequest request, ConnectionRegistry registry) =>
 {
     if (int.TryParse(request.Provider, out _) || !Enum.TryParse<ChannelProvider>(request.Provider, ignoreCase: true, out var provider) || !Enum.IsDefined(provider))
@@ -171,6 +194,8 @@ app.MapPost("/v1/connections/{id}/sync", async (string id, SyncRequest request, 
     var result = await runner.SyncAsync(adapter, id, request.From, request.To, ct);
     return Results.Ok(result);
 });
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
