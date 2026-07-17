@@ -40,7 +40,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 
 app.MapPost("/v1/connections", (CreateConnectionRequest request, ConnectionRegistry registry) =>
 {
-    if (!Enum.TryParse<ChannelProvider>(request.Provider, ignoreCase: true, out var provider))
+    if (int.TryParse(request.Provider, out _) || !Enum.TryParse<ChannelProvider>(request.Provider, ignoreCase: true, out var provider) || !Enum.IsDefined(provider))
         return Results.Problem(statusCode: 400, title: "Unknown provider",
             detail: "provider must be one of: beds24, smoobu, hostaway.");
 

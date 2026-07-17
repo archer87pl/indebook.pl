@@ -37,6 +37,15 @@ public class ChannelSyncEndpointTests(WebApplicationFactory<Program> factory)
         Assert.Contains("application/problem+json", resp.Content.Headers.ContentType!.ToString());
     }
 
+    [Theory]
+    [InlineData("99")]
+    [InlineData("1")]
+    public async Task Numeric_provider_string_is_rejected_with_400(string provider)
+    {
+        var resp = await _client.PostAsJsonAsync("/v1/connections", new { provider });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
     [Fact]
     public async Task Get_unknown_connection_returns_404()
     {
