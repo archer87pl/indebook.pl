@@ -26,4 +26,6 @@ Dynamic pricing dla najmu krótkoterminowego (rynek PL).
 
     dotnet build && dotnet test
 
+**Uwaga:** MassTransit jest przypięty do 8.5.10 — ostatniego wydania na licencji Apache-2.0. Wersje 9+ wymagają płatnej licencji komercyjnej do wystartowania szyny (niewidoczne w testach in-memory, fatalne przy realnym RabbitMQ). Nie aktualizuj bez świadomej decyzji licencyjnej.
+
 Spec: `docs/superpowers/specs/`, plany: `docs/superpowers/plans/`.
