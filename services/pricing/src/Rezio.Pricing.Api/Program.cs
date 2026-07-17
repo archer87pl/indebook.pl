@@ -26,7 +26,7 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<MarketDataStore>();
+builder.Services.AddSingleton<IMarketDataStore, InMemoryMarketDataStore>();
 builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
 
 builder.Services.AddMassTransit(x =>
@@ -53,7 +53,7 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
 });
 
 app.MapGet("/v1/listings/{id}/prices",
-    (string id, DateOnly from, DateOnly to, IListingStore store, TimeProvider clock) =>
+    async (string id, DateOnly from, DateOnly to, IListingStore store, TimeProvider clock, CancellationToken ct) =>
 {
     if (to < from || to.DayNumber - from.DayNumber >= 365)
         return Results.Problem(statusCode: 400, title: "Invalid date range",
@@ -64,7 +64,7 @@ app.MapGet("/v1/listings/{id}/prices",
         return Results.Problem(statusCode: 404, title: "Listing not found");
 
     var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
-    var prices = store.MarketDays(id, from, to)
+    var prices = (await store.MarketDaysAsync(id, from, to, ct))
         .Select(day => PricingEngine.Recommend(settings, day, today))
         .ToList();
 

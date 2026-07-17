@@ -11,9 +11,9 @@ public class MarketDataConsumersTests
     [Fact]
     public async Task Consumes_market_stats_into_store()
     {
-        var store = new MarketDataStore();
+        var store = new InMemoryMarketDataStore();
         await using var provider = new ServiceCollection()
-            .AddSingleton(store)
+            .AddSingleton<IMarketDataStore>(store)
             .AddMassTransitTestHarness(x => x.AddConsumer<MarketStatsUpdatedConsumer>())
             .BuildServiceProvider(true);
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -24,7 +24,7 @@ public class MarketDataConsumersTests
                 [new MarketStatsLine(new DateOnly(2026, 6, 4), 320m, 0.85, 30)]));
 
             Assert.True(await harness.Consumed.Any<MarketStatsUpdated>());
-            Assert.Equal(0.85, store.Get("mkt_gdansk", new DateOnly(2026, 6, 4)).OccupancyRate);
+            Assert.Equal(0.85, (await store.GetAsync("mkt_gdansk", new DateOnly(2026, 6, 4), CancellationToken.None)).OccupancyRate);
         }
         finally { await harness.Stop(); }
     }
@@ -32,9 +32,9 @@ public class MarketDataConsumersTests
     [Fact]
     public async Task Consumes_demand_scores_into_store()
     {
-        var store = new MarketDataStore();
+        var store = new InMemoryMarketDataStore();
         await using var provider = new ServiceCollection()
-            .AddSingleton(store)
+            .AddSingleton<IMarketDataStore>(store)
             .AddMassTransitTestHarness(x => x.AddConsumer<DemandScoreUpdatedConsumer>())
             .BuildServiceProvider(true);
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -45,7 +45,7 @@ public class MarketDataConsumersTests
                 [new DemandScoreLine(new DateOnly(2026, 6, 4), 70, ["Boże Ciało"])]));
 
             Assert.True(await harness.Consumed.Any<DemandScoreUpdated>());
-            var data = store.Get("mkt_gdansk", new DateOnly(2026, 6, 4));
+            var data = await store.GetAsync("mkt_gdansk", new DateOnly(2026, 6, 4), CancellationToken.None);
             Assert.Equal(70, data.DemandScore);
             Assert.Contains("Boże Ciało", data.DemandDrivers);
         }
