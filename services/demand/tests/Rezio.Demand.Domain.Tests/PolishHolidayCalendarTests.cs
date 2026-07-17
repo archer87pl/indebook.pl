@@ -31,9 +31,16 @@ public class PolishHolidayCalendarTests
     }
 
     [Fact]
-    public void Holidays_are_sorted_by_date()
+    public void Holidays_are_ordered_from_new_year_to_second_christmas_day()
     {
         var holidays = PolishHolidayCalendar.ForYear(2026);
-        Assert.Equal(holidays.OrderBy(h => h.Date).Select(h => h.Date), holidays.Select(h => h.Date));
+
+        var first = holidays[0];
+        Assert.Equal(new DateOnly(2026, 1, 1), first.Date);
+        Assert.Equal("Nowy Rok", first.Name);
+
+        var last = holidays[^1];
+        Assert.Equal(new DateOnly(2026, 12, 26), last.Date);
+        Assert.Equal("Drugi dzień Świąt", last.Name);
     }
 }
