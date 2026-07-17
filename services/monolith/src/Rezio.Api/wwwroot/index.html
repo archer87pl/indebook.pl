@@ -167,9 +167,9 @@
       <div class="sect">
         <p class="title"><span class="n">3</span> Cennik</p>
         <div class="fields">
-          <div class="field w-sm"><label>Baza (PLN)</label><input id="base" type="number" step="10"></div>
-          <div class="field w-sm"><label>Min</label><input id="min" type="number" step="10"></div>
-          <div class="field w-sm"><label>Max</label><input id="max" type="number" step="10"></div>
+          <div class="field w-sm"><label>Baza (PLN)</label><input id="base" type="number" step="10" min="0"></div>
+          <div class="field w-sm"><label>Min</label><input id="min" type="number" step="10" min="0"></div>
+          <div class="field w-sm"><label>Max</label><input id="max" type="number" step="10" min="0"></div>
         </div>
       </div>
       <div class="sect">
@@ -241,6 +241,9 @@ function syncControls(){
 
 async function requote(){
   syncControls();
+  if(state.base<=0||state.min<0||state.min>state.max){
+    state.loading=false;state.quote=null;state.error="Popraw cennik: baza > 0, min ≥ 0, min ≤ max.";renderResult();return;
+  }
   state.loading=true;state.error=null;renderResult();
   try{
     const r=await fetch("/v1/quote",{method:"POST",headers:{"Content-Type":"application/json"},

@@ -49,6 +49,24 @@ public class QuoteEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public async Task Zero_base_price_returns_400()
+    {
+        var resp = await _client.PostAsJsonAsync("/v1/quote", new {
+            market_id = "mkt_gdansk", base_price = 0, min_price = 100, max_price = 900,
+            from = "2026-06-04", to = "2026-06-07" });
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Min_above_max_returns_400()
+    {
+        var resp = await _client.PostAsJsonAsync("/v1/quote", new {
+            market_id = "mkt_gdansk", base_price = 350, min_price = 900, max_price = 800,
+            from = "2026-06-04", to = "2026-06-07" });
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Business_market_ordinary_day_has_no_positive_drivers()
     {
         // Warszawa, zwykły wtorek 2026-09-08 → demand baseline 50, brak driverów

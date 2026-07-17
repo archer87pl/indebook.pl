@@ -137,6 +137,10 @@ app.MapPost("/v1/quote",
         return Results.Problem(statusCode: 400, title: "Invalid date range",
             detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
 
+    if (req.BasePrice <= 0 || req.MinPrice < 0 || req.MinPrice > req.MaxPrice)
+        return Results.Problem(statusCode: 400, title: "Invalid pricing",
+            detail: "base_price must be > 0, min_price >= 0, and min_price <= max_price.");
+
     var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
     var days = await quotes.QuoteAsync(req.MarketId, req.BasePrice, req.MinPrice, req.MaxPrice, req.From, req.To, today, ct);
     if (days is null)
