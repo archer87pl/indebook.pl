@@ -1,3 +1,4 @@
+using Rezio.ChannelSync.Domain;
 using Rezio.Pricing.Domain;
 
 namespace Rezio.Api;
@@ -11,3 +12,11 @@ public sealed record PublishPricesRequest(string ConnectionId, string ExternalLi
 public sealed record PublishPricesResponse(int PublishedDays);
 
 public sealed record DemandResponse(string MarketId, IReadOnlyList<Rezio.Demand.Domain.DemandScore> Scores);
+
+public sealed record CreateConnectionRequest(string Provider);
+
+public sealed record ConnectionResponse(string Id, string Provider, string Status);
+
+public sealed record ListingsResponse(string ConnectionId, IReadOnlyList<ChannelListing> Listings);
+
+public sealed record SyncRequest(DateOnly From, DateOnly To);

@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Rezio.ChannelSync.Api.Tests;
+namespace Rezio.Api.Tests;
 
 public class ChannelSyncEndpointTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>

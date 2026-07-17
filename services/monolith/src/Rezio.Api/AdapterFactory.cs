@@ -1,6 +1,6 @@
 using Rezio.ChannelSync.Domain;
 
-namespace Rezio.ChannelSync.Api;
+namespace Rezio.Api;
 
 // Buduje adapter dla providera połączenia. Dziś zawsze syntetyczny;
 // prawdziwe adaptery (Beds24/Smoobu/Hostaway) wejdą tutaj za IChannelAdapter.

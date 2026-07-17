@@ -6,11 +6,9 @@
   <Folder Name="/services/" />
   <Folder Name="/services/channelsync/" />
   <Folder Name="/services/channelsync/src/">
-    <Project Path="services/channelsync/src/Rezio.ChannelSync.Api/Rezio.ChannelSync.Api.csproj" />
     <Project Path="services/channelsync/src/Rezio.ChannelSync.Domain/Rezio.ChannelSync.Domain.csproj" />
   </Folder>
   <Folder Name="/services/channelsync/tests/">
-    <Project Path="services/channelsync/tests/Rezio.ChannelSync.Api.Tests/Rezio.ChannelSync.Api.Tests.csproj" />
     <Project Path="services/channelsync/tests/Rezio.ChannelSync.Domain.Tests/Rezio.ChannelSync.Domain.Tests.csproj" />
   </Folder>
   <Folder Name="/services/demand/" />

@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\..\pricing\src\Rezio.Pricing.Domain\Rezio.Pricing.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\contracts\Rezio.Contracts\Rezio.Contracts.csproj" />
     <ProjectReference Include="..\..\..\demand\src\Rezio.Demand.Domain\Rezio.Demand.Domain.csproj" />
+    <ProjectReference Include="..\..\..\channelsync\src\Rezio.ChannelSync.Domain\Rezio.ChannelSync.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
