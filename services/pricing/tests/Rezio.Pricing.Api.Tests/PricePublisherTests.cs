@@ -12,7 +12,9 @@ public class PricePublisherTests
     public async Task Publishes_price_computed_with_rate_lines_for_known_listing()
     {
         await using var provider = new ServiceCollection()
-            .AddSingleton<IMarketDataStore, InMemoryMarketDataStore>()
+            .AddSingleton(TimeProvider.System)
+            .AddSingleton<IMarketDataStore>(sp =>
+                new InMemoryMarketDataStore(sp.GetRequiredService<TimeProvider>()))
             .AddSingleton<IListingStore, InMemoryListingStore>()
             .AddScoped<PricePublisher>()
             .AddMassTransitTestHarness()
@@ -50,7 +52,9 @@ public class PricePublisherTests
     public async Task Unknown_listing_publishes_nothing()
     {
         await using var provider = new ServiceCollection()
-            .AddSingleton<IMarketDataStore, InMemoryMarketDataStore>()
+            .AddSingleton(TimeProvider.System)
+            .AddSingleton<IMarketDataStore>(sp =>
+                new InMemoryMarketDataStore(sp.GetRequiredService<TimeProvider>()))
             .AddSingleton<IListingStore, InMemoryListingStore>()
             .AddScoped<PricePublisher>()
             .AddMassTransitTestHarness()

@@ -1,6 +1,10 @@
 namespace Rezio.Pricing.Api;
 
-public sealed record MarketDayData(double? OccupancyRate, int? DemandScore, IReadOnlyList<string> DemandDrivers);
+public sealed record MarketDayData(
+    double? OccupancyRate,
+    int? DemandScore,
+    IReadOnlyList<string> DemandDrivers,
+    DateTimeOffset? LastWrittenAt = null);
 
 public interface IMarketDataStore
 {

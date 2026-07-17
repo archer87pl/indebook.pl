@@ -11,7 +11,7 @@ public class MarketDataConsumersTests
     [Fact]
     public async Task Consumes_market_stats_into_store()
     {
-        var store = new InMemoryMarketDataStore();
+        var store = new InMemoryMarketDataStore(TimeProvider.System);
         await using var provider = new ServiceCollection()
             .AddSingleton<IMarketDataStore>(store)
             .AddMassTransitTestHarness(x => x.AddConsumer<MarketStatsUpdatedConsumer>())
@@ -32,7 +32,7 @@ public class MarketDataConsumersTests
     [Fact]
     public async Task Consumes_demand_scores_into_store()
     {
-        var store = new InMemoryMarketDataStore();
+        var store = new InMemoryMarketDataStore(TimeProvider.System);
         await using var provider = new ServiceCollection()
             .AddSingleton<IMarketDataStore>(store)
             .AddMassTransitTestHarness(x => x.AddConsumer<DemandScoreUpdatedConsumer>())

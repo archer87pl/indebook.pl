@@ -26,7 +26,8 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IMarketDataStore, InMemoryMarketDataStore>();
+builder.Services.AddSingleton<IMarketDataStore>(sp =>
+    new InMemoryMarketDataStore(sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
 
 builder.Services.AddMassTransit(x =>

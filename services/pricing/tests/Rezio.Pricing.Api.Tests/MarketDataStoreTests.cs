@@ -7,7 +7,7 @@ public class MarketDataStoreTests
     [Fact]
     public async Task Empty_store_returns_nulls_and_empty_drivers()
     {
-        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore();
+        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore(TimeProvider.System);
         var data = await store.GetAsync("mkt_gdansk", D, CancellationToken.None);
         Assert.Null(data.OccupancyRate);
         Assert.Null(data.DemandScore);
@@ -17,7 +17,7 @@ public class MarketDataStoreTests
     [Fact]
     public async Task Stats_and_demand_merge_per_key()
     {
-        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore();
+        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore(TimeProvider.System);
         await store.SetStatsAsync("mkt_gdansk", D, 0.85, CancellationToken.None);
         await store.SetDemandAsync("mkt_gdansk", D, 70, ["Boże Ciało"], CancellationToken.None);
 
@@ -30,7 +30,7 @@ public class MarketDataStoreTests
     [Fact]
     public async Task Set_demand_then_stats_preserves_demand()
     {
-        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore();
+        var store = new Rezio.Pricing.Api.InMemoryMarketDataStore(TimeProvider.System);
         await store.SetDemandAsync("mkt_gdansk", D, 70, ["Boże Ciało"], CancellationToken.None);
         await store.SetStatsAsync("mkt_gdansk", D, 0.85, CancellationToken.None);
 
@@ -42,7 +42,7 @@ public class MarketDataStoreTests
     [Fact]
     public async Task Listing_store_falls_back_without_event_data_and_uses_it_when_present()
     {
-        var marketData = new Rezio.Pricing.Api.InMemoryMarketDataStore();
+        var marketData = new Rezio.Pricing.Api.InMemoryMarketDataStore(TimeProvider.System);
         var listings = new Rezio.Pricing.Api.InMemoryListingStore(marketData);
 
         // bez danych: fallback — wtorek 2026-06-09 => 0.70 / 50 / []
@@ -63,7 +63,7 @@ public class MarketDataStoreTests
     [Fact]
     public async Task Weekend_fallback_is_preserved_without_event_data()
     {
-        var listings = new Rezio.Pricing.Api.InMemoryListingStore(new Rezio.Pricing.Api.InMemoryMarketDataStore());
+        var listings = new Rezio.Pricing.Api.InMemoryListingStore(new Rezio.Pricing.Api.InMemoryMarketDataStore(TimeProvider.System));
         var friday = (await listings.MarketDaysAsync("lst_demo", new DateOnly(2026, 6, 5), new DateOnly(2026, 6, 5), CancellationToken.None)).Single();
         Assert.Equal(60, friday.DemandScore);
         Assert.Equal(["weekend"], friday.DemandDrivers);
