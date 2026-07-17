@@ -14,7 +14,7 @@ public sealed class PricePublisher(IListingStore store, IPublishEndpoint bus)
         if (settings is null)
             return 0;
 
-        var rates = store.MarketDays(listingId, from, to)
+        var rates = (await store.MarketDaysAsync(listingId, from, to, ct))
             .Select(day => PricingEngine.Recommend(settings, day, today))
             .Select(rec => new RateLine(rec.Date, rec.RecommendedPrice))
             .ToList();

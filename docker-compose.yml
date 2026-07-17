@@ -8,10 +8,13 @@ services:
     environment:
       LOKI_URL: http://loki:3100
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      DATABASE_URL: Host=postgres;Database=rezio;Username=rezio;Password=rezio
     depends_on:
       loki:
         condition: service_started
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
 
   demand-api:
@@ -59,6 +62,22 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: rezio
+      POSTGRES_PASSWORD: rezio
+      POSTGRES_DB: rezio
+    ports:
+      - "5432:5432"
+    volumes:
+      - rezio-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rezio"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:3.13-management
     ports:
@@ -105,3 +124,6 @@ services:
       - demand-api
       - scraper-api
       - channelsync-api
+
+volumes:
+  rezio-pg:
