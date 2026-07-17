@@ -51,4 +51,18 @@ public class PricesEndpointTests(WebApplicationFactory<Program> factory)
         var resp = await _client.GetAsync("/v1/listings/lst_demo/prices?from=2026-01-01&to=2027-06-01");
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
+
+    [Fact]
+    public async Task Malformed_from_date_returns_400()
+    {
+        var resp = await _client.GetAsync("/v1/listings/lst_demo/prices?from=2026-13-99&to=2026-08-07");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Missing_to_parameter_returns_400()
+    {
+        var resp = await _client.GetAsync("/v1/listings/lst_demo/prices?from=2026-08-01");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
 }

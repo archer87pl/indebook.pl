@@ -27,6 +27,9 @@ builder.Services.AddSerilog(lc =>
 
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower);
+// Malformed/missing route params (e.g. from=2026-13-99) => 400, not a thrown
+// BadHttpRequestException surfaced as 500 (default in the Development env used by tests).
+builder.Services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = false);
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);

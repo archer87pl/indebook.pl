@@ -40,6 +40,20 @@ public class DemandEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public async Task Malformed_from_date_returns_400()
+    {
+        var resp = await _client.GetAsync("/v1/markets/mkt_zakopane/demand?from=2026-13-99&to=2026-06-07");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Missing_to_parameter_returns_400()
+    {
+        var resp = await _client.GetAsync("/v1/markets/mkt_zakopane/demand?from=2026-06-04");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Health_returns_healthy_status_json()
     {
         var resp = await _client.GetAsync("/health");
