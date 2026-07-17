@@ -16,11 +16,14 @@ Dynamic pricing dla najmu krótkoterminowego (rynek PL).
 | Grafana (logi, datasource Loki) | http://localhost:3000 |
 | RabbitMQ (management) | http://localhost:15672 (guest/guest) — szyna zdarzeń między serwisami |
 
-## Pętla cena→push (zdarzenia)
+## Przepływ danych i pętla cena→push (zdarzenia)
 
-1. `POST /v1/connections {"provider":"beds24"}` na channel-sync (:8083) → zapamiętaj `id`.
-2. `POST /v1/listings/lst_demo/publish-prices` na pricing (:8080) z `{"connection_id":"<id>","external_listing_id":"beds24-listing-1","from":"2026-08-01","to":"2026-08-07"}`.
-3. pricing publikuje `PriceComputed` → channel-sync konsumuje i pushuje ceny (log w Grafanie: `{service="channelsync-api"}`).
+1. `POST /v1/scrape-jobs` na scraper (:8082) z `{"market_id":"mkt_gdansk","from":"2026-06-04","to":"2026-06-10"}` → scraper publikuje `MarketStatsUpdated`, pricing zapisuje obłożenie rynku.
+2. `POST /v1/markets/mkt_gdansk/publish-demand` na demand (:8081) z `{"from":"2026-06-04","to":"2026-06-10"}` → demand publikuje `DemandScoreUpdated`, pricing zapisuje demand score + drivery (np. „Boże Ciało").
+3. `GET /v1/listings/lst_demo/prices?from=2026-06-04&to=2026-06-10` na pricing (:8080) → ceny liczone na danych z eventów (drivery widoczne w `components.demand_drivers`).
+4. `POST /v1/connections {"provider":"beds24"}` na channel-sync (:8083), potem `POST /v1/listings/lst_demo/publish-prices` na pricing → channel-sync pushuje ceny (log `Pushed N rates` w Loki).
+
+Bez zdarzeń pricing degraduje się do fallbacku syntetycznego (obłożenie 0.70, weekendowy demand 60).
 
 ## Development
 
