@@ -7,8 +7,12 @@ services:
       - "8080:8080"
     environment:
       LOKI_URL: http://loki:3100
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
-      - loki
+      loki:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   demand-api:
     build:
@@ -40,8 +44,23 @@ services:
       - "8083:8080"
     environment:
       LOKI_URL: http://loki:3100
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
     depends_on:
-      - loki
+      loki:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   loki:
     image: grafana/loki:3.1.0

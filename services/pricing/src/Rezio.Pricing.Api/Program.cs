@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
+using MassTransit;
 using Rezio.Pricing.Api;
 using Rezio.Pricing.Domain;
 using Serilog;
@@ -26,6 +27,16 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
+
+builder.Services.AddMassTransit(x =>
+{
+    var rabbit = builder.Configuration["RABBITMQ_URL"];
+    if (!string.IsNullOrWhiteSpace(rabbit))
+        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
+    else
+        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
+});
+builder.Services.AddScoped<PricePublisher>();
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -54,6 +65,22 @@ app.MapGet("/v1/listings/{id}/prices",
         .ToList();
 
     return Results.Ok(new PricesResponse(id, "PLN", prices));
+});
+
+app.MapPost("/v1/listings/{id}/publish-prices",
+    async (string id, PublishPricesRequest request, PricePublisher publisher, TimeProvider clock, CancellationToken ct) =>
+{
+    if (request.To < request.From || request.To.DayNumber - request.From.DayNumber >= 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    var days = await publisher.PublishAsync(id, request.ConnectionId, request.ExternalListingId,
+        request.From, request.To, today, ct);
+
+    return days == 0
+        ? Results.Problem(statusCode: 404, title: "Listing not found")
+        : Results.Accepted($"/v1/listings/{id}/prices", new PublishPricesResponse(days));
 });
 
 app.Run();

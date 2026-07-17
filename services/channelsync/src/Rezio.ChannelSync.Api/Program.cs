@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
+using MassTransit;
 using Rezio.ChannelSync.Api;
 using Rezio.ChannelSync.Domain;
 using Serilog;
@@ -27,6 +28,16 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<ConnectionRegistry>();
 builder.Services.AddSingleton<SyncRunner>();
 builder.Services.AddSingleton<IAdapterFactory, SyntheticAdapterFactory>();
+builder.Services.AddSingleton(new RatePushService((delay, ct) => Task.Delay(delay, ct)));
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<PriceComputedConsumer>();
+    var rabbit = builder.Configuration["RABBITMQ_URL"];
+    if (!string.IsNullOrWhiteSpace(rabbit))
+        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
+    else
+        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
+});
 
 var app = builder.Build();
 app.UseExceptionHandler();
