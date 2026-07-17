@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\pricing\src\Rezio.Pricing.Domain\Rezio.Pricing.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\contracts\Rezio.Contracts\Rezio.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\demand\src\Rezio.Demand.Domain\Rezio.Demand.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,3 +9,5 @@ public sealed record PricesResponse(
 
 public sealed record PublishPricesRequest(string ConnectionId, string ExternalListingId, DateOnly From, DateOnly To);
 public sealed record PublishPricesResponse(int PublishedDays);
+
+public sealed record DemandResponse(string MarketId, IReadOnlyList<Rezio.Demand.Domain.DemandScore> Scores);

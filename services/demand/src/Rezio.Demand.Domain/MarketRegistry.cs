@@ -1,6 +1,4 @@
-using Rezio.Demand.Domain;
-
-namespace Rezio.Demand.Api;
+namespace Rezio.Demand.Domain;
 
 public sealed record Market(string Id, string Name, MarketType Type, Voivodeship Voivodeship);
 

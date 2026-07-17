@@ -4,6 +4,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Rezio.Api;
 using Rezio.Api.Persistence;
+using Rezio.Demand.Domain;
 using Rezio.Pricing.Domain;
 using Serilog;
 using Serilog.Events;
@@ -42,6 +43,7 @@ else
 }
 
 builder.Services.AddScoped<IListingStore, InMemoryListingStore>();
+builder.Services.AddSingleton<IMarketRegistry, InMemoryMarketRegistry>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -90,6 +92,23 @@ app.MapGet("/v1/listings/{id}/prices",
         .ToList();
 
     return Results.Ok(new PricesResponse(id, "PLN", prices));
+});
+
+app.MapGet("/v1/markets/{id}/demand",
+    (string id, DateOnly from, DateOnly to, IMarketRegistry registry) =>
+{
+    if (to < from || to.DayNumber - from.DayNumber >= 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    var market = registry.Find(id);
+    if (market is null)
+        return Results.Problem(statusCode: 404, title: "Market not found");
+
+    var scores = CalendarSignals.ForRange(from, to)
+        .Select(signals => DemandScoreCalculator.Score(market.Type, market.Voivodeship, signals))
+        .ToList();
+    return Results.Ok(new DemandResponse(id, scores));
 });
 
 app.MapPost("/v1/listings/{id}/publish-prices",

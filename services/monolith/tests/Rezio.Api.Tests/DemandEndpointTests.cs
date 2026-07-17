@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Rezio.Demand.Api.Tests;
+namespace Rezio.Api.Tests;
 
 public class DemandEndpointTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
