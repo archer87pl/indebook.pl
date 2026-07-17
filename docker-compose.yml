@@ -2,7 +2,7 @@ services:
   pricing-api:
     build:
       context: .
-      dockerfile: services/pricing/Dockerfile
+      dockerfile: services/monolith/Dockerfile
     ports:
       - "8080:8080"
     environment:
