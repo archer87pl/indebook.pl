@@ -1,6 +1,5 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Rezio.Api;
 using Rezio.Api.Persistence;
@@ -49,19 +48,7 @@ builder.Services.AddSingleton<ConnectionRegistry>();
 builder.Services.AddSingleton<SyncRunner>();
 builder.Services.AddSingleton<IAdapterFactory, SyntheticAdapterFactory>();
 builder.Services.AddSingleton(new RatePushService((delay, ct) => Task.Delay(delay, ct)));
-
-builder.Services.AddMassTransit(x =>
-{
-    x.AddConsumer<MarketStatsUpdatedConsumer>();
-    x.AddConsumer<DemandScoreUpdatedConsumer>();
-
-    var rabbit = builder.Configuration["RABBITMQ_URL"];
-    if (!string.IsNullOrWhiteSpace(rabbit))
-        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
-    else
-        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
-});
-builder.Services.AddScoped<PricePublisher>();
+builder.Services.AddScoped<PricePusher>();
 
 var app = builder.Build();
 
@@ -117,19 +104,27 @@ app.MapGet("/v1/markets/{id}/demand",
 });
 
 app.MapPost("/v1/listings/{id}/publish-prices",
-    async (string id, PublishPricesRequest request, PricePublisher publisher, TimeProvider clock, CancellationToken ct) =>
+    async (string id, PublishPricesRequest request, PricePusher pusher, TimeProvider clock, CancellationToken ct) =>
 {
     if (request.To < request.From || request.To.DayNumber - request.From.DayNumber >= 365)
         return Results.Problem(statusCode: 400, title: "Invalid date range",
             detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
 
     var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
-    var days = await publisher.PublishAsync(id, request.ConnectionId, request.ExternalListingId,
+    var days = await pusher.PushAsync(id, request.ConnectionId, request.ExternalListingId,
         request.From, request.To, today, ct);
 
     return days == 0
-        ? Results.Problem(statusCode: 404, title: "Listing not found")
+        ? Results.Problem(statusCode: 404, title: "Listing or connection not found")
         : Results.Accepted($"/v1/listings/{id}/prices", new PublishPricesResponse(days));
+});
+
+app.MapPost("/v1/internal/market-stats",
+    async (MarketStatsIngestRequest request, IMarketDataStore store, CancellationToken ct) =>
+{
+    foreach (var line in request.Stats)
+        await store.SetStatsAsync(request.MarketId, line.Date, line.OccupancyRate, ct);
+    return Results.Accepted(value: new { ingested_days = request.Stats.Count });
 });
 
 app.MapPost("/v1/connections", (CreateConnectionRequest request, ConnectionRegistry registry) =>

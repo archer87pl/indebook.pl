@@ -2,13 +2,20 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Rezio.Scraper.Api.Tests;
 
 public class ScraperEndpointTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    // Replace the real outbound HttpClient (which would otherwise dial the monolith at
+    // MONOLITH_URL) with a stub so these endpoint tests stay self-contained/offline.
+    private readonly HttpClient _client = factory.WithWebHostBuilder(builder =>
+        builder.ConfigureServices(services =>
+            services.AddHttpClient<ScrapeAndPublish>(c => c.BaseAddress = new Uri("http://monolith.test"))
+                .ConfigurePrimaryHttpMessageHandler(() => new RecordingHandler())))
+        .CreateClient();
 
     [Fact]
     public async Task Scrape_job_then_stats_roundtrip()

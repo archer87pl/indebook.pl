@@ -1,13 +1,12 @@
+using Rezio.Demand.Domain;
 using Rezio.Pricing.Domain;
 
 namespace Rezio.Api;
 
-public sealed class InMemoryListingStore(IMarketDataStore marketData) : IListingStore
+public sealed class InMemoryListingStore(IMarketDataStore marketData, IMarketRegistry demandRegistry) : IListingStore
 {
     private const string DemoMarketId = "mkt_gdansk";
-    private static readonly ListingSettings Demo = new(350m, 200m, 800m, MarketType.Seaside);
-    private static readonly IReadOnlyList<string> WeekendDrivers = ["weekend"];
-    private static readonly IReadOnlyList<string> NoDrivers = [];
+    private static readonly ListingSettings Demo = new(350m, 200m, 800m, Rezio.Pricing.Domain.MarketType.Seaside);
 
     public ListingSettings? FindSettings(string listingId) =>
         listingId == "lst_demo" ? Demo : null;
@@ -15,19 +14,14 @@ public sealed class InMemoryListingStore(IMarketDataStore marketData) : IListing
     public async Task<IReadOnlyList<MarketDaySnapshot>> MarketDaysAsync(
         string listingId, DateOnly from, DateOnly to, CancellationToken ct)
     {
+        var demandMarket = demandRegistry.Find(DemoMarketId)!; // mkt_gdansk → Seaside/Pomorskie
         var days = new List<MarketDaySnapshot>();
         for (var d = from; d <= to; d = d.AddDays(1))
         {
-            var weekend = d.DayOfWeek is DayOfWeek.Friday or DayOfWeek.Saturday;
-            var data = await marketData.GetAsync(DemoMarketId, d, ct);
-
-            var occupancy = data.OccupancyRate ?? 0.70;
-            var score = data.DemandScore ?? (weekend ? 60 : 50);
-            var drivers = data.DemandScore is null
-                ? (weekend ? WeekendDrivers : NoDrivers)
-                : data.DemandDrivers;
-
-            days.Add(new MarketDaySnapshot(d, occupancy, score, drivers));
+            var occupancy = (await marketData.GetAsync(DemoMarketId, d, ct)).OccupancyRate ?? 0.70;
+            var signals = CalendarSignals.ForRange(d, d).Single();
+            var demand = DemandScoreCalculator.Score(demandMarket.Type, demandMarket.Voivodeship, signals);
+            days.Add(new MarketDaySnapshot(d, occupancy, demand.Score, demand.Drivers));
         }
         return days;
     }

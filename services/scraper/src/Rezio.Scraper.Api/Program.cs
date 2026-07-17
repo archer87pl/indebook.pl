@@ -1,6 +1,5 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
-using MassTransit;
 using Rezio.Scraper.Api;
 using Rezio.Scraper.Domain;
 using Serilog;
@@ -28,14 +27,10 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IListingSource, SyntheticListingSource>();
 builder.Services.AddSingleton<IStatsStore, InMemoryStatsStore>();
 builder.Services.AddSingleton<ScrapeRunner>();
-builder.Services.AddScoped<ScrapeAndPublish>();
-builder.Services.AddMassTransit(x =>
+builder.Services.AddHttpClient<ScrapeAndPublish>(client =>
 {
-    var rabbit = builder.Configuration["RABBITMQ_URL"];
-    if (!string.IsNullOrWhiteSpace(rabbit))
-        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
-    else
-        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
+    var monolithUrl = builder.Configuration["MONOLITH_URL"] ?? "http://localhost:8080";
+    client.BaseAddress = new Uri(monolithUrl);
 });
 
 var app = builder.Build();

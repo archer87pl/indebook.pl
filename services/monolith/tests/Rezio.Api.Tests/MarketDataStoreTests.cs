@@ -40,32 +40,37 @@ public class MarketDataStoreTests
     }
 
     [Fact]
-    public async Task Listing_store_falls_back_without_event_data_and_uses_it_when_present()
+    public async Task Listing_store_falls_back_occupancy_but_computes_demand_inline_regardless_of_stored_demand()
     {
         var marketData = new Rezio.Api.InMemoryMarketDataStore(TimeProvider.System);
-        var listings = new Rezio.Api.InMemoryListingStore(marketData);
+        var demandRegistry = new Rezio.Demand.Domain.InMemoryMarketRegistry();
+        var listings = new Rezio.Api.InMemoryListingStore(marketData, demandRegistry);
 
-        // bez danych: fallback — wtorek 2026-06-09 => 0.70 / 50 / []
+        // bez danych obłożenia: fallback 0.70; wtorek 2026-06-09 (bez święta/mostka) => demand inline = 50 / []
         var before = (await listings.MarketDaysAsync("lst_demo", new DateOnly(2026, 6, 9), new DateOnly(2026, 6, 9), CancellationToken.None)).Single();
         Assert.Equal(0.70, before.OccupancyRate);
         Assert.Equal(50, before.DemandScore);
         Assert.Empty(before.DemandDrivers);
 
-        // z danymi z eventów
+        // obłożenie z ingestu wpływa na wynik; popyt jest zawsze liczony inline i ignoruje SetDemandAsync
         await marketData.SetStatsAsync("mkt_gdansk", new DateOnly(2026, 6, 9), 0.9, CancellationToken.None);
         await marketData.SetDemandAsync("mkt_gdansk", new DateOnly(2026, 6, 9), 75, ["ferie zimowe (pomorskie)"], CancellationToken.None);
         var after = (await listings.MarketDaysAsync("lst_demo", new DateOnly(2026, 6, 9), new DateOnly(2026, 6, 9), CancellationToken.None)).Single();
         Assert.Equal(0.9, after.OccupancyRate);
-        Assert.Equal(75, after.DemandScore);
-        Assert.Equal(["ferie zimowe (pomorskie)"], after.DemandDrivers);
+        Assert.Equal(50, after.DemandScore);
+        Assert.Empty(after.DemandDrivers);
     }
 
     [Fact]
-    public async Task Weekend_fallback_is_preserved_without_event_data()
+    public async Task Boze_Cialo_bridge_day_gets_inline_long_weekend_demand()
     {
-        var listings = new Rezio.Api.InMemoryListingStore(new Rezio.Api.InMemoryMarketDataStore(TimeProvider.System));
+        var listings = new Rezio.Api.InMemoryListingStore(
+            new Rezio.Api.InMemoryMarketDataStore(TimeProvider.System),
+            new Rezio.Demand.Domain.InMemoryMarketRegistry());
+
+        // piątek 2026-06-05 to mostek w długim weekendzie Bożego Ciała (czwartek 2026-06-04)
         var friday = (await listings.MarketDaysAsync("lst_demo", new DateOnly(2026, 6, 5), new DateOnly(2026, 6, 5), CancellationToken.None)).Single();
-        Assert.Equal(60, friday.DemandScore);
-        Assert.Equal(["weekend"], friday.DemandDrivers);
+        Assert.True(friday.DemandScore > 50);
+        Assert.Contains("długi weekend", friday.DemandDrivers);
     }
 }

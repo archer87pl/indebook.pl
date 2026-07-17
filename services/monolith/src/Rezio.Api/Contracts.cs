@@ -20,3 +20,6 @@ public sealed record ConnectionResponse(string Id, string Provider, string Statu
 public sealed record ListingsResponse(string ConnectionId, IReadOnlyList<ChannelListing> Listings);
 
 public sealed record SyncRequest(DateOnly From, DateOnly To);
+
+public sealed record MarketStatsIngestLine(DateOnly Date, decimal MedianPrice, double OccupancyRate, int ActiveListings);
+public sealed record MarketStatsIngestRequest(string MarketId, IReadOnlyList<MarketStatsIngestLine> Stats);

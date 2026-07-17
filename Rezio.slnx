@@ -1,8 +1,4 @@
 <Solution>
-  <Folder Name="/contracts/">
-    <Project Path="contracts/Rezio.Contracts.Tests/Rezio.Contracts.Tests.csproj" />
-    <Project Path="contracts/Rezio.Contracts/Rezio.Contracts.csproj" />
-  </Folder>
   <Folder Name="/services/" />
   <Folder Name="/services/channelsync/" />
   <Folder Name="/services/channelsync/src/">

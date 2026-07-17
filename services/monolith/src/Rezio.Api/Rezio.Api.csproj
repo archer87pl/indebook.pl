@@ -2,15 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\pricing\src\Rezio.Pricing.Domain\Rezio.Pricing.Domain.csproj" />
-    <ProjectReference Include="..\..\..\..\contracts\Rezio.Contracts\Rezio.Contracts.csproj" />
     <ProjectReference Include="..\..\..\demand\src\Rezio.Demand.Domain\Rezio.Demand.Domain.csproj" />
     <ProjectReference Include="..\..\..\channelsync\src\Rezio.ChannelSync.Domain\Rezio.ChannelSync.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
-    <PackageReference Include="MassTransit" Version="8.5.10" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
