@@ -26,10 +26,14 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<MarketDataStore>();
 builder.Services.AddSingleton<IListingStore, InMemoryListingStore>();
 
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<MarketStatsUpdatedConsumer>();
+    x.AddConsumer<DemandScoreUpdatedConsumer>();
+
     var rabbit = builder.Configuration["RABBITMQ_URL"];
     if (!string.IsNullOrWhiteSpace(rabbit))
         x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });

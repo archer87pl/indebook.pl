@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HealthChecks.UI.Client;
+using MassTransit;
 using Rezio.Scraper.Api;
 using Rezio.Scraper.Domain;
 using Serilog;
@@ -27,6 +28,15 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IListingSource, SyntheticListingSource>();
 builder.Services.AddSingleton<IStatsStore, InMemoryStatsStore>();
 builder.Services.AddSingleton<ScrapeRunner>();
+builder.Services.AddScoped<ScrapeAndPublish>();
+builder.Services.AddMassTransit(x =>
+{
+    var rabbit = builder.Configuration["RABBITMQ_URL"];
+    if (!string.IsNullOrWhiteSpace(rabbit))
+        x.UsingRabbitMq((ctx, cfg) => { cfg.Host(new Uri(rabbit)); cfg.ConfigureEndpoints(ctx); });
+    else
+        x.UsingInMemory((ctx, cfg) => cfg.ConfigureEndpoints(ctx));
+});
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -46,7 +56,7 @@ IResult? ValidateRange(DateOnly from, DateOnly to) =>
             detail: "'to' must not precede 'from' and the range must not exceed 365 days.")
         : null;
 
-app.MapPost("/v1/scrape-jobs", async (ScrapeJobRequest request, ScrapeRunner runner, CancellationToken ct) =>
+app.MapPost("/v1/scrape-jobs", async (ScrapeJobRequest request, ScrapeAndPublish runner, CancellationToken ct) =>
 {
     if (ValidateRange(request.From, request.To) is { } invalid)
         return invalid;
