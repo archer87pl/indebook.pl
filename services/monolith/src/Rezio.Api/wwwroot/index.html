@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezio — konsola konfiguracji obiektu</title>
+<style>
+  :root{
+    --paper:#f5f6f8; --card:#ffffff; --sunk:#eef0f4; --line:#dde1e8;
+    --ink:#151b23; --muted:#5b6472; --faint:#8a93a2;
+    --accent:#0c6b76; --accent-soft:#0c6b7615; --accent-line:#0c6b7640;
+    --up:#c1741d; --up-soft:#c1741d18; --down:#b24a3a; --down-soft:#b24a3a18;
+    --land:#e5e9ef; --land-line:#c3ccd8; --sea:#dbe6ea;
+    --shadow:0 1px 2px #151b2310, 0 6px 20px #151b2312;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0e141b; --card:#161e28; --sunk:#111823; --line:#28323f;
+      --ink:#e8edf3; --muted:#9aa6b4; --faint:#6b7686;
+      --accent:#2fb8c6; --accent-soft:#2fb8c61e; --accent-line:#2fb8c655;
+      --up:#e0973f; --up-soft:#e0973f20; --down:#e06a56; --down-soft:#e06a5620;
+      --land:#1e2833; --land-line:#33414f; --sea:#16222a; --shadow:0 1px 2px #0006, 0 8px 26px #0007;
+    }
+  }
+  :root[data-theme="light"]{
+    --paper:#f5f6f8;--card:#ffffff;--sunk:#eef0f4;--line:#dde1e8;--ink:#151b23;--muted:#5b6472;--faint:#8a93a2;
+    --accent:#0c6b76;--accent-soft:#0c6b7615;--accent-line:#0c6b7640;--up:#c1741d;--up-soft:#c1741d18;--down:#b24a3a;--down-soft:#b24a3a18;
+    --land:#e5e9ef;--land-line:#c3ccd8;--sea:#dbe6ea;--shadow:0 1px 2px #151b2310,0 6px 20px #151b2312;
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e141b;--card:#161e28;--sunk:#111823;--line:#28323f;--ink:#e8edf3;--muted:#9aa6b4;--faint:#6b7686;
+    --accent:#2fb8c6;--accent-soft:#2fb8c61e;--accent-line:#2fb8c655;--up:#e0973f;--up-soft:#e0973f20;--down:#e06a56;--down-soft:#e06a5620;
+    --land:#1e2833;--land-line:#33414f;--sea:#16222a;--shadow:0 1px 2px #0006,0 8px 26px #0007;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px;}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:6px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:18px;box-shadow:var(--shadow);}
+  h1{font-size:20px;margin:0;letter-spacing:-.01em;font-weight:650;}
+  .brand .sub{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:2px;}
+  .lead{color:var(--muted);max-width:62ch;margin:4px 0 20px;font-size:14px;}
+  .prefills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+  .prefills .lab{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);align-self:center;margin-right:2px;}
+  button{font-family:inherit;cursor:pointer;color:inherit;}
+  .pf{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 13px;font-size:13px;display:flex;align-items:center;gap:7px;transition:border-color .15s,transform .05s;box-shadow:var(--shadow);}
+  .pf:hover{border-color:var(--accent-line);}
+  .pf:active{transform:translateY(1px);}
+  .pf .dot{width:8px;height:8px;border-radius:50%;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;}
+  @media (max-width:880px){.grid{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;}
+  .panel h2{font-size:12px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0;padding:14px 18px 0;font-weight:600;}
+  .sect{padding:14px 18px;border-bottom:1px solid var(--line);}
+  .sect:last-child{border-bottom:0;}
+  .sect .title{font-size:13px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+  .sect .title .n{font-family:var(--mono);font-size:11px;color:var(--accent);border:1px solid var(--accent-line);border-radius:5px;padding:1px 5px;background:var(--accent-soft);}
+  .mapwrap{position:relative;}
+  svg.map{width:100%;height:auto;display:block;border-radius:10px;background:var(--sea);}
+  .pin{cursor:pointer;}
+  .pin circle.hit{fill:transparent;}
+  .pin circle.dot{fill:var(--card);stroke:var(--muted);stroke-width:1.6;transition:all .18s;}
+  .pin text{font-family:var(--mono);font-size:3.1px;fill:var(--muted);text-anchor:middle;transition:fill .18s;letter-spacing:.02em;}
+  .pin:hover circle.dot{stroke:var(--accent);}
+  .pin.on circle.dot{fill:var(--accent);stroke:var(--accent);r:2.9;}
+  .pin.on text{fill:var(--ink);font-weight:700;}
+  .pin.on circle.ring{stroke:var(--accent);}
+  @media (prefers-reduced-motion:no-preference){.pin.on circle.ring{animation:pulse 2.4s ease-out infinite;}}
+  @keyframes pulse{0%{r:3;opacity:.5}100%{r:8;opacity:0}}
+  .market-info{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+  .tag{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--line);color:var(--muted);}
+  .tag b{color:var(--ink);font-weight:600;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:12.5px;transition:all .13s;user-select:none;}
+  .chip:hover{border-color:var(--accent-line);}
+  .chip.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600;}
+  .chip.tag-on{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .hint{font-size:11.5px;color:var(--faint);margin:8px 0 0;line-height:1.4;}
+  .fields{display:flex;flex-wrap:wrap;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:4px;}
+  .field label{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);}
+  .field input{font-family:var(--mono);font-size:14px;background:var(--sunk);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:7px 9px;width:100%;}
+  .field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+  .field.w-sm input{width:82px;}
+  .field.w-date input{width:158px;}
+  .profnote{font-size:11.5px;color:var(--up);background:var(--up-soft);border:1px solid var(--up);border-radius:8px;padding:8px 10px;margin-top:10px;display:flex;gap:8px;}
+  .result .headline{padding:20px 20px 14px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;min-height:96px;}
+  .result .price-big{font-family:var(--mono);font-size:44px;font-weight:680;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
+  .result .price-big span{font-size:20px;color:var(--muted);font-weight:500;}
+  .result .price-cap{font-size:12px;color:var(--muted);margin-top:6px;}
+  .occ-badge{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:5px;margin-left:4px;border:1px solid var(--line);background:var(--sunk);color:var(--muted);}
+  .occ-badge.scraped{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft);}
+  .result .avg{text-align:right;font-size:12px;color:var(--muted);}
+  .result .avg b{font-family:var(--mono);font-size:18px;color:var(--ink);display:block;font-variant-numeric:tabular-nums;}
+  .clampflag{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:5px;margin-top:6px;background:var(--down-soft);color:var(--down);border:1px solid var(--down);}
+  .bd{padding:6px 18px 14px;}
+  .bd .frow{display:grid;grid-template-columns:132px 1fr 52px;align-items:center;gap:10px;padding:4px 0;}
+  .bd .fname{font-size:12.5px;color:var(--muted);}
+  .bd .fbar{position:relative;height:16px;background:var(--sunk);border-radius:4px;overflow:hidden;}
+  .bd .fbar .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line);}
+  .bd .fbar .fill{position:absolute;top:2px;bottom:2px;border-radius:3px;}
+  .bd .fval{font-family:var(--mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;}
+  .bd .fval.up{color:var(--accent);} .bd .fval.dn{color:var(--down);}
+  .drivers{display:flex;flex-wrap:wrap;gap:6px;padding:2px 18px 16px;}
+  .drv{font-family:var(--mono);font-size:11.5px;padding:3px 9px;border-radius:999px;display:flex;align-items:center;gap:5px;}
+  .drv.up{background:var(--up-soft);color:var(--up);border:1px solid var(--up);}
+  .drv.dn{background:var(--down-soft);color:var(--down);border:1px solid var(--down);}
+  .drv.nt{background:var(--sunk);color:var(--muted);border:1px solid var(--line);}
+  .strip{display:flex;gap:5px;overflow-x:auto;padding:2px 18px 18px;}
+  .day{flex:0 0 auto;width:64px;border:1px solid var(--line);border-radius:9px;padding:8px 6px;text-align:center;cursor:pointer;transition:all .13s;background:var(--card);position:relative;}
+  .day:hover{border-color:var(--accent-line);}
+  .day.on{border-color:var(--accent);background:var(--accent-soft);}
+  .day .dow{font-family:var(--mono);font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;}
+  .day .dom{font-family:var(--mono);font-size:15px;font-weight:600;margin:1px 0;}
+  .day .dp{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .day .sig{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;}
+  .day.we .dom{color:var(--accent);}
+  .foot{padding:12px 18px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint);line-height:1.5;}
+  .foot code{font-family:var(--mono);background:var(--sunk);padding:1px 5px;border-radius:4px;color:var(--muted);}
+  .section-note{font-size:11.5px;color:var(--faint);padding:0 18px 14px;margin-top:-4px;}
+  .state{padding:40px 20px;text-align:center;color:var(--muted);font-size:14px;}
+  .state.err{color:var(--down);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">🗺️</div>
+      <div>
+        <h1>Konfiguracja obiektu i podgląd wyceny</h1>
+        <div class="sub">Rezio · konsola administratora</div>
+      </div>
+    </div>
+  </header>
+  <p class="lead">Ustaw położenie obiektu na mapie, jego typ i zakres dat — a silnik zwróci dzienne ceny z rozbiciem na składniki. Wycena liczona przez backend (<code style="font-family:var(--mono)">POST /v1/quote</code>), tą samą logiką co produkcja: krzywe sezonowe, kalendarz świąt i ferii MEN, długie weekendy.</p>
+
+  <div class="prefills">
+    <span class="lab">Przykłady:</span>
+    <button class="pf" data-pf="0"><span class="dot" style="background:var(--accent)"></span>Domek pod Tatrami · ferie</button>
+    <button class="pf" data-pf="1"><span class="dot" style="background:var(--up)"></span>Apartament nad Bałtykiem · 15 sierpnia</button>
+    <button class="pf" data-pf="2"><span class="dot" style="background:var(--down)"></span>Aparthotel biznesowy · zwykły tydzień</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Konfiguracja</h2>
+      <div class="sect">
+        <p class="title"><span class="n">1</span> Położenie obiektu</p>
+        <div class="mapwrap">
+          <svg class="map" viewBox="0 0 100 92" id="map" role="group" aria-label="Mapa Polski — wybierz rynek">
+            <path d="M18,24 Q26,15 38,13 Q46,9 54,11 Q64,10 74,16 Q84,21 87,32 Q90,42 86,52 Q82,63 73,71 Q64,79 55,86 Q49,90 44,85 Q34,80 25,71 Q15,62 12,50 Q10,38 13,31 Z"
+              fill="var(--land)" stroke="var(--land-line)" stroke-width="0.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="market-info" id="marketInfo"></div>
+      </div>
+      <div class="sect">
+        <p class="title"><span class="n">2</span> Typ obiektu (kategoria)</p>
+        <div class="chips" id="cats"></div>
+        <div class="chips" id="tags" style="margin-top:9px"></div>
+        <div class="profnote">ℹ Kategoria i tagi są zapisywane w profilu obiektu, ale nie wpływają jeszcze na cenę — comp-set-driven pricing to kolejny etap. Cenę napędzają: rynek, cena bazowa, daty i obłożenie.</div>
+      </div>
+      <div class="sect">
+        <p class="title"><span class="n">3</span> Cennik</p>
+        <div class="fields">
+          <div class="field w-sm"><label>Baza (PLN)</label><input id="base" type="number" step="10"></div>
+          <div class="field w-sm"><label>Min</label><input id="min" type="number" step="10"></div>
+          <div class="field w-sm"><label>Max</label><input id="max" type="number" step="10"></div>
+        </div>
+      </div>
+      <div class="sect">
+        <p class="title"><span class="n">4</span> Zakres dat</p>
+        <div class="fields">
+          <div class="field w-date"><label>Od (zameldowanie)</label><input id="from" type="date"></div>
+          <div class="field w-date"><label>Do</label><input id="to" type="date"></div>
+        </div>
+        <p class="hint">Wyprzedzenie liczone względem daty serwera (mnożnik last-minute / z wyprzedzeniem).</p>
+      </div>
+    </div>
+
+    <div class="panel result" id="result">
+      <h2>Wynik wyceny</h2>
+      <div class="state" id="state">Wybierz rynek i zakres dat…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const MARKETS={
+  mkt_gdansk:{name:"Gdańsk",typePL:"morze",voi:"pomorskie",x:50,y:14},
+  mkt_warszawa:{name:"Warszawa",typePL:"miasto biznesowe",voi:"mazowieckie",x:61,y:44},
+  mkt_krakow:{name:"Kraków",typePL:"miasto turyst.",voi:"małopolskie",x:55,y:72},
+  mkt_zakopane:{name:"Zakopane",typePL:"góry",voi:"małopolskie",x:52,y:83},
+};
+const CATS=[["apartament","Apartament"],["dom_domek","Dom / domek"],["pokoj","Pokój"],["hotel_aparthotel","Hotel / aparthotel"],["pensjonat_willa","Pensjonat / willa"],["agroturystyka","Agroturystyka"],["glamping_nietypowe","Glamping / nietypowe"]];
+const TAG_PL={widok_gory:"widok na góry",widok_woda:"widok na wodę",przy_stoku:"przy stoku",blisko_plazy:"blisko plaży",sauna_balia:"sauna / balia",jacuzzi:"jacuzzi",kominek:"kominek",zwierzeta_ok:"zwierzęta OK",agro_zwierzeta:"zwierzęta gospodarskie"};
+const TAGS=Object.keys(TAG_PL);
+const DOW_PL=["nd","pon","wt","śr","czw","pt","sob"];
+const state={market:"mkt_gdansk",category:"apartament",tags:[],base:350,min:200,max:800,from:"2026-08-14",to:"2026-08-17",selDay:0,quote:null,loading:false,error:null};
+const PREFILLS=[
+  {market:"mkt_zakopane",category:"dom_domek",tags:["widok_gory","kominek","sauna_balia"],base:450,min:280,max:1200,from:"2026-02-07",to:"2026-02-14"},
+  {market:"mkt_gdansk",category:"apartament",tags:["widok_woda","blisko_plazy"],base:350,min:220,max:900,from:"2026-08-14",to:"2026-08-17"},
+  {market:"mkt_warszawa",category:"hotel_aparthotel",tags:[],base:300,min:200,max:650,from:"2026-09-08",to:"2026-09-12"},
+];
+
+const map=document.getElementById("map");
+for(const [id,M] of Object.entries(MARKETS)){
+  const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.setAttribute("class","pin");g.dataset.id=id;g.setAttribute("tabindex","0");g.setAttribute("role","button");g.setAttribute("aria-label",M.name);
+  g.innerHTML=`<circle class="ring" cx="${M.x}" cy="${M.y}" r="3" fill="none" stroke-width="1.2"/><circle class="hit" cx="${M.x}" cy="${M.y}" r="6"/><circle class="dot" cx="${M.x}" cy="${M.y}" r="2.3"/><text x="${M.x}" y="${M.y-4.2}">${M.name}</text>`;
+  g.addEventListener("click",()=>{state.market=id;state.selDay=0;requote();});
+  g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();state.market=id;state.selDay=0;requote();}});
+  map.appendChild(g);
+}
+const catsEl=document.getElementById("cats");
+CATS.forEach(([id,label])=>{const b=document.createElement("button");b.className="chip";b.textContent=label;b.dataset.cat=id;b.addEventListener("click",()=>{state.category=id;syncControls();});catsEl.appendChild(b);});
+const tagsEl=document.getElementById("tags");
+TAGS.forEach(t=>{const b=document.createElement("button");b.className="chip";b.textContent=TAG_PL[t];b.dataset.tag=t;b.addEventListener("click",()=>{const i=state.tags.indexOf(t);i<0?state.tags.push(t):state.tags.splice(i,1);syncControls();});tagsEl.appendChild(b);});
+
+let debounce;
+function bindNum(id,key){const el=document.getElementById(id);el.addEventListener("input",()=>{state[key]=parseFloat(el.value)||0;clearTimeout(debounce);debounce=setTimeout(requote,300);});}
+function bindDate(id,key){const el=document.getElementById(id);el.addEventListener("change",()=>{state[key]=el.value;state.selDay=0;requote();});}
+["base","min","max"].forEach(k=>bindNum(k,k));
+["from","to"].forEach(k=>bindDate(k,k));
+document.querySelectorAll(".pf").forEach(b=>b.addEventListener("click",()=>{Object.assign(state,JSON.parse(JSON.stringify(PREFILLS[+b.dataset.pf])));state.selDay=0;requote();}));
+
+function syncControls(){
+  document.getElementById("base").value=state.base;document.getElementById("min").value=state.min;document.getElementById("max").value=state.max;
+  document.getElementById("from").value=state.from;document.getElementById("to").value=state.to;
+  document.querySelectorAll(".pin").forEach(p=>p.classList.toggle("on",p.dataset.id===state.market));
+  document.querySelectorAll("#cats .chip").forEach(c=>c.classList.toggle("on",c.dataset.cat===state.category));
+  document.querySelectorAll("#tags .chip").forEach(c=>c.classList.toggle("tag-on",state.tags.includes(c.dataset.tag)));
+  const M=MARKETS[state.market];
+  document.getElementById("marketInfo").innerHTML=`<span class="tag">Rynek: <b>${M.name}</b></span><span class="tag">Typ: <b>${M.typePL}</b></span><span class="tag">Woj.: <b>${M.voi}</b></span>`;
+}
+
+async function requote(){
+  syncControls();
+  state.loading=true;state.error=null;renderResult();
+  try{
+    const r=await fetch("/v1/quote",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({market_id:state.market,base_price:state.base,min_price:state.min,max_price:state.max,from:state.from,to:state.to})});
+    if(!r.ok){ let msg="Błąd "+r.status; try{const p=await r.json();if(p.title)msg=p.title+(p.detail?" — "+p.detail:"");}catch(e){} throw new Error(msg); }
+    state.quote=await r.json();
+    if(state.selDay>=state.quote.days.length)state.selDay=0;
+  }catch(e){state.quote=null;state.error=e.message;}
+  state.loading=false;renderResult();
+}
+
+function fmtDate(iso){const[y,m,d]=iso.split("-");return d+"."+m;}
+function dowOf(iso){const[y,m,d]=iso.split("-").map(Number);return new Date(Date.UTC(y,m-1,d)).getUTCDay();}
+
+function renderResult(){
+  const el=document.getElementById("result");
+  if(state.loading){el.innerHTML=`<h2>Wynik wyceny</h2><div class="state">Liczę…</div>`;return;}
+  if(state.error){el.innerHTML=`<h2>Wynik wyceny</h2><div class="state err">${state.error}</div>`;return;}
+  const q=state.quote;if(!q){el.innerHTML=`<h2>Wynik wyceny</h2><div class="state">Wybierz rynek i zakres dat…</div>`;return;}
+  const days=q.days;if(!days.length){el.innerHTML=`<h2>Wynik wyceny</h2><div class="state">Brak dni w zakresie.</div>`;return;}
+  const sel=days[state.selDay];const C=sel.components;
+  const avg=Math.round(days.reduce((s,x)=>s+x.recommended_price,0)/days.length);
+  const total=days.reduce((s,x)=>s+x.recommended_price,0);
+  const up=sel.demand_score>=50;
+  const factorRow=(name,val)=>{const u=val>=1,w=Math.min(48,Math.abs(val-1)*100*1.6),left=u?50:50-w,col=u?'var(--accent)':'var(--down)';
+    return `<div class="frow"><span class="fname">${name}</span><span class="fbar"><span class="mid"></span><span class="fill" style="left:${left}%;width:${w}%;background:${col}"></span></span><span class="fval ${u?'up':'dn'}">×${val.toFixed(2)}</span></div>`;};
+  const drv=sel.demand_drivers.length?sel.demand_drivers.map(t=>`<span class="drv ${up?'up':'dn'}">${up?'▲':'▼'} ${t}</span>`).join(""):`<span class="drv nt">— brak sygnałów, popyt bazowy 50</span>`;
+  const occCls=sel.occupancy_source==="scraped"?"scraped":"";
+  const occTxt=sel.occupancy_source==="scraped"?"ze scrapera":"fallback";
+  el.innerHTML=`<h2>Wynik wyceny · ${q.market_name}</h2>
+    <div class="headline">
+      <div>
+        <div class="price-big">${sel.recommended_price}<span> zł / noc</span></div>
+        <div class="price-cap">${DOW_PL[dowOf(sel.date)]}, ${sel.date} · demand ${sel.demand_score}/100 · obłożenie ${Math.round(sel.occupancy_rate*100)}%<span class="occ-badge ${occCls}">${occTxt}</span></div>
+        ${sel.clamped_by?`<span class="clampflag">ograniczone przez ${sel.clamped_by==='min_price'?'cenę minimalną':'cenę maksymalną'}</span>`:''}
+      </div>
+      <div class="avg">${days.length} nocy<b>${avg} zł</b>śr. / noc · ${total} zł razem</div>
+    </div>
+    <div class="section-note">Baza ${C.base_price} zł × mnożniki → ${sel.recommended_price} zł. Słupki: w prawo (turkus) = w górę, w lewo (czerwień) = w dół względem 1,00.</div>
+    <div class="bd">
+      ${factorRow("Sezon ("+MARKETS[state.market].typePL+")",C.season)}
+      ${factorRow("Dzień tygodnia",C.day_of_week)}
+      ${factorRow("Wyprzedzenie",C.lead_time)}
+      ${factorRow("Obłożenie rynku",C.market_occupancy)}
+      ${factorRow("Popyt (kalendarz)",C.demand)}
+    </div>
+    <div class="drivers">${drv}</div>
+    <div class="strip" id="strip">
+      ${days.map((x,i)=>{const wd=dowOf(x.date);const u=x.demand_score>=50;return `<button class="day ${i===state.selDay?'on':''} ${(wd===5||wd===6)?'we':''}" data-i="${i}"><div class="dow">${DOW_PL[wd]}</div><div class="dom">${fmtDate(x.date)}</div><div class="dp">${x.recommended_price}</div>${x.demand_drivers.length?`<span class="sig" style="background:${u?'var(--up)':'var(--down)'}"></span>`:''}</button>`;}).join("")}
+    </div>
+    <div class="foot">Kliknij dzień na pasku, żeby zobaczyć jego rozbicie. Silnik składa cenę z sześciu wyjaśnialnych mnożników; obłożenie z modułu danych rynkowych (scraper, z fallbackiem 0,70), popyt z polskiego kalendarza. Endpoint: <code>POST /v1/quote</code>.</div>`;
+  document.querySelectorAll("#strip .day").forEach(x=>x.addEventListener("click",()=>{state.selDay=+x.dataset.i;renderResult();}));
+}
+
+syncControls();
+requote();
+</script>
+</body>
+</html>

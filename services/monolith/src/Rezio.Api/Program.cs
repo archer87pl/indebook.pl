@@ -62,6 +62,8 @@ if (StoreSelection.UsesPostgres(databaseUrl))
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseSerilogRequestLogging();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
@@ -188,6 +190,8 @@ app.MapPost("/v1/connections/{id}/sync", async (string id, SyncRequest request, 
     var result = await runner.SyncAsync(adapter, id, request.From, request.To, ct);
     return Results.Ok(result);
 });
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
 
