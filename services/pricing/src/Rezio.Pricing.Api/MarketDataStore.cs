@@ -4,7 +4,6 @@ namespace Rezio.Pricing.Api;
 
 public sealed class InMemoryMarketDataStore(TimeProvider clock) : IMarketDataStore
 {
-    private static readonly TimeSpan Freshness = TimeSpan.FromDays(7);
     private static readonly IReadOnlyList<string> NoDrivers = [];
     private readonly ConcurrentDictionary<(string MarketId, DateOnly Date), MarketDayData> _data = new();
 
@@ -32,7 +31,7 @@ public sealed class InMemoryMarketDataStore(TimeProvider clock) : IMarketDataSto
         if (!_data.TryGetValue((marketId, date), out var record) || record.LastWrittenAt is null)
             return Task.FromResult(empty);
 
-        var stale = clock.GetUtcNow() - record.LastWrittenAt.Value > Freshness;
+        var stale = clock.GetUtcNow() - record.LastWrittenAt.Value > MarketDataFreshness.Window;
         return Task.FromResult(stale ? empty : record);
     }
 }

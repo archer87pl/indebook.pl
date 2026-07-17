@@ -1,5 +1,10 @@
 namespace Rezio.Pricing.Api;
 
+internal static class MarketDataFreshness
+{
+    public static readonly TimeSpan Window = TimeSpan.FromDays(7);
+}
+
 public sealed record MarketDayData(
     double? OccupancyRate,
     int? DemandScore,

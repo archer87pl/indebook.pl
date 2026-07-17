@@ -5,7 +5,6 @@ namespace Rezio.Pricing.Api.Persistence;
 
 public sealed class EfMarketDataStore(PricingDbContext db, TimeProvider clock) : IMarketDataStore
 {
-    private static readonly TimeSpan Freshness = TimeSpan.FromDays(7);
     private static readonly IReadOnlyList<string> NoDrivers = [];
 
     public Task SetStatsAsync(string marketId, DateOnly date, double occupancyRate, CancellationToken ct) =>
@@ -57,7 +56,7 @@ public sealed class EfMarketDataStore(PricingDbContext db, TimeProvider clock) :
         var empty = new MarketDayData(null, null, NoDrivers);
         var row = await db.MarketData.AsNoTracking()
             .FirstOrDefaultAsync(x => x.MarketId == marketId && x.Date == date, ct);
-        if (row is null || clock.GetUtcNow() - row.LastWrittenAt > Freshness)
+        if (row is null || clock.GetUtcNow() - row.LastWrittenAt > MarketDataFreshness.Window)
             return empty;
 
         var drivers = JsonSerializer.Deserialize<List<string>>(row.DemandDriversJson) ?? [];
