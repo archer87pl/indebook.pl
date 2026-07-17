@@ -20,6 +20,24 @@ public class WinterBreakCalendarTests
     public void Covers_matches_men_2026_schedule(Voivodeship v, string date, bool expected) =>
         Assert.Equal(expected, WinterBreakCalendar.Covers(v, DateOnly.Parse(date)));
 
+    [Theory]
+    [InlineData(Voivodeship.Slaskie, "2027-01-18", true)]        // tura 1: pierwszy dzień (18.01)
+    [InlineData(Voivodeship.Slaskie, "2027-01-31", true)]        // tura 1: ostatni dzień (31.01)
+    [InlineData(Voivodeship.Slaskie, "2027-01-17", false)]       // dzień przed turą 1
+    [InlineData(Voivodeship.Slaskie, "2027-02-01", false)]       // dzień po turze 1
+    [InlineData(Voivodeship.Mazowieckie, "2027-02-01", true)]    // tura 2: pierwszy dzień (01.02)
+    [InlineData(Voivodeship.Mazowieckie, "2027-02-14", true)]    // tura 2: ostatni dzień (14.02)
+    [InlineData(Voivodeship.Mazowieckie, "2027-01-31", false)]   // dzień przed turą 2
+    [InlineData(Voivodeship.Mazowieckie, "2027-02-15", false)]   // dzień po turze 2
+    [InlineData(Voivodeship.Malopolskie, "2027-02-15", true)]    // tura 3: pierwszy dzień (15.02)
+    [InlineData(Voivodeship.Malopolskie, "2027-02-28", true)]    // tura 3: ostatni dzień (28.02)
+    [InlineData(Voivodeship.Malopolskie, "2027-02-14", false)]   // dzień przed turą 3
+    [InlineData(Voivodeship.Malopolskie, "2027-03-01", false)]   // dzień po turze 3
+    [InlineData(Voivodeship.Mazowieckie, "2027-01-25", false)]   // mazowieckie jest w turze 2, nie w turze 1
+    [InlineData(Voivodeship.Slaskie, "2027-02-20", false)]       // śląskie było w turze 1, nie w turze 3
+    public void Covers_matches_men_2027_schedule(Voivodeship v, string date, bool expected) =>
+        Assert.Equal(expected, WinterBreakCalendar.Covers(v, DateOnly.Parse(date)));
+
     [Fact]
     public void Unknown_year_returns_false()
     {
