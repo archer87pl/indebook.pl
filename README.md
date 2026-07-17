@@ -15,6 +15,7 @@ Dynamic pricing dla najmu krótkoterminowego (rynek PL).
 | HealthChecks UI (zdrowie systemu) | http://localhost:8090 |
 | Grafana (logi, datasource Loki) | http://localhost:3000 |
 | RabbitMQ (management) | http://localhost:15672 (guest/guest) — szyna zdarzeń między serwisami |
+| Postgres | localhost:5432 (rezio/rezio) — trwałe dane rynkowe pricing |
 
 ## Przepływ danych i pętla cena→push (zdarzenia)
 
@@ -24,6 +25,8 @@ Dynamic pricing dla najmu krótkoterminowego (rynek PL).
 4. `POST /v1/connections {"provider":"beds24"}` na channel-sync (:8083), potem `POST /v1/listings/lst_demo/publish-prices` na pricing → channel-sync pushuje ceny (log `Pushed N rates` w Loki).
 
 Bez zdarzeń pricing degraduje się do fallbacku syntetycznego (obłożenie 0.70, weekendowy demand 60).
+
+Dane rynkowe pricing są trwałe (Postgres) — przeżywają restart kontenera. Dane starsze niż 7 dni degradują się do fallbacku syntetycznego (świeżość, spec §6). Bez `DATABASE_URL` pricing używa pamięci ulotnej.
 
 ## Development
 
