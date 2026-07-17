@@ -1,5 +1,5 @@
 services:
-  pricing-api:
+  rezio-api:
     build:
       context: .
       dockerfile: services/monolith/Dockerfile
@@ -7,29 +7,11 @@ services:
       - "8080:8080"
     environment:
       LOKI_URL: http://loki:3100
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
       DATABASE_URL: Host=postgres;Database=rezio;Username=rezio;Password=rezio
     depends_on:
       loki:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
       postgres:
-        condition: service_healthy
-
-  demand-api:
-    build:
-      context: .
-      dockerfile: services/demand/Dockerfile
-    ports:
-      - "8081:8080"
-    environment:
-      LOKI_URL: http://loki:3100
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-    depends_on:
-      loki:
-        condition: service_started
-      rabbitmq:
         condition: service_healthy
 
   scraper-api:
@@ -40,27 +22,12 @@ services:
       - "8082:8080"
     environment:
       LOKI_URL: http://loki:3100
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      MONOLITH_URL: http://rezio-api:8080
     depends_on:
       loki:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
-
-  channelsync-api:
-    build:
-      context: .
-      dockerfile: services/channelsync/Dockerfile
-    ports:
-      - "8083:8080"
-    environment:
-      LOKI_URL: http://loki:3100
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-    depends_on:
-      loki:
+      rezio-api:
         condition: service_started
-      rabbitmq:
-        condition: service_healthy
 
   postgres:
     image: postgres:16
@@ -74,17 +41,6 @@ services:
       - rezio-pg:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U rezio"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -111,19 +67,13 @@ services:
     ports:
       - "8090:80"
     environment:
-      HealthChecksUI__HealthChecks__0__Name: pricing-api
-      HealthChecksUI__HealthChecks__0__Uri: http://pricing-api:8080/health
-      HealthChecksUI__HealthChecks__1__Name: demand-api
-      HealthChecksUI__HealthChecks__1__Uri: http://demand-api:8080/health
-      HealthChecksUI__HealthChecks__2__Name: scraper-api
-      HealthChecksUI__HealthChecks__2__Uri: http://scraper-api:8080/health
-      HealthChecksUI__HealthChecks__3__Name: channelsync-api
-      HealthChecksUI__HealthChecks__3__Uri: http://channelsync-api:8080/health
+      HealthChecksUI__HealthChecks__0__Name: rezio-api
+      HealthChecksUI__HealthChecks__0__Uri: http://rezio-api:8080/health
+      HealthChecksUI__HealthChecks__1__Name: scraper-api
+      HealthChecksUI__HealthChecks__1__Uri: http://scraper-api:8080/health
     depends_on:
-      - pricing-api
-      - demand-api
+      - rezio-api
       - scraper-api
-      - channelsync-api
 
 volumes:
   rezio-pg:

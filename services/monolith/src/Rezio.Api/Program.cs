@@ -21,7 +21,7 @@ builder.Services.AddSerilog(lc =>
     var lokiUrl = builder.Configuration["LOKI_URL"];
     if (!string.IsNullOrWhiteSpace(lokiUrl))
         lc.WriteTo.GrafanaLoki(lokiUrl,
-            labels: [new LokiLabel { Key = "service", Value = "pricing-api" }]);
+            labels: [new LokiLabel { Key = "service", Value = "rezio-api" }]);
 });
 
 builder.Services.ConfigureHttpJsonOptions(o =>
