@@ -49,6 +49,7 @@ builder.Services.AddSingleton<SyncRunner>();
 builder.Services.AddSingleton<IAdapterFactory, SyntheticAdapterFactory>();
 builder.Services.AddSingleton(new RatePushService((delay, ct) => Task.Delay(delay, ct)));
 builder.Services.AddScoped<PricePusher>();
+builder.Services.AddScoped<QuoteService>();
 
 var app = builder.Build();
 
@@ -125,6 +126,22 @@ app.MapPost("/v1/internal/market-stats",
     foreach (var line in request.Stats)
         await store.SetStatsAsync(request.MarketId, line.Date, line.OccupancyRate, ct);
     return Results.Accepted(value: new { ingested_days = request.Stats.Count });
+});
+
+app.MapPost("/v1/quote",
+    async (QuoteRequest req, QuoteService quotes, IMarketRegistry registry, TimeProvider clock, CancellationToken ct) =>
+{
+    if (req.To < req.From || req.To.DayNumber - req.From.DayNumber >= 365)
+        return Results.Problem(statusCode: 400, title: "Invalid date range",
+            detail: "'to' must not precede 'from' and the range must not exceed 365 days.");
+
+    var today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    var days = await quotes.QuoteAsync(req.MarketId, req.BasePrice, req.MinPrice, req.MaxPrice, req.From, req.To, today, ct);
+    if (days is null)
+        return Results.Problem(statusCode: 404, title: "Market not found");
+
+    var market = registry.Find(req.MarketId)!;
+    return Results.Ok(new QuoteResponse(req.MarketId, market.Name, market.Type.ToString(), "PLN", days));
 });
 
 app.MapPost("/v1/connections", (CreateConnectionRequest request, ConnectionRegistry registry) =>
