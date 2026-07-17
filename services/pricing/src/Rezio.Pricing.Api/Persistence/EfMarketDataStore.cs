@@ -8,43 +8,47 @@ public sealed class EfMarketDataStore(PricingDbContext db, TimeProvider clock) :
     private static readonly TimeSpan Freshness = TimeSpan.FromDays(7);
     private static readonly IReadOnlyList<string> NoDrivers = [];
 
-    public async Task SetStatsAsync(string marketId, DateOnly date, double occupancyRate, CancellationToken ct)
-    {
-        var row = await db.MarketData.FindAsync([marketId, date], ct);
-        if (row is null)
+    public Task SetStatsAsync(string marketId, DateOnly date, double occupancyRate, CancellationToken ct) =>
+        UpsertAsync(marketId, date, r =>
         {
-            db.MarketData.Add(new MarketDataRecord
-            {
-                MarketId = marketId, Date = date, OccupancyRate = occupancyRate,
-                DemandDriversJson = "[]", LastWrittenAt = clock.GetUtcNow()
-            });
-        }
-        else
-        {
-            row.OccupancyRate = occupancyRate;
-            row.LastWrittenAt = clock.GetUtcNow();
-        }
-        await db.SaveChangesAsync(ct);
-    }
+            r.OccupancyRate = occupancyRate;
+            r.LastWrittenAt = clock.GetUtcNow();
+        }, ct);
 
-    public async Task SetDemandAsync(string marketId, DateOnly date, int score, IReadOnlyList<string> drivers, CancellationToken ct)
+    public Task SetDemandAsync(string marketId, DateOnly date, int score, IReadOnlyList<string> drivers, CancellationToken ct)
     {
         var json = JsonSerializer.Serialize(drivers);
+        return UpsertAsync(marketId, date, r =>
+        {
+            r.DemandScore = score;
+            r.DemandDriversJson = json;
+            r.LastWrittenAt = clock.GetUtcNow();
+        }, ct);
+    }
+
+    private async Task UpsertAsync(string marketId, DateOnly date, Action<MarketDataRecord> apply, CancellationToken ct)
+    {
         var row = await db.MarketData.FindAsync([marketId, date], ct);
         if (row is null)
         {
-            db.MarketData.Add(new MarketDataRecord
+            row = new MarketDataRecord { MarketId = marketId, Date = date, DemandDriversJson = "[]" };
+            apply(row);
+            db.MarketData.Add(row);
+            try
             {
-                MarketId = marketId, Date = date, DemandScore = score,
-                DemandDriversJson = json, LastWrittenAt = clock.GetUtcNow()
-            });
+                await db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (DbUpdateException)
+            {
+                // Racing insert won — detach our failed add, reload the winner, merge onto it.
+                db.Entry(row).State = EntityState.Detached;
+                row = await db.MarketData.FindAsync([marketId, date], ct);
+                if (row is null)
+                    throw; // extremely unlikely: conflict but row not found
+            }
         }
-        else
-        {
-            row.DemandScore = score;
-            row.DemandDriversJson = json;
-            row.LastWrittenAt = clock.GetUtcNow();
-        }
+        apply(row);
         await db.SaveChangesAsync(ct);
     }
 
