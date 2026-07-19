@@ -63,13 +63,20 @@
   .pin{cursor:pointer;}
   .pin circle.hit{fill:transparent;}
   .pin circle.dot{fill:var(--card);stroke:var(--muted);stroke-width:1.6;transition:all .18s;}
-  .pin text{font-family:var(--mono);font-size:3.1px;fill:var(--muted);text-anchor:middle;transition:fill .18s;letter-spacing:.02em;}
+  .pin text{font-family:var(--mono);font-size:3.1px;fill:var(--ink);text-anchor:middle;transition:opacity .15s;letter-spacing:.02em;opacity:0;paint-order:stroke;stroke:var(--card);stroke-width:0.7px;}
+  .pin:hover text{opacity:1;}
   .pin:hover circle.dot{stroke:var(--accent);}
   .pin.on circle.dot{fill:var(--accent);stroke:var(--accent);r:2.9;}
-  .pin.on text{fill:var(--ink);font-weight:700;}
+  .pin.on text{fill:var(--ink);font-weight:700;opacity:1;}
   .pin.on circle.ring{stroke:var(--accent);}
   @media (prefers-reduced-motion:no-preference){.pin.on circle.ring{animation:pulse 2.4s ease-out infinite;}}
   @keyframes pulse{0%{r:3;opacity:.5}100%{r:8;opacity:0}}
+  .market-list{margin-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .mgroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .mgroup .glab{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);width:100%;margin-bottom:1px;}
+  .mkt{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:4px 9px;font-size:12px;transition:all .12s;}
+  .mkt:hover{border-color:var(--accent-line);}
+  .mkt.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
   .market-info{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
   .tag{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:6px;background:var(--sunk);border:1px solid var(--line);color:var(--muted);}
   .tag b{color:var(--ink);font-weight:600;}
@@ -156,6 +163,7 @@
               fill="var(--land)" stroke="var(--land-line)" stroke-width="0.8" stroke-linejoin="round"/>
           </svg>
         </div>
+        <div class="market-list" id="marketList"></div>
         <div class="market-info" id="marketInfo"></div>
       </div>
       <div class="sect">
@@ -192,11 +200,24 @@
 <script>
 "use strict";
 const MARKETS={
-  mkt_gdansk:{name:"Gdańsk",typePL:"morze",voi:"pomorskie",x:50,y:14},
-  mkt_warszawa:{name:"Warszawa",typePL:"miasto biznesowe",voi:"mazowieckie",x:61,y:44},
-  mkt_krakow:{name:"Kraków",typePL:"miasto turyst.",voi:"małopolskie",x:55,y:72},
-  mkt_zakopane:{name:"Zakopane",typePL:"góry",voi:"małopolskie",x:52,y:83},
+  mkt_swinoujscie:{name:"Świnoujście",type:"Seaside",typePL:"morze",voi:"zachodniopomorskie",x:16,y:15},
+  mkt_kolobrzeg:{name:"Kołobrzeg",type:"Seaside",typePL:"morze",voi:"zachodniopomorskie",x:28,y:12},
+  mkt_wladyslawowo:{name:"Władysławowo",type:"Seaside",typePL:"morze",voi:"pomorskie",x:47,y:10},
+  mkt_gdansk:{name:"Gdańsk",type:"Seaside",typePL:"morze",voi:"pomorskie",x:52,y:14},
+  mkt_torun:{name:"Toruń",type:"CityTourist",typePL:"miasto turyst.",voi:"kujawsko-pomorskie",x:43,y:30},
+  mkt_poznan:{name:"Poznań",type:"CityTourist",typePL:"miasto turyst.",voi:"wielkopolskie",x:29,y:38},
+  mkt_lublin:{name:"Lublin",type:"CityTourist",typePL:"miasto turyst.",voi:"lubelskie",x:72,y:52},
+  mkt_wroclaw:{name:"Wrocław",type:"CityTourist",typePL:"miasto turyst.",voi:"dolnośląskie",x:30,y:57},
+  mkt_krakow:{name:"Kraków",type:"CityTourist",typePL:"miasto turyst.",voi:"małopolskie",x:56,y:70},
+  mkt_lodz:{name:"Łódź",type:"CityBusiness",typePL:"miasto biznesowe",voi:"łódzkie",x:46,y:46},
+  mkt_warszawa:{name:"Warszawa",type:"CityBusiness",typePL:"miasto biznesowe",voi:"mazowieckie",x:61,y:42},
+  mkt_katowice:{name:"Katowice",type:"CityBusiness",typePL:"miasto biznesowe",voi:"śląskie",x:47,y:64},
+  mkt_karpacz:{name:"Karpacz",type:"Mountains",typePL:"góry",voi:"dolnośląskie",x:24,y:63},
+  mkt_szczyrk:{name:"Szczyrk",type:"Mountains",typePL:"góry",voi:"śląskie",x:45,y:72},
+  mkt_krynica:{name:"Krynica-Zdrój",type:"Mountains",typePL:"góry",voi:"małopolskie",x:63,y:76},
+  mkt_zakopane:{name:"Zakopane",type:"Mountains",typePL:"góry",voi:"małopolskie",x:53,y:84},
 };
+const MARKET_GROUPS=[["morze","Seaside"],["góry","Mountains"],["miasto turyst.","CityTourist"],["miasto biznesowe","CityBusiness"]];
 const CATS=[["apartament","Apartament"],["dom_domek","Dom / domek"],["pokoj","Pokój"],["hotel_aparthotel","Hotel / aparthotel"],["pensjonat_willa","Pensjonat / willa"],["agroturystyka","Agroturystyka"],["glamping_nietypowe","Glamping / nietypowe"]];
 const TAG_PL={widok_gory:"widok na góry",widok_woda:"widok na wodę",przy_stoku:"przy stoku",blisko_plazy:"blisko plaży",sauna_balia:"sauna / balia",jacuzzi:"jacuzzi",kominek:"kominek",zwierzeta_ok:"zwierzęta OK",agro_zwierzeta:"zwierzęta gospodarskie"};
 const TAGS=Object.keys(TAG_PL);
@@ -217,6 +238,15 @@ for(const [id,M] of Object.entries(MARKETS)){
   g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();state.market=id;state.selDay=0;requote();}});
   map.appendChild(g);
 }
+const listEl=document.getElementById("marketList");
+for(const [labelPL,type] of MARKET_GROUPS){
+  const g=document.createElement("div");g.className="mgroup";
+  let html=`<span class="glab">${labelPL}</span>`;
+  for(const [id,M] of Object.entries(MARKETS)) if(M.type===type)
+    html+=`<button class="mkt" data-id="${id}">${M.name}</button>`;
+  g.innerHTML=html;listEl.appendChild(g);
+}
+listEl.querySelectorAll(".mkt").forEach(b=>b.addEventListener("click",()=>{state.market=b.dataset.id;state.selDay=0;requote();}));
 const catsEl=document.getElementById("cats");
 CATS.forEach(([id,label])=>{const b=document.createElement("button");b.className="chip";b.textContent=label;b.dataset.cat=id;b.addEventListener("click",()=>{state.category=id;syncControls();});catsEl.appendChild(b);});
 const tagsEl=document.getElementById("tags");
@@ -233,6 +263,7 @@ function syncControls(){
   document.getElementById("base").value=state.base;document.getElementById("min").value=state.min;document.getElementById("max").value=state.max;
   document.getElementById("from").value=state.from;document.getElementById("to").value=state.to;
   document.querySelectorAll(".pin").forEach(p=>p.classList.toggle("on",p.dataset.id===state.market));
+  document.querySelectorAll("#marketList .mkt").forEach(m=>m.classList.toggle("on",m.dataset.id===state.market));
   document.querySelectorAll("#cats .chip").forEach(c=>c.classList.toggle("on",c.dataset.cat===state.category));
   document.querySelectorAll("#tags .chip").forEach(c=>c.classList.toggle("tag-on",state.tags.includes(c.dataset.tag)));
   const M=MARKETS[state.market];

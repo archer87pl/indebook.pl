@@ -7,7 +7,24 @@ namespace Rezio.Scraper.Domain;
 public sealed class SyntheticListingSource : IListingSource
 {
     private static readonly HashSet<string> KnownMarkets =
-        ["mkt_zakopane", "mkt_gdansk", "mkt_krakow", "mkt_warszawa"];
+    [
+        "mkt_swinoujscie",
+        "mkt_kolobrzeg",
+        "mkt_wladyslawowo",
+        "mkt_gdansk",
+        "mkt_poznan",
+        "mkt_torun",
+        "mkt_lodz",
+        "mkt_warszawa",
+        "mkt_lublin",
+        "mkt_wroclaw",
+        "mkt_karpacz",
+        "mkt_katowice",
+        "mkt_szczyrk",
+        "mkt_krakow",
+        "mkt_krynica",
+        "mkt_zakopane",
+    ];
 
     private static readonly (string Title, string Type)[] Templates =
     [
