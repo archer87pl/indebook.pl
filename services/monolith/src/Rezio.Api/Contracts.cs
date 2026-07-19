@@ -26,3 +26,6 @@ public sealed record MarketStatsIngestRequest(string MarketId, IReadOnlyList<Mar
 
 public sealed record QuoteRequest(string MarketId, decimal BasePrice, decimal MinPrice, decimal MaxPrice, DateOnly From, DateOnly To);
 public sealed record QuoteResponse(string MarketId, string MarketName, string MarketType, string Currency, IReadOnlyList<QuoteDay> Days);
+
+public sealed record MarketDto(string Id, string Name, string Type, string Voivodeship, double Lat, double Lng);
+public sealed record MarketsResponse(IReadOnlyList<MarketDto> Markets);

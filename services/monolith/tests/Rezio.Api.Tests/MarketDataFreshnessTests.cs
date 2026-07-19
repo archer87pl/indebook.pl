@@ -38,7 +38,7 @@ public class MarketDataFreshnessTests
     {
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 6, 9, 12, 0, 0, TimeSpan.Zero));
         var store = new InMemoryMarketDataStore(clock);
-        var listings = new InMemoryListingStore(store, new Rezio.Demand.Domain.InMemoryMarketRegistry());
+        var listings = new InMemoryListingStore(store, new MarketCatalog());
         await store.SetStatsAsync("mkt_gdansk", new DateOnly(2026, 6, 9), 0.95, CancellationToken.None);
 
         clock.Advance(TimeSpan.FromDays(10));

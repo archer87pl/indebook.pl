@@ -43,7 +43,8 @@ else
 }
 
 builder.Services.AddScoped<IListingStore, InMemoryListingStore>();
-builder.Services.AddSingleton<IMarketRegistry, InMemoryMarketRegistry>();
+builder.Services.AddSingleton<MarketCatalog>();
+builder.Services.AddSingleton<IMarketRegistry>(sp => sp.GetRequiredService<MarketCatalog>());
 builder.Services.AddSingleton<ConnectionRegistry>();
 builder.Services.AddSingleton<SyncRunner>();
 builder.Services.AddSingleton<IAdapterFactory, SyntheticAdapterFactory>();
@@ -88,6 +89,10 @@ app.MapGet("/v1/listings/{id}/prices",
 
     return Results.Ok(new PricesResponse(id, "PLN", prices));
 });
+
+app.MapGet("/v1/markets", (MarketCatalog catalog) =>
+    Results.Ok(new MarketsResponse(catalog.Records
+        .Select(r => new MarketDto(r.Id, r.Name, r.Type.ToString(), r.Voivodeship.ToString(), r.Lat, r.Lng)).ToList())));
 
 app.MapGet("/v1/markets/{id}/demand",
     (string id, DateOnly from, DateOnly to, IMarketRegistry registry) =>
