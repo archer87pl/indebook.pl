@@ -38,12 +38,13 @@ public class ScraperEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
-    public async Task Scrape_job_for_unknown_market_returns_404()
+    public async Task Scrape_job_accepts_any_market()
     {
         var resp = await _client.PostAsJsonAsync("/v1/scrape-jobs",
-            new { market_id = "mkt_nope", from = "2026-08-01", to = "2026-08-07" });
-        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
-        Assert.Contains("application/problem+json", resp.Content.Headers.ContentType!.ToString());
+            new { market_id = "mkt_anything", from = "2026-08-01", to = "2026-08-07" });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        Assert.Equal(30, (int)json["listings_scraped"]!);
     }
 
     [Fact]
@@ -54,10 +55,13 @@ public class ScraperEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
-    public async Task Stats_for_unknown_market_returns_404()
+    public async Task Stats_for_any_market_returns_empty_list()
     {
-        var resp = await _client.GetAsync("/v1/markets/mkt_nope/stats?from=2026-08-01&to=2026-08-07");
-        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+        var resp = await _client.GetAsync("/v1/markets/mkt_anything/stats?from=2026-08-01&to=2026-08-07");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        var stats = json["stats"]!.AsArray();
+        Assert.Empty(stats);
     }
 
     [Fact]

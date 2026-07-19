@@ -25,16 +25,16 @@ public class ScrapeRunnerTests
     }
 
     [Fact]
-    public async Task Run_for_unknown_market_scrapes_nothing()
+    public async Task Run_for_empty_market_scrapes_nothing()
     {
         var store = new InMemoryStatsStore();
         var runner = new ScrapeRunner(new SyntheticListingSource(), store);
 
-        var result = await runner.RunAsync("mkt_nope", DateOnly.Parse("2026-08-01"), DateOnly.Parse("2026-08-07"), CancellationToken.None);
+        var result = await runner.RunAsync("", DateOnly.Parse("2026-08-01"), DateOnly.Parse("2026-08-07"), CancellationToken.None);
 
         Assert.Equal(0, result.ListingsScraped);
         Assert.Equal(0, result.DaysAggregated);
-        Assert.Empty(store.Get("mkt_nope", DateOnly.Parse("2026-08-01"), DateOnly.Parse("2026-08-07")));
+        Assert.Empty(store.Get("", DateOnly.Parse("2026-08-01"), DateOnly.Parse("2026-08-07")));
     }
 
     [Fact]

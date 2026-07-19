@@ -6,26 +6,6 @@ namespace Rezio.Scraper.Domain;
 /// </summary>
 public sealed class SyntheticListingSource : IListingSource
 {
-    private static readonly HashSet<string> KnownMarkets =
-    [
-        "mkt_swinoujscie",
-        "mkt_kolobrzeg",
-        "mkt_wladyslawowo",
-        "mkt_gdansk",
-        "mkt_poznan",
-        "mkt_torun",
-        "mkt_lodz",
-        "mkt_warszawa",
-        "mkt_lublin",
-        "mkt_wroclaw",
-        "mkt_karpacz",
-        "mkt_katowice",
-        "mkt_szczyrk",
-        "mkt_krakow",
-        "mkt_krynica",
-        "mkt_zakopane",
-    ];
-
     private static readonly (string Title, string Type)[] Templates =
     [
         ("Glamping – jurta {0}", "tent"),                          // i % 6 == 0
@@ -41,7 +21,7 @@ public sealed class SyntheticListingSource : IListingSource
 
     public Task<IReadOnlyList<RawListing>> GetListingsAsync(string marketId, CancellationToken ct)
     {
-        if (!KnownMarkets.Contains(marketId))
+        if (string.IsNullOrWhiteSpace(marketId))
             return Task.FromResult<IReadOnlyList<RawListing>>([]);
 
         var listings = Enumerable.Range(1, 30).Select(i =>

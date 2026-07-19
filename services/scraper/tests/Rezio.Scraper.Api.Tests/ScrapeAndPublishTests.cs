@@ -79,11 +79,11 @@ public class ScrapeAndPublishTests
     }
 
     [Fact]
-    public async Task Unknown_market_posts_nothing()
+    public async Task Empty_market_posts_nothing()
     {
         var (sut, handler) = Build();
 
-        var result = await sut.RunAsync("mkt_nope",
+        var result = await sut.RunAsync("",
             new DateOnly(2026, 6, 4), new DateOnly(2026, 6, 10), CancellationToken.None);
 
         Assert.Equal(0, result.DaysAggregated);
