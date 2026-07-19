@@ -175,7 +175,8 @@ Kluczowe klasy: `IChannelAdapter`, `SyntheticChannelAdapter`, `ConnectionRegistr
 - Wybór rynku na **mapie Polski**, kategoria/tagi (profil obiektu), cena bazowa, zakres dat.
 - Woła **realny backend** `POST /v1/quote` — zero liczenia w JS, więc nie rozjedzie się z produkcją.
 - Renderuje: cenę za noc, rozbicie na mnożniki (słupki), drivery popytu, pasek dni.
-- `QuoteService` wycenia **dowolny** z 4 rynków (nie tylko sztywny `lst_demo`).
+- `QuoteService` wycenia **dowolny** z 16 rynków (nie tylko sztywny `lst_demo`) — system pokrywa
+  16 polskich rynków w 3 typach (góry/morze/miasta) rozrzuconych po 10 województwach.
 
 Świadome ograniczenie: kategoria i tagi są zbierane jako profil, ale **nie wpływają jeszcze na
 cenę** — comp-set-driven pricing to przyszły etap. Panel komunikuje to wprost.
