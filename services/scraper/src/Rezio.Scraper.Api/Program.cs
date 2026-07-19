@@ -43,7 +43,25 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-string[] knownMarkets = ["mkt_zakopane", "mkt_gdansk", "mkt_krakow", "mkt_warszawa"];
+string[] knownMarkets =
+[
+    "mkt_swinoujscie",
+    "mkt_kolobrzeg",
+    "mkt_wladyslawowo",
+    "mkt_gdansk",
+    "mkt_poznan",
+    "mkt_torun",
+    "mkt_lodz",
+    "mkt_warszawa",
+    "mkt_lublin",
+    "mkt_wroclaw",
+    "mkt_karpacz",
+    "mkt_katowice",
+    "mkt_szczyrk",
+    "mkt_krakow",
+    "mkt_krynica",
+    "mkt_zakopane",
+];
 
 IResult? ValidateRange(DateOnly from, DateOnly to) =>
     to < from || to.DayNumber - from.DayNumber >= 365
