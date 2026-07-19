@@ -172,12 +172,17 @@ Kluczowe klasy: `IChannelAdapter`, `SyntheticChannelAdapter`, `ConnectionRegistr
 
 - Serwowany przez monolit pod **`/`** ze statycznego `wwwroot/index.html` (vanilla HTML/CSS/JS,
   bez frameworka, bez zewnętrznych zasobów — CSP-safe, tryb jasny/ciemny).
+- Rynki są **danymi, nie kodem**: przy starcie strony `boot()` woła `GET /v1/markets`, dostaje
+  `{markets:[{id,name,type,voivodeship,lat,lng}]}`, przelicza `lat/lng → x/y` na mapie SVG
+  (`geoToXY`) i z tego buduje pinezki + pogrupowaną listę. Panel nie zawiera zakodowanej listy
+  rynków — dodanie rynku to edycja `Data/markets.json`, bez zmian w kodzie.
 - Wybór rynku na **mapie Polski**, kategoria/tagi (profil obiektu), cena bazowa, zakres dat.
 - Woła **realny backend** `POST /v1/quote` — zero liczenia w JS, więc nie rozjedzie się z produkcją.
 - Renderuje: cenę za noc, rozbicie na mnożniki (słupki), drivery popytu, pasek dni.
-- `QuoteService` wycenia **dowolny** z 16 rynków (nie tylko sztywny `lst_demo`) — system pokrywa
-  16 polskich rynków w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe)
-  rozrzuconych po 10 województwach.
+- `QuoteService` wycenia **dowolny** z 44 rynków (nie tylko sztywny `lst_demo`) — system pokrywa
+  44 polskie rynki (data-driven, `services/monolith/src/Rezio.Api/Data/markets.json`, ładowane
+  przez `MarketCatalog`) w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe)
+  rozrzuconych po wszystkich 16 województwach.
 
 Świadome ograniczenie: kategoria i tagi są zbierane jako profil, ale **nie wpływają jeszcze na
 cenę** — comp-set-driven pricing to przyszły etap. Panel komunikuje to wprost.
@@ -191,6 +196,7 @@ cenę** — comp-set-driven pricing to przyszły etap. Panel komunikuje to wpros
 | Metoda i ścieżka | Opis |
 |---|---|
 | `GET /` | Panel administratora (HTML) |
+| `GET /v1/markets` | Lista rynków (`{markets:[{id,name,type,voivodeship,lat,lng}]}`) — panel buduje z niej mapę i listę |
 | `GET /v1/listings/{id}/prices?from=&to=` | Rekomendacje dzienne z rozbiciem (obiekt `lst_demo`) |
 | `POST /v1/quote` | Wycena dowolnego rynku (`{market_id, base_price, min_price, max_price, from, to}`) |
 | `POST /v1/listings/{id}/publish-prices` | Policz i pushnij ceny (w procesie) |

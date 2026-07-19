@@ -8,7 +8,7 @@ Modularny monolit `rezio-api` (:8080) — moduły pricing, demand i channel-sync
 
 ## Szybki start (lokalnie)
 
-Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazowa i daty → wycena z backendu (`POST /v1/quote`). System pokrywa 16 polskich rynków w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe), w 10 województwach.
+Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazowa i daty → wycena z backendu (`POST /v1/quote`). Mapa i lista rynków budowane są dynamicznie z `GET /v1/markets` (bez zakodowanej listy w JS). System pokrywa 44 polskie rynki (data-driven, `Data/markets.json`) w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe), we wszystkich 16 województwach.
 
     docker compose up --build
 
