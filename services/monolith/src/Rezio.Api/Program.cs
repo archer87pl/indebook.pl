@@ -94,7 +94,7 @@ app.MapGet("/v1/listings/{id}/prices",
 
 app.MapGet("/v1/markets", (MarketCatalog catalog) =>
     Results.Ok(new MarketsResponse(catalog.Records
-        .Select(r => new MarketDto(r.Id, r.Name, r.Type.ToString(), r.Voivodeship.ToString(), r.Lat, r.Lng)).ToList())));
+        .Select(r => new MarketDto(r.Id, r.Name, r.Type.ToString(), VoivodeshipNames.Polish(r.Voivodeship), r.Lat, r.Lng)).ToList())));
 
 app.MapGet("/v1/markets/{id}/demand",
     (string id, DateOnly from, DateOnly to, IMarketRegistry registry) =>
