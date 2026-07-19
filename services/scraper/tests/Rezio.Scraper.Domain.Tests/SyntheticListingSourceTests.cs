@@ -18,9 +18,23 @@ public class SyntheticListingSourceTests
     }
 
     [Fact]
-    public async Task Unknown_market_returns_empty()
+    public async Task Any_market_id_returns_30()
     {
-        Assert.Empty(await _source.GetListingsAsync("mkt_nope", CancellationToken.None));
+        var listings = await _source.GetListingsAsync("mkt_anything", CancellationToken.None);
+        Assert.Equal(30, listings.Count);
+        Assert.Equal("syn_mkt_anything_001", listings[0].ExternalRef);
+    }
+
+    [Fact]
+    public async Task Empty_market_id_returns_empty()
+    {
+        Assert.Empty(await _source.GetListingsAsync("", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Whitespace_market_id_returns_empty()
+    {
+        Assert.Empty(await _source.GetListingsAsync("   ", CancellationToken.None));
     }
 
     [Fact]

@@ -43,7 +43,7 @@ public class MarketDataStoreTests
     public async Task Listing_store_falls_back_occupancy_but_computes_demand_inline_regardless_of_stored_demand()
     {
         var marketData = new Rezio.Api.InMemoryMarketDataStore(TimeProvider.System);
-        var demandRegistry = new Rezio.Demand.Domain.InMemoryMarketRegistry();
+        var demandRegistry = new Rezio.Api.MarketCatalog();
         var listings = new Rezio.Api.InMemoryListingStore(marketData, demandRegistry);
 
         // bez danych obłożenia: fallback 0.70; wtorek 2026-06-09 (bez święta/mostka) => demand inline = 50 / []
@@ -66,7 +66,7 @@ public class MarketDataStoreTests
     {
         var listings = new Rezio.Api.InMemoryListingStore(
             new Rezio.Api.InMemoryMarketDataStore(TimeProvider.System),
-            new Rezio.Demand.Domain.InMemoryMarketRegistry());
+            new Rezio.Api.MarketCatalog());
 
         // piątek 2026-06-05 to mostek w długim weekendzie Bożego Ciała (czwartek 2026-06-04)
         var friday = (await listings.MarketDaysAsync("lst_demo", new DateOnly(2026, 6, 5), new DateOnly(2026, 6, 5), CancellationToken.None)).Single();

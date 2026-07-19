@@ -43,26 +43,6 @@ app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks
     ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 
-string[] knownMarkets =
-[
-    "mkt_swinoujscie",
-    "mkt_kolobrzeg",
-    "mkt_wladyslawowo",
-    "mkt_gdansk",
-    "mkt_poznan",
-    "mkt_torun",
-    "mkt_lodz",
-    "mkt_warszawa",
-    "mkt_lublin",
-    "mkt_wroclaw",
-    "mkt_karpacz",
-    "mkt_katowice",
-    "mkt_szczyrk",
-    "mkt_krakow",
-    "mkt_krynica",
-    "mkt_zakopane",
-];
-
 IResult? ValidateRange(DateOnly from, DateOnly to) =>
     to < from || to.DayNumber - from.DayNumber >= 365
         ? Results.Problem(statusCode: 400, title: "Invalid date range",
@@ -74,9 +54,6 @@ app.MapPost("/v1/scrape-jobs", async (ScrapeJobRequest request, ScrapeAndPublish
     if (ValidateRange(request.From, request.To) is { } invalid)
         return invalid;
 
-    if (!knownMarkets.Contains(request.MarketId))
-        return Results.Problem(statusCode: 404, title: "Market not found");
-
     var result = await runner.RunAsync(request.MarketId, request.From, request.To, ct);
     return Results.Ok(result);
 });
@@ -85,9 +62,6 @@ app.MapGet("/v1/markets/{id}/stats", (string id, DateOnly from, DateOnly to, ISt
 {
     if (ValidateRange(from, to) is { } invalid)
         return invalid;
-
-    if (!knownMarkets.Contains(id))
-        return Results.Problem(statusCode: 404, title: "Market not found");
 
     return Results.Ok(new StatsResponse(id, store.Get(id, from, to)));
 });
