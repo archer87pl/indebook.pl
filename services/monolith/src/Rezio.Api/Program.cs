@@ -33,7 +33,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 var databaseUrl = builder.Configuration["DATABASE_URL"];
 if (StoreSelection.UsesPostgres(databaseUrl))
 {
-    builder.Services.AddDbContext<PricingDbContext>(o => o.UseNpgsql(databaseUrl));
+    builder.Services.AddDbContext<PricingDbContext>(o =>
+        o.UseNpgsql(databaseUrl, npg => npg.EnableRetryOnFailure()));
+    builder.Services.AddHealthChecks().AddDbContextCheck<PricingDbContext>("postgres");
     builder.Services.AddScoped<IMarketDataStore, EfMarketDataStore>();
 }
 else
