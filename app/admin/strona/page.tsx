@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ExternalLink, Eye, Globe, Rocket, Undo2 } from "lucide-react";
+import PreviewPane from "@/components/admin/site/PreviewPane";
+import SectionEditor from "@/components/admin/site/SectionEditor";
 import SiteWizard from "@/components/admin/site/SiteWizard";
 import SubmitButton from "@/components/ui/SubmitButton";
 import Toggle from "@/components/ui/Toggle";
@@ -21,9 +23,9 @@ import { SITE_FONTS, SITE_TEMPLATES, siteTemplate } from "@/lib/site-themes";
 export const dynamic = "force-dynamic";
 
 export default async function SitePage(props: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; detach?: string }>;
 }) {
-  const { error, saved } = await props.searchParams;
+  const { error, saved, detach } = await props.searchParams;
   const { property } = await requireOwner();
   const features = sitePlanFeatures(property.plan);
 
@@ -155,12 +157,11 @@ export default async function SitePage(props: {
         </p>
       )}
 
+      <PreviewPane />
+
       <div className="grid items-start gap-5 xl:grid-cols-[1fr_1fr]">
         <div className="space-y-5">
-          {/* Sekcje strony — edytor (uzupełniany w kolejnym etapie) */}
-          <section id="sekcje" className="card space-y-4 p-5" data-section-editor>
-            <h2 className="text-[15px] font-bold">Sekcje strony</h2>
-          </section>
+          <SectionEditor config={config} photos={photos} detachId={detach} />
         </div>
 
         <div className="space-y-5">

@@ -13,9 +13,15 @@ import { savePhotoFile } from "./photos";
 import { sitePlanFeatures } from "./plans";
 import {
   buildDefaultConfig,
+  newSection,
   normalizeConfig,
+  SECTION_LABELS,
+  type AttractionItem,
+  type SectionType,
   type SiteConfig,
+  type SiteSection,
 } from "./site-config";
+import { renderSectionHtml } from "./site-static-html";
 import { siteRevalidatePaths } from "./sites";
 import { SITE_FONTS, siteTemplate } from "./site-themes";
 import { slugify } from "./slug";
@@ -183,6 +189,132 @@ export async function updateSiteCss(formData: FormData): Promise<void> {
     where: { id: site.id },
     data: { customCss: str(formData, "css").slice(0, 20000) },
   });
+  done();
+}
+
+// ---------- sekcje ----------
+
+function sectionOr404(config: SiteConfig, id: string): SiteSection {
+  const section = config.sections.find((s) => s.id === id);
+  if (!section) fail("Nie znaleziono sekcji.");
+  return section;
+}
+
+export async function updateSiteSection(formData: FormData): Promise<void> {
+  const { site } = await requireSite();
+  const config = draftOf(site);
+  const section = sectionOr404(config, str(formData, "sectionId"));
+
+  switch (section.type) {
+    case "hero":
+      section.data.headline = str(formData, "headline").slice(0, 120);
+      section.data.tagline = str(formData, "tagline").slice(0, 200);
+      section.data.ctaLabel = str(formData, "ctaLabel").slice(0, 40) || "Zarezerwuj pobyt";
+      {
+        const photoId = Number(str(formData, "photoId"));
+        section.data.photoId = Number.isInteger(photoId) && photoId > 0 ? photoId : null;
+      }
+      break;
+    case "about":
+      section.data.title = str(formData, "title").slice(0, 80) || "O obiekcie";
+      section.data.html = str(formData, "html").slice(0, 20000);
+      break;
+    case "attractions": {
+      section.data.title = str(formData, "title").slice(0, 80) || "Atrakcje w okolicy";
+      // format: jedna atrakcja na linię, „Nazwa | opis | odległość"
+      const items: AttractionItem[] = str(formData, "items")
+        .split("\n")
+        .map((line) => {
+          const [name = "", desc = "", distance = ""] = line.split("|").map((s) => s.trim());
+          return { name: name.slice(0, 80), desc: desc.slice(0, 200), distance: distance.slice(0, 30) };
+        })
+        .filter((i) => i.name)
+        .slice(0, 20);
+      section.data.items = items;
+      break;
+    }
+    case "contact":
+      section.data.title = str(formData, "title").slice(0, 80) || "Kontakt";
+      section.data.intro = str(formData, "intro").slice(0, 300);
+      break;
+    case "customHtml":
+      section.data.html = str(formData, "html").slice(0, 50000);
+      break;
+    // sekcje danych: tylko tytuł
+    case "units":
+    case "gallery":
+    case "amenities":
+    case "calendar":
+    case "reviews":
+      section.data.title = str(formData, "title").slice(0, 80) || SECTION_LABELS[section.type];
+      break;
+  }
+
+  await saveDraft(site.id, config);
+  done();
+}
+
+export async function toggleSiteSection(formData: FormData): Promise<void> {
+  const { site } = await requireSite();
+  const config = draftOf(site);
+  const section = sectionOr404(config, str(formData, "sectionId"));
+  section.enabled = !section.enabled;
+  await saveDraft(site.id, config);
+  done();
+}
+
+export async function moveSiteSection(formData: FormData): Promise<void> {
+  const { site } = await requireSite();
+  const config = draftOf(site);
+  const id = str(formData, "sectionId");
+  const dir = str(formData, "dir") === "up" ? -1 : 1;
+  const index = config.sections.findIndex((s) => s.id === id);
+  if (index === -1) fail("Nie znaleziono sekcji.");
+  const target = index + dir;
+  if (target < 0 || target >= config.sections.length) done();
+  [config.sections[index], config.sections[target]] = [
+    config.sections[target],
+    config.sections[index],
+  ];
+  await saveDraft(site.id, config);
+  done();
+}
+
+export async function addSiteSection(formData: FormData): Promise<void> {
+  const { site } = await requireSite();
+  const config = draftOf(site);
+  const type = str(formData, "type") as SectionType;
+  if (!(type in SECTION_LABELS)) fail("Nieznany typ sekcji.");
+  if (config.sections.length >= 25) fail("Za dużo sekcji (maks. 25).");
+  config.sections.push(newSection(type));
+  await saveDraft(site.id, config);
+  done();
+}
+
+export async function removeSiteSection(formData: FormData): Promise<void> {
+  const { site } = await requireSite();
+  const config = draftOf(site);
+  const id = str(formData, "sectionId");
+  if (!config.sections.some((s) => s.id === id)) fail("Nie znaleziono sekcji.");
+  config.sections = config.sections.filter((s) => s.id !== id);
+  await saveDraft(site.id, config);
+  done();
+}
+
+/** Odpięcie sekcji: zamiana na „Własny kod" ze statycznym zrzutem treści. */
+export async function convertSectionToHtml(formData: FormData): Promise<void> {
+  const { property, site } = await requireSite();
+  const config = draftOf(site);
+  const index = config.sections.findIndex((s) => s.id === str(formData, "sectionId"));
+  if (index === -1) fail("Nie znaleziono sekcji.");
+  const section = config.sections[index];
+  if (section.type === "customHtml") fail("Ta sekcja już jest własnym kodem.");
+  const html = renderSectionHtml(section, { property });
+  const replacement = newSection("customHtml");
+  if (replacement.type === "customHtml") replacement.data.html = html;
+  replacement.enabled = section.enabled;
+  config.sections[index] = replacement;
+  await saveDraft(site.id, config);
   done();
 }
 
