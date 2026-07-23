@@ -1,11 +1,11 @@
 import { Clock, MapPin } from "lucide-react";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
+import InquiryForm from "./InquiryForm";
 
 type ContactSection = Extract<SiteSection, { type: "contact" }>;
 
-// Mapa: Google Maps embed bez klucza API (adres tekstowy). Formularz zapytań
-// dochodzi w kolejnym etapie (API /api/sites/inquiry).
+// Mapa: Google Maps embed bez klucza API (adres tekstowy).
 export default function Contact({ section, ctx }: { section: ContactSection; ctx: SiteCtx }) {
   const p = ctx.property;
   return (
@@ -18,17 +18,20 @@ export default function Contact({ section, ctx }: { section: ContactSection; ctx
           </p>
         )}
         <div className="grid items-start gap-8 md:grid-cols-2">
-          <div className="space-y-4 text-sm">
-            {p.address && (
-              <p className="flex items-center gap-2.5">
-                <MapPin size={16} strokeWidth={2} className="flex-none text-[var(--site-primary)]" />
-                {p.address}
+          <div className="space-y-5">
+            <div className="space-y-3 text-sm">
+              {p.address && (
+                <p className="flex items-center gap-2.5">
+                  <MapPin size={16} strokeWidth={2} className="flex-none text-[var(--site-primary)]" />
+                  {p.address}
+                </p>
+              )}
+              <p className="flex items-center gap-2.5 text-[var(--site-muted)]">
+                <Clock size={16} strokeWidth={2} className="flex-none text-[var(--site-primary)]" />
+                zameldowanie od {p.checkInFrom} · wymeldowanie do {p.checkOutTo}
               </p>
-            )}
-            <p className="flex items-center gap-2.5 text-[var(--site-muted)]">
-              <Clock size={16} strokeWidth={2} className="flex-none text-[var(--site-primary)]" />
-              zameldowanie od {p.checkInFrom} · wymeldowanie do {p.checkOutTo}
-            </p>
+            </div>
+            <InquiryForm siteKey={ctx.siteKey} />
           </div>
           {p.address && (
             <div className="overflow-hidden rounded-2xl border border-[var(--site-text)]/10">

@@ -24,6 +24,8 @@ export type SiteCtx = {
   property: SiteWithData["property"];
   appUrl: string;
   preview: boolean;
+  /** klucz strony do API (subdomena) */
+  siteKey: string;
 };
 
 function Section({ section, ctx }: { section: SiteSection; ctx: SiteCtx }) {
@@ -60,7 +62,12 @@ export default function SiteRenderer({
   config: SiteConfig;
   preview?: boolean;
 }) {
-  const ctx: SiteCtx = { property: site.property, appUrl: appUrl(), preview };
+  const ctx: SiteCtx = {
+    property: site.property,
+    appUrl: appUrl(),
+    preview,
+    siteKey: site.subdomain,
+  };
   const sections = config.sections.filter((s) => s.enabled);
   const vars = themeVars(config.theme, site.template);
 
