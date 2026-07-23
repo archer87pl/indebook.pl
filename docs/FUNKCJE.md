@@ -534,7 +534,7 @@ i wszystkie komponenty z przykładami.
 
 ## 10. Testy
 
-- **Jednostkowe** (`npm test`, Vitest — 93 testy): daty, wyceny, faktury,
+- **Jednostkowe** (`npm test`, Vitest — 107 testów): daty, wyceny, faktury,
   meldunek, SMS-y, opinie, płatności P24, konfiguracja stron WWW, sanityzacja
   HTML, routing hostów, domeny (`lib/*.test.ts`).
 - **E2E** (`npm run test:e2e`, Playwright — 12 scenariuszy,

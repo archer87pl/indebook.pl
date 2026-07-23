@@ -16,8 +16,8 @@ import {
   buildDefaultConfig,
   newSection,
   normalizeConfig,
+  parseAttractionsInput,
   SECTION_LABELS,
-  type AttractionItem,
   type SectionType,
   type SiteConfig,
   type SiteSection,
@@ -220,20 +220,10 @@ export async function updateSiteSection(formData: FormData): Promise<void> {
       section.data.title = str(formData, "title").slice(0, 80) || "O obiekcie";
       section.data.html = str(formData, "html").slice(0, 20000);
       break;
-    case "attractions": {
+    case "attractions":
       section.data.title = str(formData, "title").slice(0, 80) || "Atrakcje w okolicy";
-      // format: jedna atrakcja na linię, „Nazwa | opis | odległość"
-      const items: AttractionItem[] = str(formData, "items")
-        .split("\n")
-        .map((line) => {
-          const [name = "", desc = "", distance = ""] = line.split("|").map((s) => s.trim());
-          return { name: name.slice(0, 80), desc: desc.slice(0, 200), distance: distance.slice(0, 30) };
-        })
-        .filter((i) => i.name)
-        .slice(0, 20);
-      section.data.items = items;
+      section.data.items = parseAttractionsInput(str(formData, "items"));
       break;
-    }
     case "contact":
       section.data.title = str(formData, "title").slice(0, 80) || "Kontakt";
       section.data.intro = str(formData, "intro").slice(0, 300);

@@ -142,6 +142,23 @@ export function normalizeConfig(raw: unknown): SiteConfig {
   };
 }
 
+// Parser pola „Atrakcje" z edytora: jedna atrakcja na linię,
+// „Nazwa | opis | odległość". Linie bez nazwy pomijamy, maks. 20 pozycji.
+export function parseAttractionsInput(text: string): AttractionItem[] {
+  return text
+    .split("\n")
+    .map((line) => {
+      const [name = "", desc = "", distance = ""] = line.split("|").map((s) => s.trim());
+      return {
+        name: name.slice(0, 80),
+        desc: desc.slice(0, 200),
+        distance: distance.slice(0, 30),
+      };
+    })
+    .filter((i) => i.name)
+    .slice(0, 20);
+}
+
 // Minimalny wycinek danych obiektu potrzebny do prefillu (strukturalnie,
 // bez zależności od typów Prismy — łatwiej testować).
 export type PropertyPrefill = {

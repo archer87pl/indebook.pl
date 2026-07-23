@@ -3,6 +3,7 @@ import {
   buildDefaultConfig,
   newSection,
   normalizeConfig,
+  parseAttractionsInput,
   SECTION_LABELS,
   sid,
   type SiteConfig,
@@ -82,6 +83,46 @@ describe("buildDefaultConfig", () => {
   it("nieznany szablon nie wywala — fallback na uniwersalny", () => {
     const cfg = buildDefaultConfig(propertyFixture, "nie-ma-takiego");
     expect(cfg.theme.palette).toBeTruthy();
+  });
+});
+
+describe("parseAttractionsInput", () => {
+  it("parsuje linie „Nazwa | opis | odległość”", () => {
+    const items = parseAttractionsInput(
+      "Jezioro | plaża i pomost | 300 m\nSzlak górski|wejście na szczyt|2 km"
+    );
+    expect(items).toEqual([
+      { name: "Jezioro", desc: "plaża i pomost", distance: "300 m" },
+      { name: "Szlak górski", desc: "wejście na szczyt", distance: "2 km" },
+    ]);
+  });
+
+  it("brakujące części dają puste pola, linie bez nazwy odpadają", () => {
+    const items = parseAttractionsInput("Tylko nazwa\n\n | opis bez nazwy | 1 km\nX | | 5 km");
+    expect(items).toEqual([
+      { name: "Tylko nazwa", desc: "", distance: "" },
+      { name: "X", desc: "", distance: "5 km" },
+    ]);
+  });
+
+  it("tnie do 20 pozycji i przycina za długie pola", () => {
+    const many = Array.from({ length: 30 }, (_, i) => `Atrakcja ${i}`).join("\n");
+    expect(parseAttractionsInput(many)).toHaveLength(20);
+    const [item] = parseAttractionsInput(`${"a".repeat(200)} | ${"b".repeat(300)} | ${"c".repeat(99)}`);
+    expect(item.name).toHaveLength(80);
+    expect(item.desc).toHaveLength(200);
+    expect(item.distance).toHaveLength(30);
+  });
+
+  it("pusty tekst → pusta lista", () => {
+    expect(parseAttractionsInput("")).toEqual([]);
+  });
+});
+
+describe("normalizeConfig — round-trip", () => {
+  it("znormalizowana konfiguracja przechodzi przez normalizację bez zmian", () => {
+    const cfg = buildDefaultConfig(propertyFixture, "miejski");
+    expect(normalizeConfig(JSON.parse(JSON.stringify(cfg)))).toEqual(cfg);
   });
 });
 

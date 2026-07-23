@@ -38,32 +38,33 @@ export default function AvailabilityCalendar({
 }) {
   const [unitTypeId, setUnitTypeId] = useState(unitTypes[0]?.id);
   const [month, setMonth] = useState(currentMonth);
-  const [days, setDays] = useState<Day[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  // wynik znakowany kluczem zapytania — „ładowanie" to po prostu brak wyniku
+  // dla bieżącego klucza (bez setState wprost w efekcie)
+  const [result, setResult] = useState<{ key: string; days: Day[] | null } | null>(null);
   const [range, setRange] = useState<{ from: string | null; to: string | null }>({
     from: null,
     to: null,
   });
 
+  const queryKey = `${unitTypeId}-${month}`;
+  const loading = result?.key !== queryKey;
+  const days = result?.key === queryKey ? result.days : null;
+
   useEffect(() => {
     if (!unitTypeId) return;
     let cancelled = false;
-    setLoading(true);
     fetch(`/api/sites/availability?unitTypeId=${unitTypeId}&month=${month}`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
-        if (!cancelled) setDays(data.days);
+        if (!cancelled) setResult({ key: queryKey, days: data.days });
       })
       .catch(() => {
-        if (!cancelled) setDays(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setResult({ key: queryKey, days: null });
       });
     return () => {
       cancelled = true;
     };
-  }, [unitTypeId, month]);
+  }, [unitTypeId, month, queryKey]);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 

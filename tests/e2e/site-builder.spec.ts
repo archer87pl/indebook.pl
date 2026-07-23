@@ -95,6 +95,8 @@ test.describe("kreator strony WWW", () => {
     await expect(page.getByRole("heading", { name: headline })).toBeVisible();
     await expect(page.getByText("Nasze apartamenty")).toBeVisible();
     await expect(page.getByText("Dostępność i ceny")).toBeVisible();
+    // widget kalendarza zhydratowany (client component wystartował bez błędu)
+    await expect(page.getByText("Kliknij dzień przyjazdu i wyjazdu")).toBeVisible();
     await expect(page.getByText("Strona stworzona w")).toBeVisible();
 
     // sitemap i robots per host
