@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { requireOwner } from "./auth";
 import { prisma } from "./db";
+import { domainProvider, normalizeDomain } from "./domains";
 import { savePhotoFile } from "./photos";
 import { sitePlanFeatures } from "./plans";
 import {
@@ -330,5 +331,59 @@ export async function updateSiteSubdomain(formData: FormData): Promise<void> {
     data: { subdomain },
   });
   for (const path of [...oldPaths, ...siteRevalidatePaths(updated)]) revalidatePath(path);
+  done();
+}
+
+// ---------- własna domena (plan PRO) ----------
+
+async function requireDomainAccess() {
+  const ctx = await requireSite();
+  if (!sitePlanFeatures(ctx.property.plan).customDomain) {
+    fail("Własna domena jest dostępna w planie Pro.");
+  }
+  const provider = domainProvider();
+  if (!provider) fail("Podpinanie domen nie jest skonfigurowane na tej instalacji.");
+  return { ...ctx, provider };
+}
+
+export async function setCustomDomain(formData: FormData): Promise<void> {
+  const { site, provider } = await requireDomainAccess();
+  const domain = normalizeDomain(str(formData, "domain"));
+  if (!domain) fail("Podaj poprawną domenę, np. mojobiekt.pl.");
+  const taken = await prisma.site.findFirst({
+    where: { customDomain: domain, id: { not: site.id } },
+  });
+  if (taken) fail("Ta domena jest już podpięta do innej strony.");
+  await provider.add(domain);
+  const check = await provider.check(domain);
+  await prisma.site.update({
+    where: { id: site.id },
+    data: { customDomain: domain, domainStatus: check.status },
+  });
+  done();
+}
+
+export async function refreshDomainStatus(): Promise<void> {
+  const { site, provider } = await requireDomainAccess();
+  if (!site.customDomain) fail("Brak podpiętej domeny.");
+  const check = await provider.check(site.customDomain);
+  await prisma.site.update({
+    where: { id: site.id },
+    data: { domainStatus: check.status },
+  });
+  for (const path of siteRevalidatePaths(site)) revalidatePath(path);
+  done();
+}
+
+export async function removeCustomDomain(): Promise<void> {
+  const { site, provider } = await requireDomainAccess();
+  if (!site.customDomain) fail("Brak podpiętej domeny.");
+  await provider.remove(site.customDomain);
+  const oldPaths = siteRevalidatePaths(site);
+  await prisma.site.update({
+    where: { id: site.id },
+    data: { customDomain: null, domainStatus: "NONE" },
+  });
+  for (const path of oldPaths) revalidatePath(path);
   done();
 }

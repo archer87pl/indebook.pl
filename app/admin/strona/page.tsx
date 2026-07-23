@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExternalLink, Eye, Globe, Rocket, Undo2 } from "lucide-react";
+import DomainPanel from "@/components/admin/site/DomainPanel";
 import PreviewPane from "@/components/admin/site/PreviewPane";
 import SectionEditor from "@/components/admin/site/SectionEditor";
 import SiteWizard from "@/components/admin/site/SiteWizard";
@@ -278,7 +279,7 @@ export default async function SitePage(props: {
                 Zmień
               </SubmitButton>
             </form>
-            <div data-domain-panel />
+            <DomainPanel site={site} plan={property.plan} />
           </section>
 
           {/* SEO */}
