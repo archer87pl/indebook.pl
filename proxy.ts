@@ -1,7 +1,8 @@
 // Routing hostów (Next.js 16: dawne middleware). Żądania do subdomen
 // *.SITES_BASE_DOMAIN i własnych domen klientów przepisujemy na wewnętrzną
-// ścieżkę /_sites/<klucz>, którą renderuje app/_sites/[host]. Host aplikacji
-// (APP_URL / localhost) przechodzi bez zmian.
+// ścieżkę /sites/<klucz>, którą renderuje app/sites/[host]. Host aplikacji
+// (APP_URL / localhost) przechodzi bez zmian. Uwaga: katalog nie może mieć
+// prefiksu "_" — App Router wyklucza takie foldery z routingu.
 
 import { NextResponse, type NextRequest } from "next/server";
 import { classifyHost } from "@/lib/site-host";
@@ -11,7 +12,7 @@ export function proxy(request: NextRequest) {
   if (kind.kind === "app") return NextResponse.next();
 
   const url = request.nextUrl.clone();
-  url.pathname = `/_sites/${kind.key}${url.pathname === "/" ? "" : url.pathname}`;
+  url.pathname = `/sites/${kind.key}${url.pathname === "/" ? "" : url.pathname}`;
   return NextResponse.rewrite(url);
 }
 
