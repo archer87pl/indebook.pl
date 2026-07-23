@@ -28,6 +28,7 @@ i komplet automatyzacji (płatności, meldunek, SMS-y, opinie, faktury).
 9. [Bezpieczeństwo i RODO](#9-bezpieczeństwo-i-rodo)
 10. [Testy](#10-testy)
 11. [Mapa tras](#11-mapa-tras)
+12. [Strona WWW obiektu (kreator)](#12-strona-www-obiektu-kreator)
 
 ---
 
@@ -533,9 +534,10 @@ i wszystkie komponenty z przykładami.
 
 ## 10. Testy
 
-- **Jednostkowe** (`npm test`, Vitest — 44 testy): daty, wyceny, faktury,
-  meldunek, SMS-y, opinie (`lib/*.test.ts`).
-- **E2E** (`npm run test:e2e`, Playwright — 9 scenariuszy,
+- **Jednostkowe** (`npm test`, Vitest — 93 testy): daty, wyceny, faktury,
+  meldunek, SMS-y, opinie, płatności P24, konfiguracja stron WWW, sanityzacja
+  HTML, routing hostów, domeny (`lib/*.test.ts`).
+- **E2E** (`npm run test:e2e`, Playwright — 12 scenariuszy,
   `tests/e2e/`):
   - pełna ścieżka gościa: strona obiektu → dostępność → rezerwacja →
     zaliczka (symulacja) → **meldunek z rysowanym e-podpisem**,
@@ -543,7 +545,9 @@ i wszystkie komponenty z przykładami.
     wyszukiwarka, Goście/Płatności/Kalendarz,
   - superadmin: pulpit z trendem, globalne rezerwacje i opinie,
     **impersonacja właściciela**,
-  - auth: błędne hasło, ochrona panelu przed niezalogowanymi.
+  - auth: błędne hasło, ochrona panelu przed niezalogowanymi,
+  - kreator strony WWW: gating planów, wizard → edycja → publikacja →
+    strona live na subdomenie, 404 dla nieznanych hostów.
   Testy chodzą na dedykowanym porcie **3100** (dev server startowany przez
   Playwright) i bazie z `.env` (dane znakowane `E2E …`), jeden worker
   (limit puli połączeń).
@@ -571,5 +575,51 @@ i wszystkie komponenty z przykładami.
 | `/admin/pokoje`, `/admin/cennik` | oferta i ceny |
 | `/admin/opinie`, `/admin/raporty` | opinie (moderacja), raporty (Pro) |
 | `/admin/obiekt`, `/admin/plan` | ustawienia, abonament |
+| `/admin/strona` | kreator strony WWW obiektu (Standard+) |
+| `/podglad-strony` | podgląd roboczej wersji strony WWW (tylko właściciel) |
+| `nazwa.rezop.pl` → `/sites/[host]` | opublikowana strona WWW obiektu (+ `sitemap.xml`, `robots.txt` per host) |
 | `/superadmin` (+ `/rezerwacje`, `/opinie`, `/obiekt/[id]`) | panel platformy |
 | `/api/ical/[unitId]`, `/api/payments/p24`, `/api/cron/*`, `/api/admin/export` | integracje |
+| `/api/sites/availability`, `/api/sites/inquiry` | widget kalendarza i formularz kontaktowy stron WWW |
+
+---
+
+## 12. Strona WWW obiektu (kreator)
+
+Moduł **„Strona WWW"** w panelu (`/admin/strona`) pozwala właścicielowi zbudować
+stronę-wizytówkę obiektu bez wiedzy technicznej i opublikować ją na subdomenie
+`nazwa.rezop.pl` (env `SITES_BASE_DOMAIN`), a w planie Pro — pod własną domeną.
+
+- **Gating planów** (`sitePlanFeatures`): FREE — zachęta do upgrade'u;
+  Standard — kreator + subdomena; Pro — dodatkowo własna domena.
+- **Wizard startowy** (4 kroki): szablon (górski / nadmorski / miejski /
+  uniwersalny) → potwierdzenie danych z Rezio → paleta i typografia → adres.
+  Strona od razu wypełnia się danymi obiektu (nazwa, opis, pokoje, zdjęcia) —
+  nigdy nie startuje pusta.
+- **Edytor sekcji**: hero, o obiekcie, apartamenty, galeria (lightbox),
+  udogodnienia, kalendarz dostępności i cen (dane na żywo z API), atrakcje
+  okolicy, opinie, kontakt (formularz + mapa), własny kod HTML. Widoczność
+  i kolejność sekcji, formularze per sekcja, podgląd draftu w iframie
+  (desktop/mobile). Sekcje danych nie kopiują treści — czytają z tabel Rezio.
+- **Draft/publikacja**: edytor pracuje na `Site.draftConfig`; „Opublikuj"
+  kopiuje draft → `publishedConfig` (+ revalidate ISR), „Cofnij zmiany"
+  przywraca opublikowaną wersję. Strona publiczna renderuje wyłącznie
+  opublikowaną konfigurację (ISR 300 s).
+- **„Konwertuj na własny kod"**: odpięcie sekcji generowanej — zamiana na
+  statyczny HTML (ostrzeżenie: dane przestają się aktualizować).
+- **Bezpieczeństwo**: HTML użytkownika sanityzowany allowlistą przy renderze
+  (`lib/sanitize.ts`, bez skryptów; iframe tylko YouTube/mapy), własny CSS
+  bez możliwości wyjścia z tagu `<style>`.
+- **Routing hostów**: `proxy.ts` klasyfikuje host (`lib/site-host.ts`)
+  i przepisuje subdomeny oraz domeny własne na `/sites/[host]`. Lokalnie
+  działa `nazwa.localhost:3000` bez konfiguracji.
+- **Własna domena (Pro)**: abstrakcja `DomainProvider` (`lib/domains.ts`),
+  implementacja Vercel API (env `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`,
+  opcjonalnie `VERCEL_TEAM_ID`; brak = sekcja ukryta). Panel pokazuje rekordy
+  DNS, status (Oczekuje / Zweryfikowana / Błąd) i instrukcję krok po kroku;
+  SSL wystawia Vercel automatycznie. Warianty `www` z przekierowaniem na apex.
+- **SEO**: metadata + Open Graph z konfiguracji (fallback: dane obiektu),
+  JSON-LD `LodgingBusiness`, canonical, `sitemap.xml` i `robots.txt` per host.
+- **Rezerwacja (hybryda)**: widget kalendarza i ceny na stronie klienta,
+  finalizacja na istniejącym flow `appUrl/rezerwuj/[unitTypeId]`; zapytania
+  z formularza kontaktowego idą e-mailem do właściciela (honeypot antyspam).
