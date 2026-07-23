@@ -11,7 +11,9 @@ import {
   requireOwner,
   requireSuperadmin,
 } from "./auth";
-import { hashPassword, verifyPassword } from "./password";
+import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from "./password";
+import { rateLimitOrRedirect } from "./rate-limit";
+import { assertPublicUrl } from "./net";
 import { isValidISO, todayISO } from "./dates";
 import { logEvent } from "./log";
 import { SETTING_SECTIONS } from "./settings";
@@ -66,8 +68,9 @@ const PENDING_TTL_MS = 30 * 60 * 1000; // 30 min na opłacenie zaliczki
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 function newCode(): string {
+  // 8 znaków z 31-znakowego alfabetu ≈ 2^39.6 — kod to bearer do danych gościa
   let s = "";
-  for (let i = 0; i < 6; i++) s += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
+  for (let i = 0; i < 8; i++) s += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
   return `HO-${s}`;
 }
 
@@ -118,8 +121,13 @@ export async function register(formData: FormData) {
 export async function login(formData: FormData) {
   const email = str(formData, "email").toLowerCase();
   const password = str(formData, "password");
+  // brute-force: maks. 10 prób / 10 min na IP
+  await rateLimitOrRedirect("login", 10, 10 * 60_000, "/login?error=rate");
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  // zawsze wykonaj scrypt (na atrapie, gdy konto nie istnieje), aby czas
+  // odpowiedzi nie zdradzał istnienia e-maila (ochrona przed enumeracją)
+  const ok = verifyPassword(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+  if (!user || !ok) {
     await logEvent({
       kind: "AUTH",
       level: "WARN",
@@ -147,6 +155,8 @@ export async function logout() {
 
 export async function requestPasswordReset(formData: FormData) {
   const email = str(formData, "email").toLowerCase();
+  // ochrona przed zalewem maili resetu: maks. 5 / 15 min na IP
+  await rateLimitOrRedirect("reset", 5, 15 * 60_000, "/zapomniane-haslo?sent=1");
   const user = await prisma.user.findUnique({ where: { email } });
   if (user) {
     const token = randomBytes(32).toString("hex");
@@ -407,6 +417,13 @@ export async function cancelByGuest(formData: FormData) {
 export async function findReservation(formData: FormData) {
   const code = str(formData, "code").toUpperCase();
   const email = str(formData, "email").toLowerCase();
+  // enumeracja kodów rezerwacji: maks. 15 prób / 10 min na IP
+  await rateLimitOrRedirect(
+    "find-reservation",
+    15,
+    10 * 60_000,
+    "/moja-rezerwacja?error=rate"
+  );
   const reservation = await prisma.reservation.findUnique({ where: { code } });
   if (!reservation || reservation.email.toLowerCase() !== email) {
     redirect(`/moja-rezerwacja?error=1&code=${encodeURIComponent(code)}`);
@@ -1222,6 +1239,12 @@ export async function addIcalFeed(formData: FormData) {
   if (!(await ownedUnit(unitId, property.id))) redirect("/admin/kanaly");
   if (!/^https?:\/\/.+/i.test(url)) fail("Podaj poprawny adres URL kalendarza iCal.");
   if (!CHANNEL_KEYS.includes(channel)) fail("Wybierz kanał.");
+  // SSRF: odrzuć adresy wewnętrzne już przy dodawaniu (fetch też to sprawdza)
+  try {
+    await assertPublicUrl(url);
+  } catch (e) {
+    fail(e instanceof Error ? e.message : "Nieprawidłowy adres URL.");
+  }
 
   const feed = await prisma.icalFeed.create({
     data: { unitId, url, name, channel },

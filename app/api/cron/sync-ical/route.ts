@@ -1,4 +1,5 @@
 import { syncAllIcalFeeds } from "@/lib/jobs";
+import { safeEqual } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -7,7 +8,8 @@ export const maxDuration = 60;
 // nagłówek Authorization: Bearer <CRON_SECRET> — odrzucamy obce żądania.
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // fail-closed: bez skonfigurowanego sekretu endpoint jest niedostępny
+  if (!secret || !safeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) {
     return new Response("Unauthorized", { status: 401 });
   }
   const feeds = await syncAllIcalFeeds();

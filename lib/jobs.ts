@@ -145,6 +145,14 @@ export async function purgeExpiredSessions(): Promise<number> {
   return sessions.count;
 }
 
+/** Kasuje wygasłe okna rate-limitera (retencja licznika). */
+export async function purgeExpiredRateLimits(): Promise<number> {
+  const { count } = await prisma.rateLimit.deleteMany({
+    where: { resetAt: { lt: new Date() } },
+  });
+  return count;
+}
+
 /** Retencja dziennika zdarzeń: wpisy starsze niż 90 dni są kasowane. */
 export async function purgeOldEventLogs(): Promise<number> {
   const cutoff = new Date(Date.now() - 90 * 24 * 3600 * 1000);

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Property, Reservation } from "@prisma/client";
+import { safeEqual } from "./password";
 
 // Przelewy24 REST API v1 (https://developers.przelewy24.pl).
 // Konfiguracja per obiekt (Property.p24*) — właściciel ma własną umowę z P24,
@@ -131,7 +132,7 @@ export function verifyP24NotificationSign(
     },
     cfg.crc
   );
-  return expected === n.sign;
+  return safeEqual(expected, n.sign);
 }
 
 /** Potwierdza transakcję w P24 (wymagane, żeby środki zostały zaksięgowane). */

@@ -518,11 +518,22 @@ i wszystkie komponenty z przykładami.
 ## 9. Bezpieczeństwo i RODO
 
 - **Hasła**: scrypt z solą (`lib/password.ts`); sesje w bazie, cookie
-  httpOnly 30 dni; reset hasła tokenem ważnym 1 h (unieważnia wszystkie
-  sesje).
+  httpOnly + `secure` (prod) 30 dni; logowanie stałoczasowe (bez enumeracji
+  po timingu); reset hasła tokenem ważnym 1 h (unieważnia wszystkie sesje).
 - **Izolacja tenantów**: każda strona/akcja panelu przez `requireOwner()`,
   mutacje weryfikowane helperami `owned*` względem `propertyId`; superadmin
   osobną barierą `requireSuperadmin()`.
+- **Anty-abuse**: rate-limiter oknem stałym w bazie (`lib/rate-limit.ts`)
+  na logowaniu, resecie hasła, wyszukiwaniu rezerwacji i formularzu
+  kontaktowym stron WWW (aktywny w produkcji); crony (`app/api/cron/*`)
+  fail-closed przy pustym `CRON_SECRET`; porównania sekretów przez
+  `timingSafeEqual` (`safeEqual`).
+- **SSRF**: feedy iCal walidowane przed pobraniem (`lib/net.ts` — blokada
+  adresów prywatnych/loopback/metadata, `redirect:"error"`).
+- **Nagłówki**: `X-Frame-Options`, `X-Content-Type-Options`,
+  `Referrer-Policy`, HSTS; `X-Powered-By` wyłączony (`next.config.ts`).
+- **Domeny własne**: routing serwuje stronę tylko dla domen `VERIFIED`;
+  niezweryfikowany „claim" nie blokuje onboardingu prawdziwego właściciela.
 - **RODO**: karta meldunkowa bez skanów dokumentów (tylko typ + numer,
   maskowany na listach), automatyczna retencja PII 12 miesięcy po
   wymeldowaniu, zgody (RODO przy rezerwacji, publikacja przy opinii,
@@ -534,7 +545,7 @@ i wszystkie komponenty z przykładami.
 
 ## 10. Testy
 
-- **Jednostkowe** (`npm test`, Vitest — 107 testów): daty, wyceny, faktury,
+- **Jednostkowe** (`npm test`, Vitest — 119 testów): daty, wyceny, faktury,
   meldunek, SMS-y, opinie, płatności P24, konfiguracja stron WWW, sanityzacja
   HTML, routing hostów, domeny (`lib/*.test.ts`).
 - **E2E** (`npm run test:e2e`, Playwright — 12 scenariuszy,

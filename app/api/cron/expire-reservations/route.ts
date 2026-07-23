@@ -3,9 +3,11 @@ import {
   purgeExpiredCheckIns,
   purgeExpiredSessions,
   purgeOldEventLogs,
+  purgeExpiredRateLimits,
   sendArrivalReminders,
   sendReviewRequests,
 } from "@/lib/jobs";
+import { safeEqual } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -14,7 +16,8 @@ export const maxDuration = 30;
 // nagłówek Authorization: Bearer <CRON_SECRET> — odrzucamy obce żądania.
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // fail-closed: bez skonfigurowanego sekretu endpoint jest niedostępny
+  if (!secret || !safeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) {
     return new Response("Unauthorized", { status: 401 });
   }
   const count = await expireReservations();
@@ -22,6 +25,7 @@ export async function GET(req: Request) {
   const purged = await purgeExpiredCheckIns();
   const purgedSessions = await purgeExpiredSessions();
   const purgedLogs = await purgeOldEventLogs();
+  await purgeExpiredRateLimits();
   const reminders = await sendArrivalReminders();
   const reviewRequests = await sendReviewRequests();
   return Response.json({

@@ -18,9 +18,20 @@ export async function GET(request: Request) {
 
   const unitType = await prisma.unitType.findUnique({
     where: { id: unitTypeId },
-    include: { seasons: true, property: { select: { suspended: true } } },
+    include: {
+      seasons: true,
+      property: {
+        select: { suspended: true, site: { select: { publishedConfig: true } } },
+      },
+    },
   });
-  if (!unitType || unitType.property.suspended) {
+  // dostępność wystawiamy tylko dla obiektów z OPUBLIKOWANĄ stroną WWW —
+  // inaczej dane obiektów roboczych/nieopublikowanych byłyby enumerowalne
+  if (
+    !unitType ||
+    unitType.property.suspended ||
+    !unitType.property.site?.publishedConfig
+  ) {
     return NextResponse.json({ error: "Nie znaleziono" }, { status: 404 });
   }
 

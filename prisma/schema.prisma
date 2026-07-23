@@ -107,6 +107,16 @@ model Property {
   site           Site?
 }
 
+// Rate-limiter oknem stałym (login, reset hasła, formularz kontaktowy,
+// akcje gościa po kodzie). Klucz = "akcja:identyfikator" (zwykle IP).
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt]) // retencja: cron kasuje wygasłe okna
+}
+
 // Strona WWW obiektu budowana w kreatorze (moduł „Strona WWW" w panelu).
 // draftConfig — wersja robocza edytowana w panelu; publishedConfig — to, co
 // widzi świat (null = jeszcze nie opublikowana). Publikacja kopiuje draft →

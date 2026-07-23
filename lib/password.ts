@@ -13,3 +13,17 @@ export function verifyPassword(password: string, stored: string): boolean {
   const expected = Buffer.from(hash, "hex");
   return candidate.length === expected.length && timingSafeEqual(candidate, expected);
 }
+
+// Hash nieistniejącego (nierozwiązywalnego) hasła — do wykonania „na pusto"
+// przy logowaniu, gdy konto nie istnieje, żeby czas odpowiedzi nie zdradzał
+// istnienia e-maila (ochrona przed enumeracją użytkowników).
+export const DUMMY_PASSWORD_HASH = hashPassword("rezio-dummy-password");
+
+// Stałoczasowe porównanie dwóch stringów (podpisy, tokeny). Najpierw długość
+// przez timingSafeEqual na buforach równej długości, potem właściwe porównanie.
+export function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}

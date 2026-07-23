@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { safeEqual } from "@/lib/password";
 
 // Eksport iCal per jednostka — do podpięcia w Booking.com/Airbnb.
 // URL zawiera sekret (?t=token), żeby dostępność nie była publicznie zgadywalna.
@@ -17,7 +18,7 @@ export async function GET(
     },
   });
   if (!unit) return new Response("Not found", { status: 404 });
-  if (!unit.icalToken || token !== unit.icalToken)
+  if (!unit.icalToken || !safeEqual(token, unit.icalToken))
     return new Response("Forbidden", { status: 403 });
 
   const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";

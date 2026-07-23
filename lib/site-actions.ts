@@ -343,7 +343,18 @@ export async function setCustomDomain(formData: FormData): Promise<void> {
   const taken = await prisma.site.findFirst({
     where: { customDomain: domain, id: { not: site.id } },
   });
-  if (taken) fail("Ta domena jest już podpięta do innej strony.");
+  if (taken) {
+    // Zweryfikowany właściciel wygrywa; niezweryfikowany „claim" nie może
+    // blokować onboardingu prawdziwego właściciela — zwalniamy go
+    // (weryfikacja DNS u dostawcy i tak rozstrzyga, kto realnie ma domenę).
+    if (taken.domainStatus === "VERIFIED") {
+      fail("Ta domena jest już zweryfikowana na innej stronie.");
+    }
+    await prisma.site.update({
+      where: { id: taken.id },
+      data: { customDomain: null, domainStatus: "NONE" },
+    });
+  }
   await provider.add(domain);
   const check = await provider.check(domain);
   await prisma.site.update({

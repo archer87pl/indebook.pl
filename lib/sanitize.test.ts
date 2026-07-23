@@ -58,4 +58,13 @@ describe("sanitizeCss", () => {
     expect(out).not.toContain("<script");
     expect(out).toContain("body{color:red}");
   });
+
+  it("usuwa @import i expression(), zostawia url() tła", () => {
+    const out = sanitizeCss(
+      '@import url("//evil.com/x"); body{ width: expression(alert(1)); background:url("/blob/a.jpg") }'
+    );
+    expect(out).not.toMatch(/@import/i);
+    expect(out).not.toMatch(/expression\s*\(/i);
+    expect(out).toContain("background:url");
+  });
 });

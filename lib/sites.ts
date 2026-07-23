@@ -27,9 +27,13 @@ const SITE_INCLUDE = {
 
 // key = subdomena („willa") albo pełna domena własna („mojobiekt.pl",
 // dopasowywana też bez prefiksu www — classifyHost już go zdejmuje).
+// Domena własna liczy się tylko po weryfikacji (VERIFIED) — niezweryfikowany
+// claim nie może serwować cudzej treści ani być użyty do przechwycenia ruchu.
 export async function getSiteByKey(key: string): Promise<SiteWithData | null> {
   return prisma.site.findFirst({
-    where: { OR: [{ subdomain: key }, { customDomain: key }] },
+    where: {
+      OR: [{ subdomain: key }, { customDomain: key, domainStatus: "VERIFIED" }],
+    },
     include: SITE_INCLUDE,
   });
 }

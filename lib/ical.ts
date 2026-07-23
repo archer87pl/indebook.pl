@@ -2,6 +2,7 @@ import type { Block, IcalFeed, Reservation } from "@prisma/client";
 import { addDaysISO, todayISO } from "./dates";
 import { prisma } from "./db";
 import { logEvent } from "./log";
+import { assertPublicUrl } from "./net";
 
 export type ChannelConflict = {
   block: Block & { feed: IcalFeed | null };
@@ -84,9 +85,13 @@ export async function syncIcalFeed(
   feed: IcalFeed
 ): Promise<{ ok: boolean; imported: number; error?: string }> {
   try {
+    // SSRF: host feedu nie może wskazywać na zasób wewnętrzny; redirect:"error"
+    // blokuje obejście przez przekierowanie na adres prywatny.
+    await assertPublicUrl(feed.url);
     const res = await fetch(feed.url, {
       signal: AbortSignal.timeout(10_000),
       headers: { Accept: "text/calendar, text/plain, */*" },
+      redirect: "error",
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();

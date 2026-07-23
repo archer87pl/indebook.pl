@@ -5,6 +5,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mailer";
+import { rateLimit } from "@/lib/rate-limit";
+
+function requestIp(request: Request): string {
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return request.headers.get("x-real-ip") || "unknown";
+}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -24,6 +31,15 @@ export async function POST(request: Request) {
   const honeypot = typeof body.website === "string" ? body.website : "";
 
   if (honeypot) return NextResponse.json({ ok: true });
+
+  // anty-spam: maks. 5 zapytań / 10 min na (IP × strona)
+  const ok = await rateLimit(`inquiry:${requestIp(request)}:${siteKey}`, 5, 10 * 60_000);
+  if (!ok) {
+    return NextResponse.json(
+      { error: "Zbyt wiele zapytań. Spróbuj ponownie za chwilę." },
+      { status: 429 }
+    );
+  }
 
   if (!name || !EMAIL_RE.test(email) || message.length < 10 || message.length > 2000) {
     return NextResponse.json(

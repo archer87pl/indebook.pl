@@ -54,8 +54,13 @@ export function sanitizeCustomHtml(html: string): string {
   });
 }
 
-// Własny CSS strony: wstrzykiwany do <style>, więc jedyne realne ryzyko to
-// wyjście z tagu. Usuwamy znak "<" — poprawny CSS go nie potrzebuje.
+// Własny CSS strony: wstrzykiwany do <style>. Usuwamy "<" (blokuje wyjście
+// z tagu — jedyna ścieżka XSS) oraz konstrukcje ładujące zewnętrzne zasoby
+// niezależnie od treści strony (@import) i martwe, ale ryzykowne expression().
+// url() w tłach zostaje — to legalny sposób na własne obrazy z Blob.
 export function sanitizeCss(css: string): string {
-  return css.replace(/</g, "");
+  return css
+    .replace(/</g, "")
+    .replace(/@import\b[^;]*;?/gi, "")
+    .replace(/expression\s*\(/gi, "");
 }

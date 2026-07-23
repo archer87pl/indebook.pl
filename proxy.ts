@@ -12,22 +12,35 @@ import { classifyHost } from "@/lib/site-host";
 
 // Cache wyników lookupu domen własnych (per instancja, 60 s) — proxy działa
 // na każdym żądaniu, a wynik zmienia się tylko przy (od)pinaniu domeny.
+// Cap rozmiaru chroni przed OOM/query-flood przy zalewie unikalnych hostów.
 const DOMAIN_CACHE_MS = 60_000;
+const DOMAIN_CACHE_MAX = 5_000;
 const domainCache = new Map<string, { isTenant: boolean; until: number }>();
+
+function cacheSet(domain: string, isTenant: boolean) {
+  // usuń wygasłe; jeśli nadal za duży — wyczyść (prosty bezpiecznik pamięci)
+  if (domainCache.size >= DOMAIN_CACHE_MAX) {
+    const now = Date.now();
+    for (const [k, v] of domainCache) if (v.until <= now) domainCache.delete(k);
+    if (domainCache.size >= DOMAIN_CACHE_MAX) domainCache.clear();
+  }
+  domainCache.set(domain, { isTenant, until: Date.now() + DOMAIN_CACHE_MS });
+}
 
 async function isTenantDomain(domain: string): Promise<boolean> {
   const cached = domainCache.get(domain);
   if (cached && cached.until > Date.now()) return cached.isTenant;
   let isTenant = false;
   try {
+    // tylko zweryfikowana domena własna kieruje na stronę obiektu
     isTenant = !!(await prisma.site.findFirst({
-      where: { customDomain: domain },
+      where: { customDomain: domain, domainStatus: "VERIFIED" },
       select: { id: true },
     }));
   } catch {
     // problem z DB — bezpieczniej puścić żądanie do aplikacji niż pokazać 404
   }
-  domainCache.set(domain, { isTenant, until: Date.now() + DOMAIN_CACHE_MS });
+  cacheSet(domain, isTenant);
   return isTenant;
 }
 
