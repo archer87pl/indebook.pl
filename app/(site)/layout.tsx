@@ -76,7 +76,6 @@ export default function SiteLayout({
               Dla gości
             </p>
             <ul className="space-y-1.5">
-              <li><Link href="/#obiekty" className="hover:text-white">Przeglądaj obiekty</Link></li>
               <li><Link href="/moja-rezerwacja" className="hover:text-white">Moja rezerwacja</Link></li>
             </ul>
           </div>

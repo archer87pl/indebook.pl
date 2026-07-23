@@ -1,12 +1,17 @@
 import { createHash } from "node:crypto";
-import type { Reservation } from "@prisma/client";
-import { getSetting } from "./settings";
+import type { Property, Reservation } from "@prisma/client";
 
 // Przelewy24 REST API v1 (https://developers.przelewy24.pl).
-// Konfiguracja z panelu superadmina (PlatformSetting) z fallbackiem na env.
-// Brak kompletu danych P24 => tryb symulacji (przycisk potwierdza od razu).
+// Konfiguracja per obiekt (Property.p24*) — właściciel ma własną umowę z P24,
+// zaliczki gości trafiają bezpośrednio na jego konto, on rozlicza prowizję
+// bramki. Brak kompletu danych => tryb symulacji (przycisk potwierdza od razu).
 
-type P24Config = {
+export type P24Fields = Pick<
+  Property,
+  "p24MerchantId" | "p24PosId" | "p24ApiKey" | "p24Crc" | "p24Sandbox"
+>;
+
+export type P24Config = {
   merchantId: number;
   posId: number;
   apiKey: string;
@@ -18,29 +23,24 @@ export function appUrl(): string {
   return (process.env.APP_URL ?? "http://localhost:3001").replace(/\/$/, "");
 }
 
-async function config(): Promise<P24Config | null> {
-  const [merchantId, posId, apiKey, crc, sandboxRaw] = await Promise.all([
-    getSetting("P24_MERCHANT_ID"),
-    getSetting("P24_POS_ID"),
-    getSetting("P24_API_KEY"),
-    getSetting("P24_CRC"),
-    getSetting("P24_SANDBOX"),
-  ]);
-  if (!merchantId || !posId || !apiKey || !crc) return null;
-  const sandbox = sandboxRaw !== "false";
+export function p24Config(p: P24Fields): P24Config | null {
+  if (!p.p24MerchantId || !p.p24PosId || !p.p24ApiKey || !p.p24Crc) return null;
+  const merchantId = Number(p.p24MerchantId);
+  const posId = Number(p.p24PosId);
+  if (!Number.isInteger(merchantId) || !Number.isInteger(posId)) return null;
   return {
-    merchantId: Number(merchantId),
-    posId: Number(posId),
-    apiKey,
-    crc,
-    baseUrl: sandbox
+    merchantId,
+    posId,
+    apiKey: p.p24ApiKey,
+    crc: p.p24Crc,
+    baseUrl: p.p24Sandbox
       ? "https://sandbox.przelewy24.pl"
       : "https://secure.przelewy24.pl",
   };
 }
 
-export async function p24Configured(): Promise<boolean> {
-  return (await config()) !== null;
+export function p24Configured(p: P24Fields): boolean {
+  return p24Config(p) !== null;
 }
 
 function sign(payload: Record<string, unknown>, crc: string): string {
@@ -56,9 +56,9 @@ function authHeader(cfg: P24Config): string {
 /** Rejestruje transakcję zaliczki; zwraca URL bramki do przekierowania gościa. */
 export async function createP24Payment(
   reservation: Reservation,
-  propertyName: string
+  property: P24Fields & { name: string }
 ): Promise<string> {
-  const cfg = await config();
+  const cfg = p24Config(property);
   if (!cfg) throw new Error("P24 nie jest skonfigurowane.");
 
   const body = {
@@ -67,7 +67,7 @@ export async function createP24Payment(
     sessionId: reservation.code,
     amount: reservation.depositGr,
     currency: "PLN",
-    description: `Zaliczka za rezerwację ${reservation.code} — ${propertyName}`,
+    description: `Zaliczka za rezerwację ${reservation.code} — ${property.name}`,
     email: reservation.email,
     client: reservation.guestName,
     country: "PL",
@@ -110,11 +110,12 @@ export type P24Notification = {
   sign: string;
 };
 
-/** Weryfikuje podpis powiadomienia urlStatus. */
-export async function verifyP24NotificationSign(
-  n: P24Notification
-): Promise<boolean> {
-  const cfg = await config();
+/** Weryfikuje podpis powiadomienia urlStatus kluczem CRC obiektu. */
+export function verifyP24NotificationSign(
+  n: P24Notification,
+  property: P24Fields
+): boolean {
+  const cfg = p24Config(property);
   if (!cfg) return false;
   const expected = sign(
     {
@@ -134,8 +135,11 @@ export async function verifyP24NotificationSign(
 }
 
 /** Potwierdza transakcję w P24 (wymagane, żeby środki zostały zaksięgowane). */
-export async function verifyP24Transaction(n: P24Notification): Promise<boolean> {
-  const cfg = await config();
+export async function verifyP24Transaction(
+  n: P24Notification,
+  property: P24Fields
+): Promise<boolean> {
+  const cfg = p24Config(property);
   if (!cfg) return false;
   const res = await fetch(`${cfg.baseUrl}/api/v1/transaction/verify`, {
     method: "PUT",
@@ -160,4 +164,19 @@ export async function verifyP24Transaction(n: P24Notification): Promise<boolean>
     signal: AbortSignal.timeout(15_000),
   });
   return res.ok;
+}
+
+/** Sprawdza poprawność danych dostępowych (P24 /testAccess). */
+export async function testP24Access(property: P24Fields): Promise<boolean> {
+  const cfg = p24Config(property);
+  if (!cfg) return false;
+  try {
+    const res = await fetch(`${cfg.baseUrl}/api/v1/testAccess`, {
+      headers: { Authorization: authHeader(cfg) },
+      signal: AbortSignal.timeout(10_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

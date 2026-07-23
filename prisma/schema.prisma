@@ -90,6 +90,13 @@ model Property {
   // instrukcje przyjazdu (kody drzwi, WiFi, dojazd) — gość widzi je dopiero
   // po wypełnieniu meldunku online (zachęta do potwierdzenia tożsamości)
   arrivalInfo    String     @default("")
+  // Przelewy24 obiektu — zaliczki gości trafiają bezpośrednio na konto
+  // właściciela (własna umowa z P24). Brak kompletu danych = tryb symulacji.
+  p24MerchantId  String     @default("")
+  p24PosId       String     @default("")
+  p24ApiKey      String     @default("")
+  p24Crc         String     @default("")
+  p24Sandbox     Boolean    @default(true)
   unitTypes      UnitType[]
   photos         Photo[]
   promoCodes     PromoCode[]

@@ -11,6 +11,8 @@ import {
 } from "@/lib/payments";
 
 // urlStatus Przelewy24 — potwierdzenie płatności zaliczki.
+// Podpis weryfikujemy kluczem CRC obiektu, do którego należy rezerwacja
+// (konfiguracja P24 jest per obiekt), więc rezerwację ładujemy najpierw.
 export async function POST(req: Request) {
   let notification: P24Notification;
   try {
@@ -19,20 +21,23 @@ export async function POST(req: Request) {
     return new Response("Bad request", { status: 400 });
   }
 
-  if (!(await verifyP24NotificationSign(notification))) {
+  const reservation = await prisma.reservation.findUnique({
+    where: { code: notification.sessionId },
+    include: { unit: { include: { unitType: { include: { property: true } } } } },
+  });
+  if (!reservation) return new Response("Unknown session", { status: 404 });
+
+  const property = reservation.unit.unitType.property;
+  if (!verifyP24NotificationSign(notification, property)) {
     return new Response("Invalid signature", { status: 400 });
   }
 
-  const reservation = await prisma.reservation.findUnique({
-    where: { code: notification.sessionId },
-  });
-  if (!reservation) return new Response("Unknown session", { status: 404 });
   if (reservation.status === "CONFIRMED") return new Response("OK"); // idempotencja
   if (reservation.status !== "PENDING" || notification.amount !== reservation.depositGr) {
     return new Response("Amount/status mismatch", { status: 400 });
   }
 
-  const verified = await verifyP24Transaction(notification);
+  const verified = await verifyP24Transaction(notification, property);
   if (!verified) return new Response("Verification failed", { status: 400 });
 
   await prisma.reservation.update({

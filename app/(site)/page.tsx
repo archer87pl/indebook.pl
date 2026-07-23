@@ -10,7 +10,6 @@ import {
   FileText,
   KeyRound,
   Luggage,
-  MapPin,
   MessageSquare,
   PenLine,
   BadgePercent,
@@ -24,12 +23,10 @@ import Logo from "@/components/Logo";
 import SubmitButton from "@/components/ui/SubmitButton";
 import { demoLogin } from "@/lib/actions";
 import { getLatestPosts, formatBlogDate } from "@/lib/blog";
-import { prisma } from "@/lib/db";
-import { formatPln } from "@/lib/format";
 import { appUrl } from "@/lib/payments";
 import { PLANS } from "@/lib/plans";
 
-// ISR: landing (katalog obiektów + blog) cache'owany, odświeżany co 5 min
+// ISR: landing (blog) cache'owany, odświeżany co 5 min
 export const revalidate = 300;
 
 export const metadata: Metadata = {
@@ -306,14 +303,6 @@ const MOCK_CAL: [number, number][] = [
 ];
 
 export default async function HomePage() {
-  const properties = await prisma.property.findMany({
-    where: { suspended: false, unitTypes: { some: {} } },
-    include: {
-      unitTypes: true,
-      photos: { where: { propertyId: { not: null } }, orderBy: { id: "asc" }, take: 1 },
-    },
-    orderBy: { id: "asc" },
-  });
   const latestPosts = getLatestPosts(3);
 
   const base = appUrl();
@@ -625,76 +614,6 @@ export default async function HomePage() {
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* ---------- OBIEKTY ---------- */}
-      <section id="obiekty" className="reveal space-y-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-bold text-brand-900">Obiekty na Rezio</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Rezerwuj bezpośrednio — wspierasz obiekt, nie pośrednika.
-            </p>
-          </div>
-        </div>
-        {properties.length === 0 && (
-          <p className="card px-6 py-10 text-center text-slate-500">
-            Nie ma jeszcze żadnych obiektów.{" "}
-            <Link href="/rejestracja" className="font-semibold text-brand-600 hover:underline">
-              Dodaj pierwszy!
-            </Link>
-          </p>
-        )}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {properties.map((p) => {
-            const minPrice = Math.min(...p.unitTypes.map((ut) => ut.basePriceGr));
-            return (
-              <Link
-                key={p.id}
-                href={`/o/${p.slug}`}
-                className="card group flex flex-col overflow-hidden transition-all hover:border-brand-600 hover:shadow-lg"
-              >
-                {p.photos[0] ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={p.photos[0].path}
-                    alt={p.name}
-                    className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
-                ) : (
-                  <div
-                    className="tnum grid h-32 place-items-center text-[10px] text-slate-400"
-                    style={{
-                      background:
-                        "repeating-linear-gradient(45deg,#eef3f0,#eef3f0 8px,#e6ede9 8px,#e6ede9 16px)",
-                    }}
-                  >
-                    zdjęcie obiektu
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col space-y-2 p-5">
-                  <h3 className="text-lg font-bold text-brand-900">{p.name}</h3>
-                  {p.address && (
-                    <p className="flex items-center gap-1 text-xs font-medium text-slate-500">
-                      <MapPin size={12} strokeWidth={2} />
-                      {p.address}
-                    </p>
-                  )}
-                  <p className="line-clamp-2 flex-1 text-sm text-slate-600">{p.description}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-brand-600">
-                      od <span className="tnum">{formatPln(minPrice)}</span>{" "}
-                      <span className="text-sm font-medium text-slate-400">/ noc</span>
-                    </p>
-                    <span className="text-sm font-semibold text-brand-600 opacity-0 transition-opacity group-hover:opacity-100">
-                      Zobacz →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
         </div>
       </section>
 

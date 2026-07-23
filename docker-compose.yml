@@ -9,11 +9,6 @@ services:
       APP_URL: "${APP_URL:-http://localhost:3000}"
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
       EMAIL_FROM: "${EMAIL_FROM:-Rezio <onboarding@resend.dev>}"
-      P24_MERCHANT_ID: "${P24_MERCHANT_ID:-}"
-      P24_POS_ID: "${P24_POS_ID:-}"
-      P24_API_KEY: "${P24_API_KEY:-}"
-      P24_CRC: "${P24_CRC:-}"
-      P24_SANDBOX: "${P24_SANDBOX:-true}"
     volumes:
       - rezio-data:/app/data
       - rezio-uploads:/app/public/uploads

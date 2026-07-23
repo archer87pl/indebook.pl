@@ -65,6 +65,7 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 
 ### 4.2 Płatności
 - **Przelewy24** — BLIK, karty, szybkie przelewy; zaliczka potwierdza rezerwację automatycznie (webhook).
+- **Konto P24 per obiekt** — właściciel podpina własną umowę z Przelewy24 w panelu (samoobsługowy onboarding z testem połączenia); zaliczki trafiają bezpośrednio na jego konto, prowizję bramki (~1%) rozlicza z P24. Platforma nie dotyka pieniędzy gości (brak ryzyka regulacyjnego MIP/KIP) i nie ponosi kosztu zmiennego bramki.
 - Tryb symulacji dla dewelopmentu (bez konfiguracji bramki).
 - Procent zaliczki konfigurowalny per obiekt.
 
@@ -179,7 +180,7 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 
 ### 6.3 Jednostkowa ekonomia (kierunkowo)
 - Koszt obsługi obiektu bliski zera (self-service, tania infrastruktura serverless).
-- Główny koszt zmienny: SMS-y (SMSAPI, ~7–16 gr/szt.) i bramka płatności — do rozważenia limity SMS per plan lub przerzucenie kosztu.
+- Główny koszt zmienny: SMS-y (SMSAPI, ~7–16 gr/szt.) — do rozważenia limity SMS per plan lub przerzucenie kosztu. Bramka płatności nie obciąża platformy: każdy obiekt ma własne konto P24 i sam rozlicza prowizję bramki.
 - Dźwignia wzrostu: **efekt katalogu** (obiekty na rezio.pl generują ruch i wiarygodność) + SEO (JSON-LD, opinie w Google).
 
 ### 6.4 Uwaga o gatingu funkcji

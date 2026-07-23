@@ -13,9 +13,11 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * Konfiguracja bramek/integracji platformy (Przelewy24, Resend, SMSAPI).
- * Wartości zapisane tutaj mają pierwszeństwo nad zmiennymi środowiskowymi;
- * ENV pozostaje fallbackiem. Sekrety pokazujemy tylko jako maskę końcówki.
+ * Konfiguracja integracji platformy (Resend, SMSAPI). Wartości zapisane
+ * tutaj mają pierwszeństwo nad zmiennymi środowiskowymi; ENV pozostaje
+ * fallbackiem. Sekrety pokazujemy tylko jako maskę końcówki.
+ * Płatności (Przelewy24) konfiguruje każdy obiekt u siebie:
+ * /admin/platnosci/konfiguracja.
  */
 export default async function SuperadminSettingsPage(props: {
   searchParams: Promise<{ saved?: string; cleared?: string; testmail?: string }>;
@@ -46,7 +48,7 @@ export default async function SuperadminSettingsPage(props: {
           const configured = section.requiredKeys.every((k) => effective(k) !== "");
           const fromPanel = section.fields.some((f) => source(f.key) === "panel");
           return (
-            <Card key={section.id} className={section.id === "p24" ? "xl:col-span-2" : ""}>
+            <Card key={section.id}>
               <CardHeader
                 title={section.title}
                 sub={section.description}
@@ -63,9 +65,7 @@ export default async function SuperadminSettingsPage(props: {
               <form action={superSaveSettings}>
                 <CardBody className="space-y-4">
                   <input type="hidden" name="section" value={section.id} />
-                  <div
-                    className={`grid gap-4 ${section.id === "p24" ? "sm:grid-cols-2" : ""}`}
-                  >
+                  <div className="grid gap-4">
                     {section.fields.map((field) => {
                       const current = effective(field.key);
                       const src = source(field.key);

@@ -34,12 +34,12 @@ test("superadmin przegląda platformę i loguje się jako właściciel", async (
   await expect(page).toHaveURL(/\/superadmin\/opinie/);
   await expect(page.getByText("Opinie platformy")).toBeVisible();
 
-  // konfiguracja bramek/integracji
+  // konfiguracja integracji (płatności P24 konfiguruje obiekt u siebie)
   await page.getByRole("link", { name: "Ustawienia" }).first().click();
   await expect(page).toHaveURL(/\/superadmin\/ustawienia/);
-  await expect(page.getByText("Bramka płatności — Przelewy24")).toBeVisible();
   await expect(page.getByText("E-maile — Resend")).toBeVisible();
   await expect(page.getByText("SMS-y — SMSAPI")).toBeVisible();
+  await expect(page.getByText("Bramka płatności — Przelewy24")).toHaveCount(0);
 
   // dziennik zdarzeń (nieudane logowania z testów auth powinny tu trafiać)
   await page.getByRole("link", { name: "Logi" }).first().click();

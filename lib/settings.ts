@@ -25,27 +25,9 @@ export type SettingSection = {
   fields: SettingDef[];
 };
 
+// Płatności (Przelewy24) nie są ustawieniem platformy — każdy obiekt podpina
+// własne konto P24 w /admin/platnosci/konfiguracja (pola Property.p24*).
 export const SETTING_SECTIONS: SettingSection[] = [
-  {
-    id: "p24",
-    title: "Bramka płatności — Przelewy24",
-    description:
-      "Zaliczki BLIK/karta/przelew. Bez kompletu danych platforma działa w trybie symulacji płatności (dev/demo).",
-    requiredKeys: ["P24_MERCHANT_ID", "P24_POS_ID", "P24_API_KEY", "P24_CRC"],
-    fields: [
-      { key: "P24_MERCHANT_ID", label: "Merchant ID", secret: false, placeholder: "np. 123456" },
-      { key: "P24_POS_ID", label: "POS ID", secret: false, placeholder: "zwykle = Merchant ID" },
-      { key: "P24_API_KEY", label: "Klucz API (raporty)", secret: true },
-      { key: "P24_CRC", label: "Klucz CRC", secret: true },
-      {
-        key: "P24_SANDBOX",
-        label: "Sandbox",
-        secret: false,
-        placeholder: "true / false",
-        hint: "true = środowisko testowe sandbox.przelewy24.pl (domyślne); false = produkcja",
-      },
-    ],
-  },
   {
     id: "mail",
     title: "E-maile — Resend",

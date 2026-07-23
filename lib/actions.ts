@@ -18,7 +18,12 @@ import { SETTING_SECTIONS } from "./settings";
 import { prisma } from "./db";
 import { formatPln, parsePlnToGr } from "./format";
 import { syncIcalFeed } from "./ical";
-import { appUrl, createP24Payment, p24Configured } from "./payments";
+import {
+  appUrl,
+  createP24Payment,
+  p24Configured,
+  testP24Access,
+} from "./payments";
 import { amenityDef } from "./amenities";
 import {
   canCheckIn,
@@ -311,8 +316,8 @@ export async function createReservation(formData: FormData) {
 }
 
 /**
- * Płatność zaliczki: Przelewy24 gdy skonfigurowane (env P24_*),
- * inaczej tryb symulacji (natychmiastowe potwierdzenie).
+ * Płatność zaliczki: Przelewy24 gdy obiekt ma skonfigurowaną bramkę
+ * (Property.p24*), inaczej tryb symulacji (natychmiastowe potwierdzenie).
  */
 export async function payDeposit(formData: FormData) {
   const code = str(formData, "code");
@@ -327,14 +332,12 @@ export async function payDeposit(formData: FormData) {
     reservation.expiresAt > new Date();
   if (!payable) redirect(`/r/${code}`);
 
-  if (await p24Configured()) {
+  const property = reservation.unit.unitType.property;
+  if (p24Configured(property)) {
     let gatewayUrl = "";
     let errorMsg = "";
     try {
-      gatewayUrl = await createP24Payment(
-        reservation,
-        reservation.unit.unitType.property.name
-      );
+      gatewayUrl = await createP24Payment(reservation, property);
     } catch (e) {
       errorMsg = e instanceof Error ? e.message : "nieznany błąd";
     }
@@ -1333,6 +1336,79 @@ export async function updateProperty(formData: FormData) {
   revalidatePath(`/o/${property.slug}`); // publiczna strona obiektu (ISR)
   revalidatePath(`/o/${property.slug}/regulamin`);
   redirect("/admin/obiekt?saved=1");
+}
+
+// ---------- Panel obiektu: płatności online (Przelewy24) ----------
+
+/**
+ * Konfiguracja bramki P24 obiektu (własna umowa właściciela z Przelewy24;
+ * zaliczki gości trafiają bezpośrednio na jego konto). Sekrety: puste pole
+ * = bez zmian. Wyczyszczenie Merchant ID wyłącza bramkę (tryb symulacji).
+ */
+export async function updatePaymentSettings(formData: FormData) {
+  const { property } = await requireOwner();
+  const fail = (msg: string) =>
+    redirect(`/admin/platnosci/konfiguracja?error=${encodeURIComponent(msg)}`);
+
+  const p24MerchantId = str(formData, "p24MerchantId");
+  const p24PosId = str(formData, "p24PosId");
+  const p24ApiKey = str(formData, "p24ApiKey");
+  const p24Crc = str(formData, "p24Crc");
+  const p24Sandbox = formData.get("p24Sandbox") === "on";
+
+  if (p24MerchantId && !/^\d+$/.test(p24MerchantId))
+    fail("Merchant ID musi być liczbą — znajdziesz go w panelu Przelewy24.");
+  if (p24PosId && !/^\d+$/.test(p24PosId)) fail("POS ID musi być liczbą.");
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: {
+      p24MerchantId,
+      p24PosId: p24PosId || p24MerchantId, // zwykle ten sam identyfikator
+      p24ApiKey: p24ApiKey || property.p24ApiKey,
+      p24Crc: p24Crc || property.p24Crc,
+      p24Sandbox,
+    },
+  });
+  await logEvent({
+    kind: "ADMIN",
+    message: `Zaktualizowano konfigurację płatności (Przelewy24) — ${property.name}`,
+    propertyId: property.id,
+  });
+  revalidatePath("/admin/platnosci/konfiguracja");
+  redirect("/admin/platnosci/konfiguracja?saved=1");
+}
+
+/** Usuwa dane P24 obiektu — bramka wraca do trybu symulacji. */
+export async function clearPaymentSettings() {
+  const { property } = await requireOwner();
+  await prisma.property.update({
+    where: { id: property.id },
+    data: {
+      p24MerchantId: "",
+      p24PosId: "",
+      p24ApiKey: "",
+      p24Crc: "",
+      p24Sandbox: true,
+    },
+  });
+  await logEvent({
+    kind: "ADMIN",
+    level: "WARN",
+    message: `Usunięto konfigurację płatności (Przelewy24) — ${property.name}`,
+    propertyId: property.id,
+  });
+  revalidatePath("/admin/platnosci/konfiguracja");
+  redirect("/admin/platnosci/konfiguracja?cleared=1");
+}
+
+/** Weryfikuje dane dostępowe zapisane w bazie (P24 /testAccess). */
+export async function testP24Connection() {
+  const { property } = await requireOwner();
+  if (!p24Configured(property))
+    redirect("/admin/platnosci/konfiguracja?test=missing");
+  const ok = await testP24Access(property);
+  redirect(`/admin/platnosci/konfiguracja?test=${ok ? "ok" : "fail"}`);
 }
 
 // ---------- Panel obiektu: plan (upgrade/downgrade) ----------

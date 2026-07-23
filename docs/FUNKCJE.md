@@ -139,7 +139,8 @@ przyjeździe”). Po wysłaniu:
 - powstaje rezerwacja **PENDING z 30-minutową blokadą** (`expiresAt`) — po tym
   czasie termin zwalnia się automatycznie (cron + filtry w zapytaniach),
 - gość dostaje e-mail i trafia do panelu gościa, gdzie opłaca zaliczkę:
-  **Przelewy24** (BLIK/karta/przelew; env `P24_*`, webhook `api/payments/p24`)
+  **Przelewy24** (BLIK/karta/przelew; konto P24 obiektu z
+  `/admin/platnosci/konfiguracja`, webhook `api/payments/p24`)
   albo — bez konfiguracji — **symulacja** potwierdzająca od razu (dev/demo),
 - wpłata → status **CONFIRMED**, e-mail + SMS z linkiem do meldunku online.
 
@@ -301,7 +302,14 @@ potwierdzone ręcznie (rozliczane na miejscu) i wyróżniona bursztynowa karta
 „Oczekuje na płatność”. Tabela transakcji: data, gość + kod, metoda
 (Przelewy24 / na miejscu), typ (zaliczka / pełna kwota), kwota, status
 (zaksięgowana / potwierdzona ręcznie / oczekuje / wygasła). Przełącznik do
-zakładki Faktury i eksport CSV.
+zakładek Faktury i Konfiguracja oraz eksport CSV.
+
+Zakładka **Konfiguracja** (`/admin/platnosci/konfiguracja`): właściciel
+podpina własne konto Przelewy24 (Merchant ID, POS ID, klucz API, CRC,
+przełącznik sandbox) — zaliczki gości trafiają bezpośrednio na jego konto,
+prowizję bramki rozlicza z P24 (Rezio nie pobiera prowizji od rezerwacji).
+Sekrety maskowane, przycisk „Testuj połączenie” (P24 `/testAccess`),
+instrukcja onboardingu w 3 krokach; usunięcie danych przywraca symulację.
 
 *Pliki:* `app/admin/platnosci/page.tsx`
 
@@ -425,8 +433,7 @@ z zakładkami **Pulpit / Rezerwacje / Opinie**:
   panelu recepcji obiektu na sesji właściciela (wsparcie techniczne);
   sesja admina jest zastępowana, nie można impersonować innych adminów,
   każda impersonacja trafia do dziennika zdarzeń,
-- **konfiguracja bramek/integracji** (`/superadmin/ustawienia`): Przelewy24
-  (Merchant ID, POS ID, klucz API, CRC, sandbox), Resend (klucz API,
+- **konfiguracja integracji** (`/superadmin/ustawienia`): Resend (klucz API,
   nadawca) i SMSAPI (token, pole nadawcy) — wartości zapisywane w bazie
   (`PlatformSetting`) **mają pierwszeństwo nad zmiennymi środowiskowymi**
   (ENV pozostaje fallbackiem); sekrety pokazywane wyłącznie jako maska

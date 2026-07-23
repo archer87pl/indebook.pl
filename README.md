@@ -43,7 +43,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 **Gość**
 - katalog obiektów, strona obiektu z wyszukiwarką terminów i cenami per noc,
 - cennik sezonowy, min. długość pobytu, rezerwacja wstępna (30 min na zaliczkę),
-- symulacja bramki płatności (do podmiany na Przelewy24 / Tpay w `payDeposit`),
+- płatności Przelewy24 per obiekt (własne konto P24 właściciela w `/admin/platnosci/konfiguracja`; bez danych — symulacja),
 - panel gościa `/r/[kod]`: status, zmiana terminu (requote + kontrola dostępności), anulowanie,
 - **meldunek online** `/r/[kod]/meldunek`: karta meldunkowa z e-podpisem (canvas), dane dokumentu bez skanów (RODO), dodatkowi goście, nr auta; po wypełnieniu gość widzi instrukcje przyjazdu (kody, WiFi) i jego e-mail uznajemy za potwierdzony,
 - **czat z obiektem** na stronie rezerwacji — obie strony dostają powiadomienia e-mail, nieprzeczytane oznaczane przy wejściu,
@@ -71,7 +71,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - pulpit platformy: konta, obiekty, MRR wg planów, rezerwacje i GMV (30 dni / od początku), rozkład planów, **trend wzrostu 6 miesięcy** (GMV/rezerwacje/nowe obiekty), **zdrowie platformy** (feedy iCal z błędami, zawieszone, oczekujące płatności), wyszukiwarka obiektów,
 - **globalne widoki**: rezerwacje całej platformy (`/superadmin/rezerwacje` — statusy, wyszukiwarka, filtr per obiekt) i moderacja opinii ponad obiektami (`/superadmin/opinie`),
 - **impersonacja**: „Zaloguj jako właściciel" — wejście do panelu recepcji obiektu w celach wsparcia (sesja admina zastępowana),
-- **konfiguracja bramek z panelu** (`/superadmin/ustawienia`): Przelewy24 / Resend / SMSAPI zapisywane w bazie (`PlatformSetting`) z pierwszeństwem nad ENV, sekrety maskowane, test wysyłki e-mail,
+- **konfiguracja integracji z panelu** (`/superadmin/ustawienia`): Resend / SMSAPI zapisywane w bazie (`PlatformSetting`) z pierwszeństwem nad ENV, sekrety maskowane, test wysyłki e-mail (płatności P24 konfiguruje każdy obiekt u siebie),
 - **dziennik zdarzeń** (`/superadmin/logi`): rezerwacje, płatności, e-maile/SMS-y, błędy iCal, nieudane logowania i akcje admina — filtry, paginacja, retencja 90 dni,
 - **karta obiektu** `/superadmin/obiekt/[id]`: edycja danych obiektu (nazwa, slug ze sprawdzeniem unikalności, plan bez limitu jednostek, % zaliczki, godziny, adres, opis) i konta właściciela (imię, e-mail), wysyłka linku do resetu hasła, statystyki (jednostki, rezerwacje, GMV, opinie),
 - **zawieszenie obiektu** (ukrycie z katalogu + blokada nowych rezerwacji, egzekwowane też w `createReservation`) i **trwałe usunięcie** obiektu wraz z kontem i całą historią (potwierdzenie slugiem, kaskada w transakcji).
@@ -84,7 +84,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - pełne API dwukierunkowe (ceny, real-time) — faza 2, wymaga certyfikacji partnerskiej.
 
 **Pozostałe integracje**
-- płatności Przelewy24 (env `P24_*`, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola), SMS-y SMSAPI (env `SMSAPI_TOKEN`, fallback: konsola) — potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem (z linkiem do meldunku, cron, wysyłka tylko 8–21).
+- płatności Przelewy24 per obiekt (pola `Property.p24*` z panelu obiektu, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola), SMS-y SMSAPI (env `SMSAPI_TOKEN`, fallback: konsola) — potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem (z linkiem do meldunku, cron, wysyłka tylko 8–21).
 
 ## Konwencje
 
@@ -105,7 +105,7 @@ Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **
    npm run db:seed      # opcjonalnie: demo obiekty i superadmin
    ```
 2. **Blob** — w dashboardzie Vercel: Storage → Create → Blob; token `BLOB_READ_WRITE_TOKEN` wstrzyknie się automatycznie do deploymentu (`vercel env pull` do dev).
-3. **Zmienne środowiskowe** (Vercel → Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`, `APP_URL` (adres produkcyjny), `CRON_SECRET` (dowolny losowy ciąg), oraz opcjonalnie `RESEND_API_KEY`, `EMAIL_FROM`, `P24_*`. Pełna lista w `.env.example`.
+3. **Zmienne środowiskowe** (Vercel → Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`, `APP_URL` (adres produkcyjny), `CRON_SECRET` (dowolny losowy ciąg), oraz opcjonalnie `RESEND_API_KEY`, `EMAIL_FROM`. Pełna lista w `.env.example`.
 4. **Cron** — harmonogram w `vercel.json`: `expire-reservations` o 8:00 UTC (wygaszanie PENDING + retencja kart meldunkowych + przypomnienia o przyjeździe; pora dobrana pod SMS-y do gości), `sync-ical` o 4:00. Endpointy `app/api/cron/*` chroni `CRON_SECRET`. Uwaga: plan **Hobby** ogranicza do 2 cronów 1×/dobę — do częstszego harmonogramu potrzebny plan Pro.
 5. Deploy przez `git push` (integracja GitHub) lub `vercel --prod`. Build sam odpala `prisma generate` (`postinstall`).
 

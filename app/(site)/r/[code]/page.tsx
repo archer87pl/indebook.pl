@@ -79,7 +79,7 @@ export default async function ReservationPage(props: {
   const payable = r.status === "PENDING" && !expired;
   const active = r.status === "CONFIRMED" || payable;
   const changeable = active && r.checkIn > todayISO();
-  const p24Enabled = payable && (await p24Configured());
+  const p24Enabled = payable && p24Configured(property);
   const confirmed = r.status === "CONFIRMED";
 
   return (

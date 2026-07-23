@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Settings } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -82,6 +82,12 @@ export default async function PaymentsPage() {
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-bold text-slate-500 hover:text-slate-900"
           >
             <FileText size={12} strokeWidth={2} /> Faktury
+          </Link>
+          <Link
+            href="/admin/platnosci/konfiguracja"
+            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[11.5px] font-bold text-slate-500 hover:text-slate-900"
+          >
+            <Settings size={12} strokeWidth={2} /> Konfiguracja
           </Link>
         </div>
         <Button variant="quiet" href="/api/admin/export">
