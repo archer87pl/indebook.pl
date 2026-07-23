@@ -38,6 +38,7 @@ export const PLANS: PlanDef[] = [
       "meldunek online z e-podpisem",
       "czat z gościem i SMS-y",
       "kody promocyjne i cennik sezonowy",
+      "własna strona WWW obiektu (subdomena)",
     ],
     highlighted: true,
   },
@@ -54,6 +55,7 @@ export const PLANS: PlanDef[] = [
       "faktury VAT / zaliczkowe / proforma",
       "raporty przychodów i obłożenia per kanał",
       "eksport CSV do księgowości",
+      "własna domena strony WWW (mojobiekt.pl)",
       "priorytetowe wsparcie",
     ],
   },
@@ -61,4 +63,15 @@ export const PLANS: PlanDef[] = [
 
 export function planDef(key: string): PlanDef {
   return PLANS.find((p) => p.key === key) ?? PLANS[0];
+}
+
+// Moduł „Strona WWW": kreator + subdomena od planu Standard, własna domena w Pro.
+export function sitePlanFeatures(plan: string): {
+  builder: boolean;
+  customDomain: boolean;
+} {
+  return {
+    builder: plan === "STANDARD" || plan === "PRO",
+    customDomain: plan === "PRO",
+  };
 }

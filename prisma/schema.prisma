@@ -104,6 +104,31 @@ model Property {
   pricingRules   PricingRule[]
   reviews        Review[]
   invoices       Invoice[]
+  site           Site?
+}
+
+// Strona WWW obiektu budowana w kreatorze (moduł „Strona WWW" w panelu).
+// draftConfig — wersja robocza edytowana w panelu; publishedConfig — to, co
+// widzi świat (null = jeszcze nie opublikowana). Publikacja kopiuje draft →
+// published, „cofnij zmiany" kopiuje published → draft.
+model Site {
+  id              Int       @id @default(autoincrement())
+  propertyId      Int       @unique
+  property        Property  @relation(fields: [propertyId], references: [id])
+  // adres nazwa.<SITES_BASE_DOMAIN>, np. przystanek-lesna.rezop.pl
+  subdomain       String    @unique
+  // własna domena klienta (plan PRO), np. mojobiekt.pl
+  customDomain    String?   @unique
+  // NONE | PENDING | VERIFIED | ERROR
+  domainStatus    String    @default("NONE")
+  // szablon startowy: gorski | nadmorski | miejski | uniwersalny
+  template        String    @default("uniwersalny")
+  draftConfig     Json
+  publishedConfig Json?
+  customCss       String    @default("")
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 // Reguła cen dynamicznych — maks. jedna danego rodzaju na obiekt.
