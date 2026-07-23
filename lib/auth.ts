@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Property, User } from "@prisma/client";
@@ -28,16 +29,23 @@ export async function destroySession(): Promise<void> {
   store.delete(SESSION_COOKIE);
 }
 
+// Memoizacja per żądanie po tokenie (nie bezargumentowo): layout, strona i akcja
+// robią jedno zapytanie o sesję, a zmiana tokenu w trakcie żądania (impersonacja,
+// logowanie) daje świeży odczyt, bo zmienia klucz cache.
+const sessionByToken = cache((token: string) =>
+  prisma.session.findUnique({
+    where: { token },
+    include: { user: { include: { property: true } } },
+  })
+);
+
 export async function getSessionUser(): Promise<
   (User & { property: Property | null }) | null
 > {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  const session = await prisma.session.findUnique({
-    where: { token },
-    include: { user: { include: { property: true } } },
-  });
+  const session = await sessionByToken(token);
   if (!session || session.expiresAt <= new Date()) return null;
   return session.user;
 }
