@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CreditCard,
   FileText,
+  Globe,
   LayoutGrid,
   List,
   Loader2,
@@ -30,6 +31,7 @@ const ICONS = {
   pokoje: BedDouble,
   cennik: Tags,
   opinie: Star,
+  strona: Globe,
   raporty: BarChart3,
   ustawienia: Settings,
 } as const;

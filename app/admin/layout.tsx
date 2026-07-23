@@ -24,6 +24,7 @@ const NAV: AdminNavItem[] = [
   { href: "/admin/pokoje", label: "Pokoje", icon: "pokoje" },
   { href: "/admin/cennik", label: "Cennik", icon: "cennik" },
   { href: "/admin/opinie", label: "Opinie", icon: "opinie" },
+  { href: "/admin/strona", label: "Strona WWW", icon: "strona" },
   { href: "/admin/raporty", label: "Raporty", icon: "raporty" },
 ];
 
