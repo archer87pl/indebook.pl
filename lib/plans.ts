@@ -65,6 +65,11 @@ export function planDef(key: string): PlanDef {
   return PLANS.find((p) => p.key === key) ?? PLANS[0];
 }
 
+// Synchronizacja kanałów: iCal od Standard, Channex (2-way) tylko w Pro.
+export function channelSyncFeatures(plan: string): { ical: boolean; channex: boolean } {
+  return { ical: plan === "STANDARD" || plan === "PRO", channex: plan === "PRO" };
+}
+
 // Moduł „Strona WWW": kreator + subdomena od planu Standard, własna domena w Pro.
 export function sitePlanFeatures(plan: string): {
   builder: boolean;
