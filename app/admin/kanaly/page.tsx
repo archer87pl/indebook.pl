@@ -12,10 +12,14 @@ import {
 } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
 import { CHANNELS, channelDef } from "@/lib/channels";
+import { channelProvider } from "@/lib/channex/provider";
+import SyncModeSwitch from "@/components/admin/SyncModeSwitch";
+import SyncLog from "@/components/admin/SyncLog";
 import { formatRangeShortPl } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { findChannelConflicts } from "@/lib/ical";
 import { appUrl } from "@/lib/payments";
+import { channelSyncFeatures } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -40,15 +44,21 @@ export default async function ChannelsPage() {
   });
   const conflicts = await findChannelConflicts(property.id);
   const feedCount = units.reduce((s, u) => s + u.icalFeeds.length, 0);
+  const mode = property.syncMode;
+  const channexEnabled = channelSyncFeatures(property.plan).channex && channelProvider() !== null;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-[13px] text-slate-500">
-          Synchronizacja dostępności z Booking.com, Airbnb i innymi (iCal, w obie
-          strony). Kalendarze odświeżają się automatycznie co godzinę.
-        </p>
-        {feedCount > 0 && (
+        <div className="space-y-2">
+          <SyncModeSwitch mode={mode} channexEnabled={channexEnabled} />
+          <p className="max-w-2xl text-[13px] text-slate-500">
+            Wybierz sposób synchronizacji kanałów. <b>iCal</b> — import/eksport kalendarzy
+            (dostępność, do 1 h). <b>Channex</b> — pełna dwukierunkowa integracja z OTA
+            (ceny, rezerwacje w czasie rzeczywistym; plan Pro).
+          </p>
+        </div>
+        {mode === "ICAL" && feedCount > 0 && (
           <form action={syncAllIcalFeeds}>
             <Button>
               <RefreshCw size={14} strokeWidth={2} /> Synchronizuj wszystko
@@ -57,7 +67,28 @@ export default async function ChannelsPage() {
         )}
       </div>
 
-      {conflicts.length > 0 && (
+      {mode === "OFF" && (
+        <Card>
+          <EmptyState
+            icon={<Share2 size={26} strokeWidth={2} />}
+            title="Synchronizacja kanałów wyłączona"
+            description="Wybierz iCal lub Channex powyżej, aby połączyć się z Booking.com, Airbnb i innymi kanałami."
+          />
+        </Card>
+      )}
+
+      {mode === "CHANNEX" && (
+        <Card>
+          <CardBody>
+            <p className="text-[13px] text-slate-600">
+              Tryb <b>Channex</b> jest włączony. Konfiguracja integracji (provisioning obiektu,
+              podłączanie Booking.com/Airbnb) dochodzi w kolejnym etapie wdrożenia.
+            </p>
+          </CardBody>
+        </Card>
+      )}
+
+      {mode === "ICAL" && conflicts.length > 0 && (
         <div className="space-y-3 rounded-[14px] border border-danger-600/30 bg-danger-100 p-[18px]">
           <h2 className="flex items-center gap-2 text-[15px] font-bold text-danger-600">
             <TriangleAlert size={16} strokeWidth={2} className="flex-none" />
@@ -97,6 +128,8 @@ export default async function ChannelsPage() {
         </div>
       )}
 
+      {mode === "ICAL" && (
+      <>
       <div className="space-y-4">
         {units.length === 0 && (
           <Card>
@@ -298,6 +331,13 @@ export default async function ChannelsPage() {
           </p>
         </CardBody>
       </Card>
+      </>
+      )}
+
+      <section className="space-y-2 pt-2">
+        <h2 className="text-[15px] font-bold">Log synchronizacji</h2>
+        <SyncLog propertyId={property.id} />
+      </section>
     </div>
   );
 }
