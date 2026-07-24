@@ -1,5 +1,5 @@
 import { ArrowLeft, FileText } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { Card, CardBody } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";

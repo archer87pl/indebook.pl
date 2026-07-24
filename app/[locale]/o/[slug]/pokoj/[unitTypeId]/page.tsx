@@ -19,7 +19,7 @@ import {
   WashingMachine,
   Wifi,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";

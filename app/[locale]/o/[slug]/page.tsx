@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { Clock, Construction, FileText, MapPin, ShieldCheck, Star } from "lucide-react";
 import SearchForm from "@/components/SearchForm";

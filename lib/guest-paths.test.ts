@@ -28,15 +28,13 @@ describe("isGuestPath", () => {
       "/r/HO-ABC",
       "/r/HO-ABC/meldunek",
       "/moja-rezerwacja",
-      "/blog",
-      "/blog/wpis",
     ]) {
       expect(isGuestPath(p), p).toBe(true);
     }
   });
 
-  it("panel, superadmin, landing i auth — nie", () => {
-    for (const p of ["/", "/admin", "/admin/kanaly", "/superadmin", "/login", "/rejestracja"]) {
+  it("panel, superadmin, landing, blog i auth — nie", () => {
+    for (const p of ["/", "/admin", "/admin/kanaly", "/superadmin", "/login", "/rejestracja", "/blog", "/blog/wpis"]) {
       expect(isGuestPath(p), p).toBe(false);
     }
   });

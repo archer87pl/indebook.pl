@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { appUrl } from "@/lib/payments";
+import { getLocale } from "next-intl/server";
 import { PRODUCT_NAME } from "@/lib/brand";
 import "./globals.css";
 
@@ -30,14 +31,16 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // język aktywnego żądania (trasy gościa mają [locale]; reszta = domyślny PL)
+  const locale = await getLocale();
   return (
     <html
-      lang="pl"
+      lang={locale}
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

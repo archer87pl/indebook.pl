@@ -1,4 +1,8 @@
 {
+  "nav": {
+    "myReservation": "My booking",
+    "tagline": "book direct, no portal commission"
+  },
   "common": {
     "book": "Book now",
     "back": "Back",

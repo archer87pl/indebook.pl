@@ -1,4 +1,8 @@
 {
+  "nav": {
+    "myReservation": "Meine Buchung",
+    "tagline": "direkt buchen, ohne Portalprovision"
+  },
   "common": {
     "book": "Jetzt buchen",
     "back": "Zurück",

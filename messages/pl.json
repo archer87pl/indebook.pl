@@ -1,4 +1,8 @@
 {
+  "nav": {
+    "myReservation": "Moja rezerwacja",
+    "tagline": "rezerwuj bezpośrednio, bez prowizji portali"
+  },
   "common": {
     "book": "Zarezerwuj",
     "back": "Wróć",

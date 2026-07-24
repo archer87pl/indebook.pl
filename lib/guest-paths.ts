@@ -4,7 +4,9 @@
 
 import { routing } from "@/i18n/routing";
 
-const GUEST_PREFIXES = ["/o", "/rezerwuj", "/r", "/moja-rezerwacja", "/blog"];
+// Blog celowo poza lokalizacją: treść to polskie pliki .md (content/blog),
+// więc tłumaczymy tylko flow rezerwacji i panel gościa.
+const GUEST_PREFIXES = ["/o", "/rezerwuj", "/r", "/moja-rezerwacja"];
 
 // prefiksy języków innych niż domyślny, np. /en, /de
 const LOCALE_PREFIX_RE = new RegExp(
