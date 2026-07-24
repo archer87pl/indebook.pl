@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import StarRating from "@/components/StarRating";
@@ -26,19 +27,20 @@ export default async function ReviewPage(props: {
   });
   if (!reservation) notFound();
 
+  const t = await getTranslations("review");
   const property = reservation.unit.unitType.property;
   const backLink = (
     <Link href={`/r/${code}`} className="text-sm font-semibold text-brand-600 hover:underline">
-      ← Wróć do rezerwacji
+      ← {t("back")}
     </Link>
   );
 
   if (reservation.review) {
     return (
       <div className="mx-auto max-w-xl space-y-5 text-center">
-        <h1 className="text-2xl font-bold">Opinia o pobycie</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="alert-success">
-          Dziękujemy za opinię! Twoja ocena:{" "}
+          {t("thanks")}{" "}
           <span className="inline-flex translate-y-0.5 gap-px text-accent-400">
             {Array.from({ length: reservation.review.rating }, (_, i) => (
               <Star key={i} size={14} strokeWidth={2} fill="currentColor" />
@@ -52,10 +54,9 @@ export default async function ReviewPage(props: {
   if (!canReview({ ...reservation, hasReview: false })) {
     return (
       <div className="mx-auto max-w-xl space-y-5 text-center">
-        <h1 className="text-2xl font-bold">Opinia o pobycie</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="alert-warning">
-          Opinię będzie można wystawić po zakończonym pobycie (po{" "}
-          {formatDatePl(reservation.checkOut)}).
+          {t("notYet", { date: formatDatePl(reservation.checkOut) })}
         </p>
         {backLink}
       </div>
@@ -69,7 +70,7 @@ export default async function ReviewPage(props: {
           <Star size={22} strokeWidth={2} fill="currentColor" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold leading-tight">Jak minął pobyt?</h1>
+          <h1 className="text-2xl font-bold leading-tight">{t("heading")}</h1>
           <p className="mt-0.5 text-sm text-slate-500">
             {property.name} · {formatDatePl(reservation.checkIn)} →{" "}
             {formatDatePl(reservation.checkOut)}
@@ -84,28 +85,27 @@ export default async function ReviewPage(props: {
           <CardBody className="space-y-4">
             <input type="hidden" name="code" value={code} />
             <label className="label">
-              Twoja ocena *
+              {t("rating")}
               <StarRating />
             </label>
             <label className="label">
-              Opinia (opcjonalnie)
+              {t("comment")}
               <textarea
                 name="comment"
                 rows={4}
                 maxLength={REVIEW_MAX}
-                placeholder="Co Ci się podobało? Co moglibyśmy poprawić?"
+                placeholder={t("commentPlaceholder")}
                 className="input w-full"
               />
             </label>
             <label className="flex items-start gap-2 text-sm text-slate-600">
               <input type="checkbox" name="consent" required className="mt-1 accent-brand-600" />
               <span>
-                Zgadzam się na publikację opinii na stronie obiektu pod moim imieniem i
-                inicjałem nazwiska (np. „{reservation.guestName.split(" ")[0]} K.&rdquo;). *
+                {t("consent", { example: reservation.guestName.split(" ")[0] })}
               </span>
             </label>
             <Button type="submit" size="lg" className="w-full">
-              Wyślij opinię
+              {t("submit")}
             </Button>
           </CardBody>
         </form>

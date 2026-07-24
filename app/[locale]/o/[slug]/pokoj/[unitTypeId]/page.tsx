@@ -19,6 +19,7 @@ import {
   WashingMachine,
   Wifi,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -58,6 +59,9 @@ export default async function RoomPage(props: {
   params: Promise<{ slug: string; unitTypeId: string }>;
 }) {
   const { slug, unitTypeId } = await props.params;
+  const t = await getTranslations("property");
+  const ts = await getTranslations("search");
+  const tc = await getTranslations("common");
   const unitType = await prisma.unitType.findUnique({
     where: { id: Number(unitTypeId) },
     include: {
@@ -91,9 +95,9 @@ export default async function RoomPage(props: {
           <div>
             <h1 className="text-[26px] font-bold text-brand-950">{unitType.name}</h1>
             <p className="mt-1 text-[11.5px] text-slate-400">
-              do {unitType.maxGuests} os. · {unitType.units.length}{" "}
-              {unitType.units.length === 1 ? "jednostka" : "jednostki"} · min.{" "}
-              {unitType.minStay} {unitType.minStay === 1 ? "noc" : "noce"}
+              {t("upToGuests", { count: unitType.maxGuests })} ·{" "}
+              {t("units", { count: unitType.units.length })} ·{" "}
+              {t("minStay", { count: unitType.minStay })}
             </p>
           </div>
 
@@ -124,7 +128,9 @@ export default async function RoomPage(props: {
               className="flex h-56 items-center justify-center rounded-[14px]"
               style={{ background: PHOTO_TEXTURE }}
             >
-              <span className="tnum text-[11px] text-slate-400">zdjęcie pokoju</span>
+              <span className="tnum text-[11px] text-slate-400">
+                {t("gallery.roomPhoto")}
+              </span>
             </div>
           )}
 
@@ -136,7 +142,7 @@ export default async function RoomPage(props: {
 
           {amenityDefs.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-[15px] font-bold text-brand-950">Udogodnienia</h2>
+              <h2 className="text-[15px] font-bold text-brand-950">{t("amenitiesTitle")}</h2>
               <div className="flex flex-wrap gap-2">
                 {amenityDefs.map((a) => {
                   const Icon = AMENITY_ICONS[a.key] ?? Check;
@@ -156,22 +162,26 @@ export default async function RoomPage(props: {
 
           {unitType.seasons.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-[15px] font-bold text-brand-950">Cennik</h2>
+              <h2 className="text-[15px] font-bold text-brand-950">{t("pricing.title")}</h2>
               <Card>
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="border-b border-slate-200 text-left">
-                      <th className="th px-[18px] py-2.5">Sezon</th>
-                      <th className="th px-3 py-2.5">Termin</th>
-                      <th className="th px-[18px] py-2.5 text-right">Cena / noc</th>
+                      <th className="th px-[18px] py-2.5">{t("pricing.season")}</th>
+                      <th className="th px-3 py-2.5">{t("pricing.period")}</th>
+                      <th className="th px-[18px] py-2.5 text-right">
+                        {t("pricing.pricePerNight")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-600">
                     <tr className="border-b border-slate-100 transition-colors hover:bg-slate-50">
                       <td className="px-[18px] py-2.5 font-semibold text-slate-900">
-                        Cena standardowa
+                        {t("pricing.standard")}
                       </td>
-                      <td className="px-3 py-2.5 text-slate-400">poza sezonami</td>
+                      <td className="px-3 py-2.5 text-slate-400">
+                        {t("pricing.outsideSeasons")}
+                      </td>
                       <td className="tnum px-[18px] py-2.5 text-right font-semibold text-slate-900">
                         {formatPln(unitType.basePriceGr)}
                       </td>
@@ -208,15 +218,15 @@ export default async function RoomPage(props: {
             <CardBody>
               <p className="mb-3.5 flex items-baseline gap-1.5">
                 <span className="tnum text-[22px] font-bold text-slate-900">
-                  od {formatPln(unitType.basePriceGr)}
+                  {tc("from")} {formatPln(unitType.basePriceGr)}
                 </span>
-                <span className="text-[13px] text-slate-400">/ noc</span>
+                <span className="text-[13px] text-slate-400">{t("perNightShort")}</span>
               </p>
               <form action={`/rezerwuj/${unitType.id}`}>
                 <div className="mb-3 overflow-hidden rounded-xl border border-slate-300">
                   <div className="flex">
                     <label className="flex-1 border-r border-slate-200 px-3 py-2">
-                      <span className="th block">Przyjazd</span>
+                      <span className="th block">{ts("checkIn")}</span>
                       <input
                         type="date"
                         name="from"
@@ -227,7 +237,7 @@ export default async function RoomPage(props: {
                       />
                     </label>
                     <label className="flex-1 px-3 py-2">
-                      <span className="th block">Wyjazd</span>
+                      <span className="th block">{ts("checkOut")}</span>
                       <input
                         type="date"
                         name="to"
@@ -239,7 +249,7 @@ export default async function RoomPage(props: {
                     </label>
                   </div>
                   <label className="block border-t border-slate-200 px-3 py-2">
-                    <span className="th block">Goście</span>
+                    <span className="th block">{ts("guestsLabel")}</span>
                     <input
                       type="number"
                       name="guests"
@@ -251,11 +261,10 @@ export default async function RoomPage(props: {
                   </label>
                 </div>
                 <Button type="submit" size="lg" className="w-full">
-                  Rezerwuj ten pokój
+                  {t("bookThisRoom")}
                 </Button>
                 <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
-                  Dostępność sprawdzimy w następnym kroku. Zaliczka{" "}
-                  {property.depositPercent}% potwierdza rezerwację.
+                  {t("availabilityNote", { percent: property.depositPercent })}
                 </p>
               </form>
             </CardBody>
@@ -263,7 +272,7 @@ export default async function RoomPage(props: {
           <div className="flex items-center gap-2.5 rounded-[11px] bg-brand-50 px-3.5 py-3">
             <ShieldCheck size={16} strokeWidth={2} className="flex-none text-brand-600" />
             <span className="text-[11.5px] leading-snug text-brand-950">
-              Rezerwacja bezpośrednio u gospodarza — najlepsza cena, bez prowizji.
+              {t("directBooking")}
             </span>
           </div>
         </aside>

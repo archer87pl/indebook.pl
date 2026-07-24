@@ -1,14 +1,16 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 // Wybór oceny 1–5 gwiazdek. Ustawia ukryty input "rating" w formularzu
 // server action. Bez wyboru pole jest puste → walidacja serwera odrzuca.
 export default function StarRating() {
+  const t = useTranslations("review");
   const [value, setValue] = useState(0);
   const [hover, setHover] = useState(0);
   const active = hover || value;
-  const labels = ["", "Słabo", "Może być", "Dobrze", "Bardzo dobrze", "Rewelacyjnie"];
+  const labels = ["", t("stars.1"), t("stars.2"), t("stars.3"), t("stars.4"), t("stars.5")];
 
   return (
     <div className="flex items-center gap-3">
@@ -20,7 +22,7 @@ export default function StarRating() {
             type="button"
             onClick={() => setValue(n)}
             onMouseEnter={() => setHover(n)}
-            aria-label={`${n} z 5`}
+            aria-label={t("starsAria", { count: n })}
             className={`text-3xl leading-none px-0.5 transition-colors ${
               n <= active ? "text-accent-500" : "text-slate-300"
             }`}

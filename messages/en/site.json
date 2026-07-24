@@ -1,0 +1,63 @@
+{
+  "book": "Book now",
+  "nav": {
+    "about": "About",
+    "units": "Apartments",
+    "gallery": "Gallery",
+    "calendar": "Rates",
+    "attractions": "Area",
+    "reviews": "Reviews",
+    "contact": "Contact"
+  },
+  "sections": {
+    "about": "About the property",
+    "units": "Our apartments",
+    "gallery": "Gallery",
+    "amenities": "Amenities",
+    "calendar": "Availability and rates",
+    "attractions": "Nearby attractions",
+    "reviews": "What our guests say",
+    "contact": "Contact"
+  },
+  "units": {
+    "upTo": "up to {count} guests",
+    "minStay": "min. {count} nights",
+    "perNight": "per night",
+    "seeAndBook": "View and book"
+  },
+  "calendar": {
+    "pickRoom": "Choose an apartment",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "hintStart": "Click your arrival and departure dates",
+    "hintEnd": "Choose your departure date",
+    "stay": "Stay {from} → {to}",
+    "bookThese": "Book these dates",
+    "loadError": "Could not load availability. Please try again.",
+    "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",
+    "months": "January,February,March,April,May,June,July,August,September,October,November,December"
+  },
+  "contact": {
+    "checkInOut": "check-in from {from} · check-out by {to}",
+    "name": "Full name",
+    "email": "Email address",
+    "phone": "Phone (optional)",
+    "message": "Your message — e.g. a question about dates, number of guests, amenities…",
+    "send": "Send enquiry",
+    "sentTitle": "Thank you for your message!",
+    "sentBody": "We will reply as soon as possible — usually within a few hours.",
+    "error": "The message could not be sent.",
+    "mapTitle": "Map: {address}"
+  },
+  "footer": {
+    "checkInFrom": "check-in from {time}",
+    "checkOutTo": "check-out by {time}",
+    "terms": "Terms and privacy policy",
+    "bookings": "Bookings:",
+    "bookingsLink": "online, commission-free",
+    "madeWith": "Website built with"
+  },
+  "reviews": {
+    "summary": "{avg} / 5 · {count} reviews"
+  }
+}

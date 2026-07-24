@@ -7,7 +7,24 @@
 import { useState } from "react";
 import { Loader2, Send } from "lucide-react";
 
-export default function InquiryForm({ siteKey }: { siteKey: string }) {
+export type InquiryLabels = {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  send: string;
+  sentTitle: string;
+  sentBody: string;
+  error: string;
+};
+
+export default function InquiryForm({
+  siteKey,
+  labels,
+}: {
+  siteKey: string;
+  labels: InquiryLabels;
+}) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [error, setError] = useState("");
 
@@ -25,12 +42,12 @@ export default function InquiryForm({ siteKey }: { siteKey: string }) {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
-        throw new Error(payload?.error ?? "Nie udało się wysłać wiadomości.");
+        throw new Error(payload?.error ?? labels.error);
       }
       form.reset();
       setStatus("sent");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Nie udało się wysłać wiadomości.");
+      setError(err instanceof Error ? err.message : labels.error);
       setStatus("error");
     }
   }
@@ -38,10 +55,8 @@ export default function InquiryForm({ siteKey }: { siteKey: string }) {
   if (status === "sent") {
     return (
       <div className="rounded-2xl border border-[var(--site-text)]/10 bg-[var(--site-surface)] p-8 text-center">
-        <p className="text-lg font-bold">Dziękujemy za wiadomość!</p>
-        <p className="mt-1 text-sm text-[var(--site-muted)]">
-          Odpowiemy najszybciej, jak to możliwe — zwykle w ciągu kilku godzin.
-        </p>
+        <p className="text-lg font-bold">{labels.sentTitle}</p>
+        <p className="mt-1 text-sm text-[var(--site-muted)]">{labels.sentBody}</p>
       </div>
     );
   }
@@ -52,19 +67,19 @@ export default function InquiryForm({ siteKey }: { siteKey: string }) {
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <input name="name" required maxLength={120} placeholder="Imię i nazwisko" className={inputCls} aria-label="Imię i nazwisko" />
-        <input name="email" type="email" required maxLength={200} placeholder="Adres e-mail" className={inputCls} aria-label="Adres e-mail" />
+        <input name="name" required maxLength={120} placeholder={labels.name} className={inputCls} aria-label={labels.name} />
+        <input name="email" type="email" required maxLength={200} placeholder={labels.email} className={inputCls} aria-label={labels.email} />
       </div>
-      <input name="phone" maxLength={40} placeholder="Telefon (opcjonalnie)" className={inputCls} aria-label="Telefon" />
+      <input name="phone" maxLength={40} placeholder={labels.phone} className={inputCls} aria-label={labels.phone} />
       <textarea
         name="message"
         required
         minLength={10}
         maxLength={2000}
         rows={5}
-        placeholder="Twoja wiadomość — np. pytanie o termin, liczbę osób, udogodnienia…"
+        placeholder={labels.message}
         className={inputCls}
-        aria-label="Wiadomość"
+        aria-label={labels.message}
       />
       {/* honeypot: niewidoczne dla ludzi */}
       <input
@@ -85,7 +100,7 @@ export default function InquiryForm({ siteKey }: { siteKey: string }) {
         ) : (
           <Send size={15} />
         )}
-        Wyślij zapytanie
+        {labels.send}
       </button>
     </form>
   );

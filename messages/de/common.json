@@ -1,0 +1,9 @@
+{
+  "book": "Jetzt buchen",
+  "back": "Zurück",
+  "loading": "Wird geladen…",
+  "nights": "{count, plural, one {# Nacht} other {# Nächte}}",
+  "guests": "{count, plural, one {# Gast} other {# Gäste}}",
+  "perNight": "pro Nacht",
+  "from": "ab"
+}

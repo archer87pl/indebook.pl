@@ -1,0 +1,42 @@
+{
+  "pendingDeposit": {
+    "subject": "Booking {code} — awaiting deposit payment",
+    "body": "Thank you for booking at {property}. Stay total: {total}. Deposit: {deposit}. Booking: {url}"
+  },
+  "confirmedPaid": {
+    "subject": "Booking {code} confirmed",
+    "body": "Deposit {deposit} received. See you on {checkIn}!\n\nPlease complete your online check-in now — once done you will receive the arrival instructions:\n{checkInUrl}"
+  },
+  "confirmedByOwner": {
+    "subject": "Booking {code} confirmed",
+    "body": "The property has confirmed your booking ({checkIn} → {checkOut}).\n\nPlease complete your online check-in now — once done you will receive the arrival instructions:\n{checkInUrl}"
+  },
+  "cancelled": {
+    "subject": "Booking {code} cancelled",
+    "body": "Your booking has been cancelled."
+  },
+  "datesChanged": {
+    "subject": "Booking {code} — dates changed",
+    "body": "New stay dates: {from} → {to} ({guests} guests). Stay total: {total}."
+  },
+  "checkInInvite": {
+    "subject": "Online check-in — booking {code}",
+    "body": "{property} invites you to complete your online check-in before arrival ({checkIn}).\nIt takes 2 minutes and speeds up check-in on site:\n{checkInUrl}"
+  },
+  "manualCreated": {
+    "subject": "Booking {code} at {property}",
+    "body": "Your booking ({from} → {to}) has been saved.\n\nComplete your online check-in — once done you will receive the arrival instructions:\n{checkInUrl}\n\nBooking details: {url}"
+  },
+  "arrivalReminder": {
+    "subject": "See you tomorrow — {property}",
+    "body": "A reminder about your arrival tomorrow at {property} (check-in from {checkInFrom})."
+  },
+  "reviewRequest": {
+    "subject": "How was your stay at {property}?",
+    "body": "Thank you for staying at {property}!\n\nPlease share a short review — it only takes a moment and helps other guests:\n{reviewUrl}"
+  },
+  "sms": {
+    "arrivalReminder": "Reminder: arrival tomorrow at {property} (from {checkInFrom}).",
+    "reviewRequest": "Thank you for staying at {property}! Rate your stay: {reviewUrl}"
+  }
+}

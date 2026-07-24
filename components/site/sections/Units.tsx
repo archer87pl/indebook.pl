@@ -1,12 +1,15 @@
 import { Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
 import { formatPln } from "@/lib/format";
+import { localePath } from "@/lib/locale-urls";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 
 type UnitsSection = Extract<SiteSection, { type: "units" }>;
 
-export default function Units({ section, ctx }: { section: UnitsSection; ctx: SiteCtx }) {
+export default async function Units({ section, ctx }: { section: UnitsSection; ctx: SiteCtx }) {
+  const t = await getTranslations({ locale: ctx.locale, namespace: "site" });
   const unitTypes = ctx.property.unitTypes;
   if (unitTypes.length === 0) return null;
   return (
@@ -41,13 +44,13 @@ export default function Units({ section, ctx }: { section: UnitsSection; ctx: Si
                       <div className="whitespace-nowrap text-lg font-bold text-[var(--site-primary)]">
                         {formatPln(ut.basePriceGr)}
                       </div>
-                      <div className="text-xs text-[var(--site-muted)]">za noc</div>
+                      <div className="text-xs text-[var(--site-muted)]">{t("units.perNight")}</div>
                     </div>
                   </div>
                   <p className="flex items-center gap-1.5 text-sm text-[var(--site-muted)]">
                     <Users size={15} strokeWidth={2} />
-                    do {ut.maxGuests} os.
-                    {ut.minStay > 1 && ` · min. ${ut.minStay} nocy`}
+                    {t("units.upTo", { count: ut.maxGuests })}
+                    {ut.minStay > 1 && ` · ${t("units.minStay", { count: ut.minStay })}`}
                   </p>
                   {ut.description && (
                     <p className="line-clamp-3 text-sm leading-relaxed text-[var(--site-muted)]">
@@ -67,10 +70,10 @@ export default function Units({ section, ctx }: { section: UnitsSection; ctx: Si
                     </p>
                   )}
                   <a
-                    href={`${ctx.appUrl}/o/${ctx.property.slug}/pokoj/${ut.id}`}
+                    href={`${ctx.appUrl}${localePath(`/o/${ctx.property.slug}/pokoj/${ut.id}`, ctx.locale)}`}
                     className="mt-1 inline-block w-full rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-center text-sm font-semibold text-[var(--site-primary-text)] transition-opacity hover:opacity-90"
                   >
-                    Zobacz i zarezerwuj
+                    {t("units.seeAndBook")}
                   </a>
                 </div>
               </div>

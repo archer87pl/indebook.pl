@@ -9,11 +9,17 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Day = { date: string; free: number; priceGr: number };
 
-const WEEKDAYS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
-const MONTHS = [
-  "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
-  "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień",
-];
+export type CalendarLabels = {
+  pickRoom: string;
+  prevMonth: string;
+  nextMonth: string;
+  hintStart: string;
+  hintEnd: string;
+  bookThese: string;
+  loadError: string;
+  weekdays: string[];
+  months: string[];
+};
 
 function currentMonth(): string {
   return new Date().toISOString().slice(0, 7);
@@ -32,9 +38,14 @@ function formatZl(gr: number): string {
 export default function AvailabilityCalendar({
   unitTypes,
   appUrl,
+  bookPath,
+  labels,
 }: {
   unitTypes: { id: number; name: string }[];
   appUrl: string;
+  /** ścieżka rezerwacji z prefiksem języka, np. „/en/rezerwuj" */
+  bookPath: string;
+  labels: CalendarLabels;
 }) {
   const [unitTypeId, setUnitTypeId] = useState(unitTypes[0]?.id);
   const [month, setMonth] = useState(currentMonth);
@@ -100,7 +111,7 @@ export default function AvailabilityCalendar({
             setRange({ from: null, to: null });
           }}
           className="mb-4 w-full rounded-lg border border-[var(--site-text)]/15 bg-[var(--site-bg)] px-3 py-2 text-sm"
-          aria-label="Wybierz apartament"
+          aria-label={labels.pickRoom}
         >
           {unitTypes.map((ut) => (
             <option key={ut.id} value={ut.id}>
@@ -116,25 +127,25 @@ export default function AvailabilityCalendar({
           onClick={() => setMonth((mo) => shiftMonth(mo, -1))}
           disabled={month <= minMonth}
           className="rounded-full p-2 hover:bg-[var(--site-text)]/5 disabled:opacity-30"
-          aria-label="Poprzedni miesiąc"
+          aria-label={labels.prevMonth}
         >
           <ChevronLeft size={18} />
         </button>
         <span className="font-semibold">
-          {MONTHS[m - 1]} {y}
+          {labels.months[m - 1]} {y}
         </span>
         <button
           type="button"
           onClick={() => setMonth((mo) => shiftMonth(mo, 1))}
           className="rounded-full p-2 hover:bg-[var(--site-text)]/5"
-          aria-label="Następny miesiąc"
+          aria-label={labels.nextMonth}
         >
           <ChevronRight size={18} />
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold text-[var(--site-muted)]">
-        {WEEKDAYS.map((d) => (
+        {labels.weekdays.map((d) => (
           <div key={d} className="py-1">
             {d}
           </div>
@@ -190,22 +201,22 @@ export default function AvailabilityCalendar({
         </div>
       ) : (
         <p className="py-10 text-center text-sm text-[var(--site-muted)]">
-          Nie udało się pobrać dostępności. Spróbuj ponownie.
+          {labels.loadError}
         </p>
       )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-[var(--site-muted)]">
-          {range.from && !range.to && "Wybierz dzień wyjazdu"}
-          {!range.from && "Kliknij dzień przyjazdu i wyjazdu"}
-          {range.from && range.to && `Pobyt ${range.from} → ${range.to}`}
+          {range.from && !range.to && labels.hintEnd}
+          {!range.from && labels.hintStart}
+          {range.from && range.to && `${range.from} → ${range.to}`}
         </p>
         {range.from && range.to && unitTypeId && (
           <a
-            href={`${appUrl}/rezerwuj/${unitTypeId}?from=${range.from}&to=${range.to}&guests=2`}
+            href={`${appUrl}${bookPath}/${unitTypeId}?from=${range.from}&to=${range.to}&guests=2`}
             className="rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--site-primary-text)] transition-opacity hover:opacity-90"
           >
-            Zarezerwuj ten termin
+            {labels.bookThese}
           </a>
         )}
       </div>

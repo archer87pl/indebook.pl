@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { CalendarX, Lock } from "lucide-react";
 import Button from "@/components/ui/Button";
@@ -8,7 +9,7 @@ import { freeUnits } from "@/lib/availability";
 import { formatDatePl, isValidISO, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { quoteStayDynamic } from "@/lib/dynamic-pricing";
-import { formatPln, plNights } from "@/lib/format";
+import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,9 @@ export default async function BookPage(props: {
     redirect("/");
   }
 
+  const t = await getTranslations("booking");
+  const tCommon = await getTranslations("common");
+
   const unitType = await prisma.unitType.findUnique({
     where: { id: Number(unitTypeId) },
     include: { seasons: true, property: true, photos: { take: 1 } },
@@ -52,13 +56,16 @@ export default async function BookPage(props: {
           <CalendarX size={26} strokeWidth={2} />
         </div>
         <h1 className="text-xl font-bold">
-          Brak wolnych pokoi „{unitType.name}&rdquo; w terminie {formatDatePl(from)} →{" "}
-          {formatDatePl(to)}
+          {t("soldOut.title", {
+            unitType: unitType.name,
+            from: formatDatePl(from),
+            to: formatDatePl(to),
+          })}
         </h1>
         <p className="text-sm text-slate-600">
-          Sprawdź inne daty albo pozostałe pokoje obiektu {unitType.property.name}.
+          {t("soldOut.hint", { property: unitType.property.name })}
         </p>
-        <Button href={`/o/${unitType.property.slug}`}>Wróć i wybierz inny termin</Button>
+        <Button href={`/o/${unitType.property.slug}`}>{t("soldOut.cta")}</Button>
       </div>
     );
   }
@@ -77,19 +84,19 @@ export default async function BookPage(props: {
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-[11px] font-bold text-white">
           1
         </span>
-        Pokój
+        {t("steps.room")}
         <span className="h-px w-6 bg-slate-300" />
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-900 text-[11px] font-bold text-white">
           2
         </span>
-        <span className="font-semibold text-brand-900">Dane i zaliczka</span>
+        <span className="font-semibold text-brand-900">{t("steps.details")}</span>
       </div>
 
       {sp.error && <p className="alert-error">{sp.error}</p>}
 
       <div className="grid items-start gap-6 md:grid-cols-[1fr_360px]">
         <Card>
-          <CardHeader title="Twoje dane" />
+          <CardHeader title={t("form.title")} />
           <form action={createReservation}>
             <CardBody className="space-y-4">
               <input type="hidden" name="unitTypeId" value={unitType.id} />
@@ -97,67 +104,67 @@ export default async function BookPage(props: {
               <input type="hidden" name="to" value={to} />
               <input type="hidden" name="guests" value={guests} />
               <label className="label">
-                Imię i nazwisko *
+                {t("form.name")}
                 <input name="guestName" required minLength={3} className="input w-full" />
               </label>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="label">
-                  E-mail *
+                  {t("form.email")}
                   <input type="email" name="email" required className="input w-full" />
                 </label>
                 <label className="label">
-                  Telefon
+                  {t("form.phone")}
                   <input type="tel" name="phone" className="input w-full" />
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="label">
-                  NIP (do faktury, opcjonalnie)
+                  {t("form.taxId")}
                   <input name="nip" className="input w-full" />
                 </label>
                 <label className="label">
-                  Kod promocyjny
+                  {t("form.promo")}
                   <input
                     name="promo"
-                    placeholder="np. LATO10"
+                    placeholder={t("form.promoPlaceholder")}
                     className="input tnum w-full uppercase"
                   />
                 </label>
               </div>
               <label className="label">
-                Uwagi dla gospodarza (opcjonalnie)
+                {t("form.notes")}
                 <textarea
                   name="notes"
                   rows={3}
-                  placeholder="np. przyjazd ok. 15:00, prosimy o łóżeczko dla dziecka"
+                  placeholder={t("form.notesPlaceholder")}
                   className="input w-full"
                 />
               </label>
               <label className="flex items-start gap-2 text-sm text-slate-600">
                 <input type="checkbox" name="rodo" required className="mt-1 accent-brand-600" />
                 <span>
-                  Wyrażam zgodę na przetwarzanie moich danych osobowych w celu realizacji
-                  rezerwacji (RODO) i akceptuję{" "}
-                  <a
-                    href={`/o/${unitType.property.slug}/regulamin`}
-                    target="_blank"
-                    className="font-semibold text-brand-600 hover:underline"
-                  >
-                    regulamin obiektu
-                  </a>
-                  . *
+                  {t.rich("form.consent", {
+                    terms: (chunks) => (
+                      <a
+                        href={`/o/${unitType.property.slug}/regulamin`}
+                        target="_blank"
+                        className="font-semibold text-brand-600 hover:underline"
+                      >
+                        {chunks}
+                      </a>
+                    ),
+                  })}
                 </span>
               </label>
               <Button type="submit" size="lg" className="w-full">
-                Zapłać {formatPln(quote.depositGr)} i rezerwuj
+                {t("form.submit", { amount: formatPln(quote.depositGr) })}
               </Button>
               <p className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-400">
                 <Lock size={11} strokeWidth={2} />
-                Płatność szyfrowana · Przelewy24 (BLIK, karta, przelew)
+                {t("form.securePayment")}
               </p>
               <p className="text-xs text-slate-500">
-                Rezerwacja jest wstępna przez 30 minut — potwierdza ją wpłata zaliczki{" "}
-                {formatPln(quote.depositGr)}.
+                {t("form.holdNotice", { amount: formatPln(quote.depositGr) })}
               </p>
             </CardBody>
           </form>
@@ -189,27 +196,29 @@ export default async function BookPage(props: {
           </div>
           <div className="space-y-1.5 border-b border-slate-100 p-4 text-[12.5px]">
             <div className="flex justify-between">
-              <span className="text-slate-400">Przyjazd</span>
+              <span className="text-slate-400">{t("summary.checkIn")}</span>
               <span className="font-semibold">
                 {dayShortPl(from)} · {unitType.property.checkInFrom}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Wyjazd</span>
+              <span className="text-slate-400">{t("summary.checkOut")}</span>
               <span className="font-semibold">
                 {dayShortPl(to)} · {unitType.property.checkOutTo}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Goście</span>
-              <span className="font-semibold">{guests} os.</span>
+              <span className="text-slate-400">{t("summary.guests")}</span>
+              <span className="font-semibold">{tCommon("guests", { count: guests })}</span>
             </div>
           </div>
           <div className="p-4">
             <details className="group mb-2">
               <summary className="flex cursor-pointer list-none justify-between text-[12.5px] text-slate-600">
                 <span className="underline decoration-dotted underline-offset-2">
-                  Pobyt ({plNights(quote.nights)})
+                  {t("summary.stay", {
+                    nights: tCommon("nights", { count: quote.nights }),
+                  })}
                 </span>
                 <span className="tnum">{formatPln(quote.totalGr)}</span>
               </summary>
@@ -226,16 +235,22 @@ export default async function BookPage(props: {
               </div>
             </details>
             <div className="mb-3 flex justify-between border-t border-slate-100 pt-2.5 text-sm font-bold">
-              <span>Razem</span>
+              <span>{t("summary.total")}</span>
               <span className="tnum">{formatPln(quote.totalGr)}</span>
             </div>
             <div className="rounded-[11px] bg-brand-50 px-3.5 py-3">
               <div className="flex justify-between text-[13px] font-bold text-brand-900">
-                <span>Zaliczka teraz ({unitType.property.depositPercent}%)</span>
+                <span>
+                  {t("summary.depositNow", {
+                    percent: unitType.property.depositPercent,
+                  })}
+                </span>
                 <span className="tnum">{formatPln(quote.depositGr)}</span>
               </div>
               <div className="mt-0.5 text-[11px] text-slate-600">
-                Pozostałe {formatPln(quote.totalGr - quote.depositGr)} przy przyjeździe
+                {t("summary.remaining", {
+                  amount: formatPln(quote.totalGr - quote.depositGr),
+                })}
               </div>
             </div>
             <p className="mt-3 text-center text-[11px] text-slate-400">
@@ -243,7 +258,7 @@ export default async function BookPage(props: {
                 href={`/o/${unitType.property.slug}`}
                 className="hover:underline"
               >
-                ← Wróć do strony obiektu
+                {t("summary.backToProperty")}
               </Link>
             </p>
           </div>

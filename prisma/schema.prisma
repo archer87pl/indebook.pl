@@ -296,6 +296,8 @@ model Reservation {
   // integracja Channex: id rezerwacji w Channex (idempotencja webhooka) + prowizja OTA
   channexBookingId String? @unique
   otaCommissionGr  Int     @default(0)
+  // język gościa (pl|en|de) — w nim wysyłamy potwierdzenia i przypomnienia
+  locale           String  @default("pl")
   createdAt      DateTime  @default(now())
   expiresAt      DateTime? // PENDING po tym czasie nie blokuje dostępności
   checkInStatus  String    @default("NONE") // NONE | COMPLETED — meldunek online

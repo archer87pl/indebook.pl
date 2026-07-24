@@ -1,0 +1,20 @@
+{
+  "title": "Review of your stay",
+  "back": "Back to reservation",
+  "thanks": "Thank you for your review! Your rating:",
+  "notYet": "You will be able to leave a review once your stay has ended (after {date}).",
+  "heading": "How was your stay?",
+  "rating": "Your rating *",
+  "comment": "Review (optional)",
+  "commentPlaceholder": "What did you like? What could we improve?",
+  "consent": "I agree to my review being published on the property page under my first name and the initial of my surname (e.g. “{example} K.”). *",
+  "submit": "Send review",
+  "starsAria": "{count} of 5",
+  "stars": {
+    "1": "Poor",
+    "2": "Fair",
+    "3": "Good",
+    "4": "Very good",
+    "5": "Excellent"
+  }
+}

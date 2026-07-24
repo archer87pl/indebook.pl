@@ -1,4 +1,5 @@
 import { ArrowLeft, FileText } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -10,6 +11,7 @@ export const revalidate = 600;
 
 export default async function TermsPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
+  const t = await getTranslations("property");
   const property = await prisma.property.findUnique({ where: { slug } });
   if (!property) notFound();
 
@@ -31,15 +33,15 @@ export default async function TermsPage(props: { params: Promise<{ slug: string 
         <Card>
           <EmptyState
             icon={<FileText size={26} strokeWidth={2} />}
-            title="Brak opublikowanego regulaminu"
-            description="Obiekt nie opublikował jeszcze regulaminu. W sprawach zasad pobytu skontaktuj się bezpośrednio z obiektem."
+            title={t("terms.emptyTitle")}
+            description={t("terms.emptyDescription")}
           />
         </Card>
       )}
 
       {property.terms && (
         <section className="space-y-3">
-          <h1 className="text-[25px] font-bold text-brand-950">Regulamin obiektu</h1>
+          <h1 className="text-[25px] font-bold text-brand-950">{t("terms.title")}</h1>
           <Card>
             <CardBody className="whitespace-pre-line text-[13.5px] leading-relaxed text-slate-600">
               {property.terms}
@@ -50,7 +52,7 @@ export default async function TermsPage(props: { params: Promise<{ slug: string 
 
       {property.privacyPolicy && (
         <section className="space-y-3">
-          <h2 className="text-[25px] font-bold text-brand-950">Polityka prywatności</h2>
+          <h2 className="text-[25px] font-bold text-brand-950">{t("terms.privacyTitle")}</h2>
           <Card>
             <CardBody className="whitespace-pre-line text-[13.5px] leading-relaxed text-slate-600">
               {property.privacyPolicy}

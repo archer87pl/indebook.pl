@@ -1,0 +1,36 @@
+{
+  "steps": {
+    "room": "Pokój",
+    "details": "Dane i zaliczka"
+  },
+  "soldOut": {
+    "title": "Brak wolnych pokoi „{unitType}” w terminie {from} → {to}",
+    "hint": "Sprawdź inne daty albo pozostałe pokoje obiektu {property}.",
+    "cta": "Wróć i wybierz inny termin"
+  },
+  "form": {
+    "title": "Twoje dane",
+    "name": "Imię i nazwisko *",
+    "email": "E-mail *",
+    "phone": "Telefon",
+    "taxId": "NIP (do faktury, opcjonalnie)",
+    "promo": "Kod promocyjny",
+    "promoPlaceholder": "np. LATO10",
+    "notes": "Uwagi dla gospodarza (opcjonalnie)",
+    "notesPlaceholder": "np. przyjazd ok. 15:00, prosimy o łóżeczko dla dziecka",
+    "consent": "Wyrażam zgodę na przetwarzanie moich danych osobowych w celu realizacji rezerwacji (RODO) i akceptuję <terms>regulamin obiektu</terms>. *",
+    "submit": "Zapłać {amount} i rezerwuj",
+    "securePayment": "Płatność szyfrowana · Przelewy24 (BLIK, karta, przelew)",
+    "holdNotice": "Rezerwacja jest wstępna przez 30 minut — potwierdza ją wpłata zaliczki {amount}."
+  },
+  "summary": {
+    "checkIn": "Przyjazd",
+    "checkOut": "Wyjazd",
+    "guests": "Goście",
+    "stay": "Pobyt ({nights})",
+    "total": "Razem",
+    "depositNow": "Zaliczka teraz ({percent}%)",
+    "remaining": "Pozostałe {amount} przy przyjeździe",
+    "backToProperty": "← Wróć do strony obiektu"
+  }
+}

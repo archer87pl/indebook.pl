@@ -1,4 +1,5 @@
 import { ArrowLeft, Ban, CalendarX, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import SearchForm from "@/components/SearchForm";
@@ -10,7 +11,7 @@ import { freeUnits } from "@/lib/availability";
 import { formatDatePl, isValidISO, nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { quoteStayDynamic } from "@/lib/dynamic-pricing";
-import { formatPln, plNights } from "@/lib/format";
+import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,9 @@ export default async function ResultsPage(props: {
   searchParams: Promise<{ from?: string; to?: string; guests?: string }>;
 }) {
   const { slug } = await props.params;
+  const t = await getTranslations("search");
+  const tp = await getTranslations("property");
+  const tc = await getTranslations("common");
   const sp = await props.searchParams;
   const from = sp.from ?? "";
   const to = sp.to ?? "";
@@ -41,8 +45,8 @@ export default async function ResultsPage(props: {
         <Card>
           <EmptyState
             icon={<Ban size={26} strokeWidth={2} />}
-            title="Ten obiekt jest obecnie niedostępny"
-            action={<Button href="/">Przeglądaj inne obiekty</Button>}
+            title={tp("suspended.title")}
+            action={<Button href="/">{tp("suspended.browseOther")}</Button>}
           />
         </Card>
       </div>
@@ -98,23 +102,22 @@ export default async function ResultsPage(props: {
       />
 
       {!valid ? (
-        <p className="alert-error">
-          Nieprawidłowy zakres dat — wybierz termin od dziś, wyjazd po przyjeździe.
-        </p>
+        <p className="alert-error">{t("invalidRange")}</p>
       ) : (
         <>
           <h1 className="text-[25px] font-bold text-brand-950">
             {formatDatePl(from)} – {formatDatePl(to)}{" "}
             <span className="font-normal text-slate-400">
-              · {plNights(nightsBetween(from, to))} · {guests} os.
+              · {tc("nights", { count: nightsBetween(from, to) })} ·{" "}
+              {tc("guests", { count: guests })}
             </span>
           </h1>
           {offers.length === 0 && (
             <Card>
               <EmptyState
                 icon={<CalendarX size={26} strokeWidth={2} />}
-                title="Brak dostępnych pokoi w tym terminie"
-                description="Spróbuj innych dat — dostępność zmienia się na bieżąco."
+                title={t("noResults.title")}
+                description={t("noResults.description")}
               />
             </Card>
           )}
@@ -126,7 +129,9 @@ export default async function ResultsPage(props: {
                     className="flex h-[88px] w-[120px] flex-none items-center justify-center rounded-[11px]"
                     style={{ background: PHOTO_TEXTURE }}
                   >
-                    <span className="tnum text-[10px] text-slate-400">zdjęcie</span>
+                    <span className="tnum text-[10px] text-slate-400">
+                      {t("photoPlaceholder")}
+                    </span>
                   </div>
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <h2 className="text-[14.5px] font-bold">
@@ -139,14 +144,14 @@ export default async function ResultsPage(props: {
                     </h2>
                     <p className="flex items-center gap-1.5 text-[11.5px] text-slate-400">
                       <Users size={13} strokeWidth={2} />
-                      do {o.maxGuests} os.
+                      {tp("upToGuests", { count: o.maxGuests })}
                     </p>
                     {o.description && (
                       <p className="text-[12.5px] leading-relaxed text-slate-600">
                         {o.description}
                       </p>
                     )}
-                    <Badge tone="success">wolne: {o.available}</Badge>
+                    <Badge tone="success">{t("available", { count: o.available })}</Badge>
                   </div>
                   <div className="flex flex-col items-end justify-between gap-2 text-right">
                     <div>
@@ -154,18 +159,18 @@ export default async function ResultsPage(props: {
                         {formatPln(o.totalGr)}
                       </p>
                       <p className="text-[10.5px] text-slate-400">
-                        łącznie za {plNights(o.nights)}
+                        {t("totalFor", { count: o.nights })}
                       </p>
                     </div>
                     {o.tooShort ? (
                       <Badge tone="warning">
-                        min. pobyt: {plNights(o.tooShort)}
+                        {t("minStayBadge", { count: o.tooShort })}
                       </Badge>
                     ) : (
                       <Button
                         href={`/rezerwuj/${o.unitTypeId}?from=${from}&to=${to}&guests=${guests}`}
                       >
-                        Rezerwuję
+                        {tc("book")}
                       </Button>
                     )}
                   </div>

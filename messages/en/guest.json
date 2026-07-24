@@ -1,0 +1,85 @@
+{
+  "status": {
+    "confirmed": "Booking confirmed!",
+    "cancelled": "Booking cancelled",
+    "expired": "Booking expired",
+    "pending": "Complete your booking",
+    "confirmedSub": "See you at {property}. Deposit paid.",
+    "payableSub": "Pay the {amount} deposit to confirm your stay."
+  },
+  "alerts": {
+    "datesChanged": "Your dates have been changed. We have sent you a confirmation by email.",
+    "checkedIn": "Check-in form completed. Thank you — see you soon!",
+    "reviewThanks": "Thank you for reviewing your stay!",
+    "paymentPending": "Payment received — we are waiting for confirmation from the gateway. Please refresh the page in a moment.",
+    "expired": "The deposit window has closed — this booking has expired. Please check availability again.",
+    "checkedInOnline": "Checked in online — check-in form completed."
+  },
+  "ticket": {
+    "code": "Booking number",
+    "badgePaid": "Paid",
+    "badgePending": "Awaiting deposit",
+    "badgeExpired": "Expired",
+    "badgeCancelled": "Cancelled",
+    "property": "Property",
+    "guests": "Guests",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "fromTime": "from {time}",
+    "toTime": "until {time}",
+    "stay": "Stay",
+    "discount": "discount {amount}",
+    "amount": "Amount",
+    "deposit": "deposit {amount}"
+  },
+  "pay": {
+    "p24": "Pay the {amount} deposit — Przelewy24",
+    "simulated": "Pay the {amount} deposit (simulated payment)",
+    "p24Note": "Secure Przelewy24 payment: BLIK, card, instant bank transfer.",
+    "simulatedNote": "Developer mode: the payment gateway is simulated."
+  },
+  "checkin": {
+    "title": "Next step: online check-in",
+    "descWithArrivalInfo": "Fill in the check-in form and your arrival instructions (codes, WiFi, directions) will unlock right away.",
+    "desc": "Fill in the check-in form — it will speed up your arrival.",
+    "cta": "Check in"
+  },
+  "arrival": {
+    "title": "Arrival information"
+  },
+  "review": {
+    "title": "How was your stay?",
+    "sub": "Leave a short review — it takes a moment and helps other guests."
+  },
+  "change": {
+    "title": "Change your dates",
+    "newCheckIn": "New check-in",
+    "newCheckOut": "New check-out",
+    "guests": "Guests (max. {max})",
+    "submit": "Recalculate and change dates",
+    "note": "The price will be recalculated according to the rates for the new dates.",
+    "noteDeposit": "The deposit you have paid will be credited towards your stay."
+  },
+  "chat": {
+    "title": "Messages to the property",
+    "sub": "{property} will be notified by email, and you will see the reply here.",
+    "placeholder": "e.g. We will arrive around 6 pm, may we drop off our luggage earlier?",
+    "send": "Send message",
+    "empty": "No messages yet — write the first one.",
+    "you": "You",
+    "owner": "Property",
+    "guest": "Guest"
+  },
+  "cancel": {
+    "cta": "Cancel booking"
+  },
+  "contact": {
+    "title": "Contact the host",
+    "replyVia": "will reply in the chat or by email",
+    "replyTo": "the reply will be sent to {email}",
+    "yourPhone": "Your number: {phone}",
+    "mapPlaceholder": "location map",
+    "hours": "check-in from {checkIn} · check-out until {checkOut}",
+    "propertyPage": "Property page →"
+  }
+}

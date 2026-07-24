@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { addDaysISO, todayISO } from "@/lib/dates";
 
 /**
@@ -18,6 +19,7 @@ export default function SearchForm({
   guests?: number;
   variant?: "inline" | "widget";
 }) {
+  const t = useTranslations("search");
   const today = todayISO();
   const defaultFrom = from ?? addDaysISO(today, 1);
   const defaultTo = to ?? addDaysISO(today, 3);
@@ -28,7 +30,7 @@ export default function SearchForm({
         <div className="mb-3 overflow-hidden rounded-xl border border-slate-300">
           <div className="flex">
             <label className="flex-1 border-r border-slate-200 px-3 py-2">
-              <span className="th block">Przyjazd</span>
+              <span className="th block">{t("checkIn")}</span>
               <input
                 type="date"
                 name="from"
@@ -39,7 +41,7 @@ export default function SearchForm({
               />
             </label>
             <label className="flex-1 px-3 py-2">
-              <span className="th block">Wyjazd</span>
+              <span className="th block">{t("checkOut")}</span>
               <input
                 type="date"
                 name="to"
@@ -51,7 +53,7 @@ export default function SearchForm({
             </label>
           </div>
           <label className="block border-t border-slate-200 px-3 py-2">
-            <span className="th block">Goście</span>
+            <span className="th block">{t("guestsLabel")}</span>
             <input
               type="number"
               name="guests"
@@ -63,7 +65,7 @@ export default function SearchForm({
           </label>
         </div>
         <button type="submit" className="btn-primary h-12 w-full text-sm">
-          Sprawdź dostępność
+          {t("checkAvailability")}
         </button>
       </form>
     );
@@ -72,7 +74,7 @@ export default function SearchForm({
   return (
     <form action={action} className="card flex flex-wrap items-end gap-4 p-4">
       <label className="label">
-        Przyjazd
+        {t("checkIn")}
         <input
           type="date"
           name="from"
@@ -83,7 +85,7 @@ export default function SearchForm({
         />
       </label>
       <label className="label">
-        Wyjazd
+        {t("checkOut")}
         <input
           type="date"
           name="to"
@@ -94,7 +96,7 @@ export default function SearchForm({
         />
       </label>
       <label className="label">
-        Goście
+        {t("guestsLabel")}
         <input
           type="number"
           name="guests"
@@ -105,7 +107,7 @@ export default function SearchForm({
         />
       </label>
       <button type="submit" className="btn-primary">
-        Szukaj terminu
+        {t("searchDates")}
       </button>
     </form>
   );

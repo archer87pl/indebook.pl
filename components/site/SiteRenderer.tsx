@@ -3,6 +3,7 @@
 // komponenty obsługują wszystkie szablony i palety.
 
 import type { SiteConfig, SiteSection } from "@/lib/site-config";
+import type { AppLocale } from "@/i18n/routing";
 import { themeVars } from "@/lib/site-themes";
 import { sanitizeCss } from "@/lib/sanitize";
 import { appUrl } from "@/lib/payments";
@@ -26,6 +27,8 @@ export type SiteCtx = {
   preview: boolean;
   /** klucz strony do API (subdomena) */
   siteKey: string;
+  /** język chrome strony (cookie SITE_LOCALE); treść właściciela zostaje w oryginale */
+  locale: AppLocale;
 };
 
 function Section({ section, ctx }: { section: SiteSection; ctx: SiteCtx }) {
@@ -57,16 +60,19 @@ export default function SiteRenderer({
   site,
   config,
   preview = false,
+  locale,
 }: {
   site: SiteWithData;
   config: SiteConfig;
   preview?: boolean;
+  locale: AppLocale;
 }) {
   const ctx: SiteCtx = {
     property: site.property,
     appUrl: appUrl(),
     preview,
     siteKey: site.subdomain,
+    locale,
   };
   const sections = config.sections.filter((s) => s.enabled);
   const vars = themeVars(config.theme, site.template);

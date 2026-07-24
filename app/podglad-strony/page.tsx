@@ -4,6 +4,7 @@
 
 import { notFound } from "next/navigation";
 import SiteRenderer from "@/components/site/SiteRenderer";
+import { getSiteLocale } from "@/lib/site-locale";
 import { requireOwner } from "@/lib/auth";
 import { normalizeConfig } from "@/lib/site-config";
 import { getSiteForProperty } from "@/lib/sites";
@@ -14,5 +15,8 @@ export default async function SitePreviewPage() {
   const { property } = await requireOwner();
   const site = await getSiteForProperty(property.id);
   if (!site) notFound();
-  return <SiteRenderer site={site} config={normalizeConfig(site.draftConfig)} preview />;
+  const locale = await getSiteLocale();
+  return (
+    <SiteRenderer site={site} config={normalizeConfig(site.draftConfig)} preview locale={locale} />
+  );
 }

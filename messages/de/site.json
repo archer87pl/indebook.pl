@@ -1,0 +1,63 @@
+{
+  "book": "Jetzt buchen",
+  "nav": {
+    "about": "Über uns",
+    "units": "Apartments",
+    "gallery": "Galerie",
+    "calendar": "Preise",
+    "attractions": "Umgebung",
+    "reviews": "Bewertungen",
+    "contact": "Kontakt"
+  },
+  "sections": {
+    "about": "Über die Unterkunft",
+    "units": "Unsere Apartments",
+    "gallery": "Galerie",
+    "amenities": "Ausstattung",
+    "calendar": "Verfügbarkeit und Preise",
+    "attractions": "Sehenswürdigkeiten in der Nähe",
+    "reviews": "Das sagen unsere Gäste",
+    "contact": "Kontakt"
+  },
+  "units": {
+    "upTo": "bis zu {count} Gäste",
+    "minStay": "mind. {count} Nächte",
+    "perNight": "pro Nacht",
+    "seeAndBook": "Ansehen und buchen"
+  },
+  "calendar": {
+    "pickRoom": "Apartment wählen",
+    "prevMonth": "Voriger Monat",
+    "nextMonth": "Nächster Monat",
+    "hintStart": "Wählen Sie An- und Abreisetag",
+    "hintEnd": "Wählen Sie den Abreisetag",
+    "stay": "Aufenthalt {from} → {to}",
+    "bookThese": "Diesen Zeitraum buchen",
+    "loadError": "Verfügbarkeit konnte nicht geladen werden. Bitte erneut versuchen.",
+    "weekdays": "Mo,Di,Mi,Do,Fr,Sa,So",
+    "months": "Januar,Februar,März,April,Mai,Juni,Juli,August,September,Oktober,November,Dezember"
+  },
+  "contact": {
+    "checkInOut": "Anreise ab {from} · Abreise bis {to}",
+    "name": "Vor- und Nachname",
+    "email": "E-Mail-Adresse",
+    "phone": "Telefon (optional)",
+    "message": "Ihre Nachricht — z. B. Frage zum Termin, zur Personenzahl oder zur Ausstattung…",
+    "send": "Anfrage senden",
+    "sentTitle": "Vielen Dank für Ihre Nachricht!",
+    "sentBody": "Wir antworten so schnell wie möglich — in der Regel innerhalb weniger Stunden.",
+    "error": "Die Nachricht konnte nicht gesendet werden.",
+    "mapTitle": "Karte: {address}"
+  },
+  "footer": {
+    "checkInFrom": "Anreise ab {time}",
+    "checkOutTo": "Abreise bis {time}",
+    "terms": "AGB und Datenschutz",
+    "bookings": "Buchungen:",
+    "bookingsLink": "online, ohne Provision",
+    "madeWith": "Website erstellt mit"
+  },
+  "reviews": {
+    "summary": "{avg} / 5 · {count} Bewertungen"
+  }
+}

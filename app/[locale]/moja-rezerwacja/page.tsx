@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Ticket } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -9,43 +10,38 @@ export default async function MyReservationPage(props: {
   searchParams: Promise<{ error?: string; code?: string }>;
 }) {
   const sp = await props.searchParams;
+  const t = await getTranslations("account");
   return (
     <div className="mx-auto mt-12 max-w-sm space-y-5">
       <div className="space-y-3 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-600">
           <Ticket size={22} strokeWidth={2} />
         </div>
-        <h1 className="text-[25px] font-bold text-brand-950">Moja rezerwacja</h1>
-        <p className="text-[13px] leading-relaxed text-slate-500">
-          Podaj kod rezerwacji (z e-maila) i adres, na który została złożona.
-        </p>
+        <h1 className="text-[25px] font-bold text-brand-950">{t("title")}</h1>
+        <p className="text-[13px] leading-relaxed text-slate-500">{t("intro")}</p>
       </div>
 
-      {sp.error && (
-        <p className="alert-error">
-          Nie znaleźliśmy rezerwacji o tym kodzie i adresie e-mail.
-        </p>
-      )}
+      {sp.error && <p className="alert-error">{t("notFound")}</p>}
 
       <Card>
         <CardBody>
           <form action={findReservation} className="space-y-4">
             <label className="label">
-              Kod rezerwacji
+              {t("code")}
               <input
                 name="code"
                 required
-                placeholder="HO-XXXXXX"
+                placeholder={t("codePlaceholder")}
                 defaultValue={sp.code ?? ""}
                 className="input tnum w-full font-semibold uppercase"
               />
             </label>
             <label className="label">
-              E-mail
+              {t("email")}
               <input type="email" name="email" required className="input w-full" />
             </label>
             <Button type="submit" size="lg" className="w-full">
-              Pokaż rezerwację
+              {t("submit")}
             </Button>
           </form>
         </CardBody>

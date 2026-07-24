@@ -1,0 +1,9 @@
+{
+  "title": "Meine Buchung",
+  "intro": "Geben Sie den Buchungscode (aus der E-Mail) und die E-Mail-Adresse an, mit der gebucht wurde.",
+  "notFound": "Wir konnten keine Buchung mit diesem Code und dieser E-Mail-Adresse finden.",
+  "code": "Buchungscode",
+  "codePlaceholder": "HO-XXXXXX",
+  "email": "E-Mail",
+  "submit": "Buchung anzeigen"
+}

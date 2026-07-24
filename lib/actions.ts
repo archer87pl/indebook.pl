@@ -15,6 +15,7 @@ import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from "./password";
 import { rateLimitOrRedirect } from "./rate-limit";
 import { assertPublicUrl } from "./net";
 import { afterAri, syncUnitRange } from "./channex/enqueue-helpers";
+import { getLocale } from "next-intl/server";
 import { addDaysISO, isValidISO, todayISO } from "./dates";
 import { logEvent } from "./log";
 import { SETTING_SECTIONS } from "./settings";
@@ -50,6 +51,7 @@ import {
   REVIEW_MAX,
 } from "./reviews";
 import { planDef } from "./plans";
+import { guestT } from "./guest-mail";
 import { sendMail } from "./mailer";
 import { sendSms } from "./sms";
 import { slugify, uniquePropertySlug } from "./slug";
@@ -228,6 +230,8 @@ export async function createReservation(formData: FormData) {
   const promoInput = str(formData, "promo").toUpperCase();
   const notes = str(formData, "notes");
   const rodo = str(formData, "rodo");
+  // język, w którym gość wypełniał formularz (trasa jest pod [locale])
+  const guestLocale = await getLocale();
 
   const back = `/rezerwuj/${unitTypeId}?from=${from}&to=${to}&guests=${guests}`;
   const fail = (msg: string) => redirect(`${back}&error=${encodeURIComponent(msg)}`);
@@ -300,6 +304,8 @@ export async function createReservation(formData: FormData) {
           depositGr,
           status: "PENDING",
           source: "ONLINE",
+          // język, w którym gość rezerwował — w nim wysyłamy do niego wiadomości
+          locale: guestLocale,
           expiresAt: new Date(Date.now() + PENDING_TTL_MS),
         },
       });
@@ -320,10 +326,17 @@ export async function createReservation(formData: FormData) {
   if (unitType.property.syncMode === "CHANNEX") {
     await afterAri(unitType.property.id, unitType.id, from, to);
   }
+  const t = await guestT(guestLocale);
   mailAfter({
     to: email,
-    subject: `Rezerwacja ${code} — oczekuje na wpłatę zaliczki`,
-    body: `Dziękujemy za rezerwację w ${unitType.property.name}. Kwota pobytu: ${formatPln(totalGr)}${discountGr > 0 ? ` (rabat ${formatPln(discountGr)})` : ""}. Zaliczka: ${formatPln(depositGr)}. Rezerwacja: /r/${code}`,
+    subject: t("pendingDeposit.subject", { code }),
+    body: t("pendingDeposit.body", {
+      property: unitType.property.name,
+      // rabat dopisujemy do kwoty — katalog nie ma osobnego pola na rabat
+      total: `${formatPln(totalGr)}${discountGr > 0 ? ` (-${formatPln(discountGr)})` : ""}`,
+      deposit: formatPln(depositGr),
+      url: `/r/${code}`,
+    }),
   });
   revalidatePath("/admin");
   redirect(`/r/${code}`);
@@ -373,10 +386,15 @@ export async function payDeposit(formData: FormData) {
     propertyId: reservation.unit.unitType.property.id,
     meta: reservation.guestName,
   });
+  const t = await guestT(reservation.locale);
   mailAfter({
     to: reservation.email,
-    subject: `Rezerwacja ${code} potwierdzona`,
-    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana. Do zobaczenia ${reservation.checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}`,
+    subject: t("confirmedPaid.subject", { code }),
+    body: t("confirmedPaid.body", {
+      deposit: formatPln(reservation.depositGr),
+      checkIn: reservation.checkIn,
+      checkInUrl: checkInUrl(code),
+    }),
   });
   if (reservation.phone) {
     smsAfter({
@@ -408,10 +426,11 @@ export async function cancelByGuest(formData: FormData) {
       meta: reservation.guestName,
     });
     await syncUnitRange(reservation.unitId, reservation.checkIn, reservation.checkOut);
+    const t = await guestT(reservation.locale);
     mailAfter({
       to: reservation.email,
-      subject: `Rezerwacja ${code} anulowana`,
-      body: "Twoja rezerwacja została anulowana.",
+      subject: t("cancelled.subject", { code }),
+      body: t("cancelled.body"),
     });
   }
   revalidatePath(`/r/${code}`);
@@ -524,10 +543,16 @@ export async function changeReservationDates(formData: FormData) {
     from < r.checkIn ? from : r.checkIn,
     to > r.checkOut ? to : r.checkOut
   );
+  const t = await guestT(r.locale);
   mailAfter({
     to: r.email,
-    subject: `Rezerwacja ${code} — termin zmieniony`,
-    body: `Nowy termin pobytu: ${from} → ${to} (${guests} os.). Kwota pobytu: ${formatPln(totalGr)}.`,
+    subject: t("datesChanged.subject", { code }),
+    body: t("datesChanged.body", {
+      from,
+      to,
+      guests,
+      total: formatPln(totalGr),
+    }),
   });
   revalidatePath(back);
   redirect(`${back}?changed=1`);
@@ -838,10 +863,15 @@ export async function adminSetStatus(formData: FormData) {
   });
   if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
     if (reservation.email && !reservation.email.endsWith("@rezflow.local")) {
+      const t = await guestT(reservation.locale);
       mailAfter({
         to: reservation.email,
-        subject: `Rezerwacja ${reservation.code} potwierdzona`,
-        body: `Obiekt potwierdził Twoją rezerwację (${reservation.checkIn} → ${reservation.checkOut}).\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(reservation.code)}`,
+        subject: t("confirmedByOwner.subject", { code: reservation.code }),
+        body: t("confirmedByOwner.body", {
+          checkIn: reservation.checkIn,
+          checkOut: reservation.checkOut,
+          checkInUrl: checkInUrl(reservation.code),
+        }),
       });
     }
     if (reservation.phone) {
@@ -871,10 +901,15 @@ export async function adminSendCheckInInvite(formData: FormData) {
   if (!r.email || r.email.endsWith("@rezflow.local"))
     fail("Uzupełnij e-mail gościa, aby wysłać link do meldunku.");
 
+  const t = await guestT(r.locale);
   mailAfter({
     to: r.email,
-    subject: `Meldunek online — rezerwacja ${r.code}`,
-    body: `${property.name} zaprasza do wypełnienia meldunku online przed przyjazdem (${r.checkIn}).\nZajmie to 2 minuty i przyspieszy zameldowanie na miejscu:\n${checkInUrl(r.code)}`,
+    subject: t("checkInInvite.subject", { code: r.code }),
+    body: t("checkInInvite.body", {
+      property: property.name,
+      checkIn: r.checkIn,
+      checkInUrl: checkInUrl(r.code),
+    }),
   });
   redirect(`${back}?invited=1`);
 }
@@ -905,8 +940,10 @@ export async function adminCreateReservation(formData: FormData) {
   if (!Number.isFinite(totalGr)) fail("Nieprawidłowa cena.");
 
   let code = "";
+  // rezerwacja ręczna nie zna języka gościa — bierzemy domyślny z rekordu
+  let guestLocale = "";
   try {
-    code = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
       const reservation = await tx.reservation.create({
@@ -926,8 +963,10 @@ export async function adminCreateReservation(formData: FormData) {
           source: "MANUAL",
         },
       });
-      return reservation.code;
+      return reservation;
     });
+    code = created.code;
+    guestLocale = created.locale;
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
       fail("Brak wolnych jednostek w tym terminie.");
@@ -935,10 +974,16 @@ export async function adminCreateReservation(formData: FormData) {
   }
   // rezerwacje telefoniczne/ręczne: od razu zaproś gościa do meldunku online
   if (!email.endsWith("@rezflow.local")) {
+    const t = await guestT(guestLocale);
     mailAfter({
       to: email,
-      subject: `Rezerwacja ${code} w ${property.name}`,
-      body: `Twoja rezerwacja (${from} → ${to}) została zapisana.\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
+      subject: t("manualCreated.subject", { code, property: property.name }),
+      body: t("manualCreated.body", {
+        from,
+        to,
+        checkInUrl: checkInUrl(code),
+        url: `${appUrl()}/r/${code}`,
+      }),
     });
   }
   if (phone) {
@@ -1009,10 +1054,16 @@ export async function adminUpdateReservation(formData: FormData) {
   }
 
   if (datesChanged && email && !email.endsWith("@rezflow.local")) {
+    const t = await guestT(r.locale);
     mailAfter({
       to: email,
-      subject: `Rezerwacja ${r.code} — zmiana terminu`,
-      body: `Obiekt zmienił termin Twojej rezerwacji na: ${from} → ${to}. W razie pytań odpowiedz na tę wiadomość.`,
+      subject: t("datesChanged.subject", { code: r.code }),
+      body: t("datesChanged.body", {
+        from,
+        to,
+        guests,
+        total: formatPln(totalGr),
+      }),
     });
   }
   revalidatePath("/admin/rezerwacje");

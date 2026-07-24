@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { Clock, Construction, FileText, MapPin, ShieldCheck, Star } from "lucide-react";
@@ -19,8 +21,12 @@ const TEXTURE =
   "repeating-linear-gradient(45deg,#eef3f0,#eef3f0 10px,#e6ede9 10px,#e6ede9 20px)";
 
 function Stars({ value, size = 13 }: { value: number; size?: number }) {
+  const t = useTranslations("property");
   return (
-    <span className="inline-flex gap-px text-accent-400" aria-label={`${value} / 5`}>
+    <span
+      className="inline-flex gap-px text-accent-400"
+      aria-label={t("ratingAriaLabel", { value })}
+    >
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
@@ -38,6 +44,8 @@ export default async function PropertyPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
+  const t = await getTranslations("property");
+  const tc = await getTranslations("common");
   const property = await prisma.property.findUnique({
     where: { slug },
     include: {
@@ -56,11 +64,11 @@ export default async function PropertyPage(props: {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-100 text-accent-500">
           <Construction size={26} strokeWidth={2} />
         </div>
-        <h1 className="text-xl font-bold">Ten obiekt jest obecnie niedostępny</h1>
+        <h1 className="text-xl font-bold">{t("suspended.title")}</h1>
         <p className="text-sm text-slate-600">
-          Strona rezerwacji obiektu {property.name} jest tymczasowo wyłączona.
+          {t("suspended.description", { name: property.name })}
         </p>
-        <Button href="/">Przeglądaj inne obiekty</Button>
+        <Button href="/">{t("suspended.browseOther")}</Button>
       </div>
     );
   }
@@ -130,7 +138,7 @@ export default async function PropertyPage(props: {
             className="tnum flex h-[220px] items-center justify-center rounded-l-[14px] text-[11px] text-slate-400"
             style={{ background: TEXTURE }}
           >
-            zdjęcie główne
+            {t("gallery.mainPhoto")}
           </div>
         )}
         <div className="flex flex-col gap-2">
@@ -166,7 +174,7 @@ export default async function PropertyPage(props: {
             )}
             {photos.length > 5 && (
               <span className="relative rounded-full bg-white/90 px-2.5 py-1">
-                +{photos.length - 5} zdjęć
+                {t("gallery.morePhotos", { count: photos.length - 5 })}
               </span>
             )}
           </div>
@@ -192,7 +200,7 @@ export default async function PropertyPage(props: {
                     {avg.toFixed(1).replace(".", ",")}
                   </a>
                 )}
-                <Badge tone="success">0% prowizji</Badge>
+                <Badge tone="success">{t("zeroCommission")}</Badge>
               </span>
             </div>
             {property.description && (
@@ -204,10 +212,10 @@ export default async function PropertyPage(props: {
 
           {/* Pokoje (16a — poziome karty) */}
           <section>
-            <h2 className="mb-3 text-base font-bold">Nasze pokoje</h2>
+            <h2 className="mb-3 text-base font-bold">{t("roomsTitle")}</h2>
             {property.unitTypes.length === 0 && (
               <p className="card px-6 py-8 text-center text-slate-500">
-                Ten obiekt nie dodał jeszcze swojej oferty.
+                {t("noRoomsYet")}
               </p>
             )}
             <div className="flex flex-col gap-3">
@@ -241,9 +249,9 @@ export default async function PropertyPage(props: {
                         {ut.name}
                       </Link>
                       <p className="mb-2 mt-0.5 text-[11.5px] text-slate-400">
-                        do {ut.maxGuests} os. · {ut.units.length}{" "}
-                        {ut.units.length === 1 ? "jednostka" : "jednostki"}
-                        {ut.minStay > 1 && ` · min. ${ut.minStay} nocy`}
+                        {t("upToGuests", { count: ut.maxGuests })} ·{" "}
+                        {t("units", { count: ut.units.length })}
+                        {ut.minStay > 1 && ` · ${t("minStay", { count: ut.minStay })}`}
                       </p>
                       {amenityDefs.length > 0 && (
                         <p className="flex flex-wrap gap-1.5">
@@ -268,10 +276,10 @@ export default async function PropertyPage(props: {
                         <div className="tnum text-[19px] font-bold">
                           {formatPln(ut.basePriceGr)}
                         </div>
-                        <div className="text-[10.5px] text-slate-400">za noc</div>
+                        <div className="text-[10.5px] text-slate-400">{tc("perNight")}</div>
                       </div>
                       <Button size="sm" href={`/o/${property.slug}/pokoj/${ut.id}`}>
-                        Zobacz pokój
+                        {t("viewRoom")}
                       </Button>
                     </div>
                   </div>
@@ -284,7 +292,7 @@ export default async function PropertyPage(props: {
           {reviews.length > 0 && (
             <section id="opinie" className="scroll-mt-20 space-y-4">
               <div className="flex items-baseline gap-3">
-                <h2 className="text-base font-bold">Opinie gości</h2>
+                <h2 className="text-base font-bold">{t("reviewsTitle")}</h2>
                 <span className="flex items-center gap-1.5 text-sm text-slate-500">
                   <Stars value={avg} />
                   {avg.toFixed(1).replace(".", ",")} / 5 · {reviews.length}
@@ -308,7 +316,7 @@ export default async function PropertyPage(props: {
                     {rev.ownerReply && (
                       <div className="mt-2 rounded-lg bg-brand-50 px-3 py-2 text-sm">
                         <p className="text-xs font-semibold text-brand-700">
-                          Odpowiedź obiektu
+                          {t("ownerReply")}
                         </p>
                         <p className="whitespace-pre-line text-slate-600">{rev.ownerReply}</p>
                       </div>
@@ -322,7 +330,7 @@ export default async function PropertyPage(props: {
           {/* FAQ obiektu */}
           {property.faqs.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-base font-bold">Najczęstsze pytania</h2>
+              <h2 className="text-base font-bold">{t("faqTitle")}</h2>
               <div className="space-y-3">
                 {property.faqs.map((f) => (
                   <details key={f.id} className="card overflow-hidden">
@@ -346,28 +354,31 @@ export default async function PropertyPage(props: {
               {property.unitTypes.length > 0 && (
                 <>
                   <span className="tnum text-[22px] font-bold">
-                    od{" "}
+                    {tc("from")}{" "}
                     {formatPln(Math.min(...property.unitTypes.map((ut) => ut.basePriceGr)))}
                   </span>
-                  <span className="text-[13px] text-slate-400">/ noc</span>
+                  <span className="text-[13px] text-slate-400">{t("perNightShort")}</span>
                 </>
               )}
             </div>
             <SearchForm action={`/o/${property.slug}/wyniki`} variant="widget" />
             <p className="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
-              Zaliczka {property.depositPercent}% online · reszta przy przyjeździe
+              {t("depositNote", { percent: property.depositPercent })}
             </p>
           </div>
           <div className="flex items-center gap-2.5 rounded-[11px] bg-brand-50 px-3.5 py-3">
             <ShieldCheck size={16} strokeWidth={2} className="flex-none text-brand-600" />
             <span className="text-[11.5px] leading-snug text-brand-900">
-              Rezerwacja bezpośrednio u gospodarza — najlepsza cena, bez prowizji.
+              {t("directBooking")}
             </span>
           </div>
           <div className="card space-y-2 px-4 py-3.5 text-[12.5px] text-slate-500">
             <p className="flex items-center gap-2">
               <Clock size={13} strokeWidth={2} className="text-slate-400" />
-              zameldowanie od {property.checkInFrom} · wymeldowanie do {property.checkOutTo}
+              {t("checkInOut", {
+                checkIn: property.checkInFrom,
+                checkOut: property.checkOutTo,
+              })}
             </p>
             {(property.terms || property.privacyPolicy) && (
               <p className="flex items-center gap-2">
@@ -376,7 +387,7 @@ export default async function PropertyPage(props: {
                   href={`/o/${property.slug}/regulamin`}
                   className="font-medium text-brand-600 hover:underline"
                 >
-                  Regulamin i polityka prywatności
+                  {t("termsAndPrivacy")}
                 </a>
               </p>
             )}

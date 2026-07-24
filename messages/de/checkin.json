@@ -1,0 +1,43 @@
+{
+  "title": "Online-Check-in",
+  "back": "Zurück zur Buchung",
+  "completed": "Der Meldeschein für die Buchung {code} wurde bereits ausgefüllt. Vielen Dank!",
+  "unavailable": {
+    "past": "Dieser Aufenthalt ist bereits beendet — der Online-Check-in ist nicht mehr verfügbar.",
+    "cancelled": "Diese Buchung wurde storniert.",
+    "notConfirmed": "Der Online-Check-in ist verfügbar, sobald die Buchung bestätigt ist (Anzahlung eingegangen)."
+  },
+  "intro": "Das Ausfüllen des Meldescheins dauert 2 Minuten und beschleunigt den Check-in vor Ort. Nach dem Ausfüllen erhalten Sie die Anreiseinformationen.",
+  "mainGuest": "Daten des Hauptgastes",
+  "fullName": "Vor- und Nachname *",
+  "address": "Wohnanschrift *",
+  "addressPlaceholder": "Straße, Nr., Postleitzahl, Ort",
+  "citizenship": "Staatsangehörigkeit *",
+  "citizenshipDefault": "polnisch",
+  "arrivalTime": "Voraussichtliche Ankunftszeit",
+  "docType": "Dokumentart (optional)",
+  "docTypeNone": "— keine Angabe —",
+  "docTypes": {
+    "DOWOD": "Personalausweis",
+    "PASZPORT": "Reisepass",
+    "INNY": "Anderes Dokument"
+  },
+  "docNumber": "Dokumentnummer (optional)",
+  "docNote": "Bitte laden Sie keine Fotos oder Scans Ihrer Dokumente hoch — sie werden nicht benötigt und nicht gespeichert.",
+  "carPlate": "Kfz-Kennzeichen (optional)",
+  "carPlatePlaceholder": "z. B. KR 12345",
+  "otherGuests": "{count, plural, one {Weiterer Gast (#)} other {Weitere Gäste (#)}}",
+  "otherGuestsSub": "Optional — Vor- und Nachname sowie Geburtsdatum (für die Statistik und die Kurtaxe).",
+  "guestName": "Gast {number} — Vor- und Nachname",
+  "guestBirth": "Geburtsdatum",
+  "signature": "Unterschrift *",
+  "signatureSub": "Unterschreiben Sie mit dem Finger oder der Maus.",
+  "signaturePad": {
+    "hint": "Unterschreiben Sie im Feld oben — mit dem Finger, der Maus oder einem Stift.",
+    "done": "Unterschrift erfasst",
+    "clear": "Löschen"
+  },
+  "terms": "Ich akzeptiere die <link>Hausordnung von {property}</link> *",
+  "rodo": "Ich willige in die Verarbeitung der Daten aus diesem Meldeschein durch {property} zum Zweck der Durchführung des Aufenthalts ein. Die Daten werden 12 Monate nach dem Check-out automatisch gelöscht. *",
+  "submit": "Meldeschein bestätigen und unterschreiben"
+}

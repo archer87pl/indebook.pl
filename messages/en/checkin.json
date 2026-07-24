@@ -1,0 +1,43 @@
+{
+  "title": "Online check-in",
+  "back": "Back to reservation",
+  "completed": "The registration form for reservation {code} has already been completed. Thank you!",
+  "unavailable": {
+    "past": "This stay has already ended — online check-in is no longer available.",
+    "cancelled": "This reservation has been cancelled.",
+    "notConfirmed": "Online check-in becomes available once the reservation is confirmed (deposit paid)."
+  },
+  "intro": "Filling in the registration form takes 2 minutes and speeds up your check-in on arrival. Once completed, you will receive the arrival instructions.",
+  "mainGuest": "Main guest details",
+  "fullName": "Full name *",
+  "address": "Home address *",
+  "addressPlaceholder": "street, number, postcode, town",
+  "citizenship": "Citizenship *",
+  "citizenshipDefault": "Polish",
+  "arrivalTime": "Estimated arrival time",
+  "docType": "Document type (optional)",
+  "docTypeNone": "— not provided —",
+  "docTypes": {
+    "DOWOD": "National ID card",
+    "PASZPORT": "Passport",
+    "INNY": "Other document"
+  },
+  "docNumber": "Document number (optional)",
+  "docNote": "Do not upload photos or scans of your documents — they are not needed and we do not store them.",
+  "carPlate": "Car registration number (optional)",
+  "carPlatePlaceholder": "e.g. KR 12345",
+  "otherGuests": "{count, plural, one {Other guest (#)} other {Other guests (#)}}",
+  "otherGuestsSub": "Optional — full name and date of birth (for statistics and the local tourist tax).",
+  "guestName": "Guest {number} — full name",
+  "guestBirth": "Date of birth",
+  "signature": "Signature *",
+  "signatureSub": "Sign with your finger or mouse.",
+  "signaturePad": {
+    "hint": "Sign in the field above — with your finger, mouse or stylus.",
+    "done": "Signature captured",
+    "clear": "Clear"
+  },
+  "terms": "I accept the <link>house rules of {property}</link> *",
+  "rodo": "I consent to the processing of the data from this registration form by {property} for the purpose of my stay. The data is deleted automatically 12 months after check-out. *",
+  "submit": "Confirm and sign the registration form"
+}

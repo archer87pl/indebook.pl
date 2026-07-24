@@ -1,0 +1,85 @@
+{
+  "status": {
+    "confirmed": "Rezerwacja potwierdzona!",
+    "cancelled": "Rezerwacja anulowana",
+    "expired": "Rezerwacja wygasła",
+    "pending": "Dokończ rezerwację",
+    "confirmedSub": "Do zobaczenia w {property}. Zaliczka opłacona.",
+    "payableSub": "Opłać zaliczkę {amount}, aby potwierdzić pobyt."
+  },
+  "alerts": {
+    "datesChanged": "Termin pobytu został zmieniony. Potwierdzenie wysłaliśmy e-mailem.",
+    "checkedIn": "Karta meldunkowa wypełniona. Dziękujemy — do zobaczenia!",
+    "reviewThanks": "Dziękujemy za opinię o pobycie!",
+    "paymentPending": "Płatność przyjęta — czekamy na potwierdzenie z bramki. Odśwież stronę za chwilę.",
+    "expired": "Czas na wpłatę zaliczki minął — rezerwacja wygasła. Sprawdź dostępność ponownie.",
+    "checkedInOnline": "Zameldowany online — karta meldunkowa wypełniona."
+  },
+  "ticket": {
+    "code": "Numer rezerwacji",
+    "badgePaid": "Opłacona",
+    "badgePending": "Oczekuje na zaliczkę",
+    "badgeExpired": "Wygasła",
+    "badgeCancelled": "Anulowana",
+    "property": "Obiekt",
+    "guests": "Goście",
+    "checkIn": "Przyjazd",
+    "checkOut": "Wyjazd",
+    "fromTime": "od {time}",
+    "toTime": "do {time}",
+    "stay": "Pobyt",
+    "discount": "rabat {amount}",
+    "amount": "Kwota",
+    "deposit": "zaliczka {amount}"
+  },
+  "pay": {
+    "p24": "Zapłać zaliczkę {amount} — Przelewy24",
+    "simulated": "Opłać zaliczkę {amount} (symulacja płatności)",
+    "p24Note": "Bezpieczna płatność Przelewy24: BLIK, karta, szybki przelew.",
+    "simulatedNote": "Tryb deweloperski: bramka płatności symulowana."
+  },
+  "checkin": {
+    "title": "Następny krok: meldunek online",
+    "descWithArrivalInfo": "Wypełnij kartę meldunkową, a instrukcje przyjazdu (kody, WiFi, dojazd) odblokują się od razu.",
+    "desc": "Wypełnij kartę meldunkową — przyspieszy to zameldowanie na miejscu.",
+    "cta": "Zamelduj się"
+  },
+  "arrival": {
+    "title": "Informacje na przyjazd"
+  },
+  "review": {
+    "title": "Jak minął pobyt?",
+    "sub": "Wystaw krótką opinię — zajmie chwilę i pomoże innym gościom."
+  },
+  "change": {
+    "title": "Zmień termin pobytu",
+    "newCheckIn": "Nowy przyjazd",
+    "newCheckOut": "Nowy wyjazd",
+    "guests": "Goście (maks. {max})",
+    "submit": "Przelicz i zmień termin",
+    "note": "Cena pobytu zostanie przeliczona według cennika dla nowego terminu.",
+    "noteDeposit": "Wpłacona zaliczka zostaje zaliczona na poczet pobytu."
+  },
+  "chat": {
+    "title": "Wiadomości do obiektu",
+    "sub": "{property} dostanie powiadomienie e-mailem, a odpowiedź zobaczysz tutaj.",
+    "placeholder": "np. Będziemy około 18:00, czy możemy zostawić bagaże wcześniej?",
+    "send": "Wyślij wiadomość",
+    "empty": "Brak wiadomości — napisz pierwszą.",
+    "you": "Ty",
+    "owner": "Obiekt",
+    "guest": "Gość"
+  },
+  "cancel": {
+    "cta": "Anuluj rezerwację"
+  },
+  "contact": {
+    "title": "Kontakt do gospodarza",
+    "replyVia": "odpowie na czacie lub e-mailem",
+    "replyTo": "odpowiedź przyjdzie na {email}",
+    "yourPhone": "Twój numer: {phone}",
+    "mapPlaceholder": "mapa dojazdu",
+    "hours": "zameldowanie od {checkIn} · wymeldowanie do {checkOut}",
+    "propertyPage": "Strona obiektu →"
+  }
+}

@@ -1,4 +1,5 @@
 import { Clock, MapPin } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 import InquiryForm from "./InquiryForm";
@@ -6,7 +7,8 @@ import InquiryForm from "./InquiryForm";
 type ContactSection = Extract<SiteSection, { type: "contact" }>;
 
 // Mapa: Google Maps embed bez klucza API (adres tekstowy).
-export default function Contact({ section, ctx }: { section: ContactSection; ctx: SiteCtx }) {
+export default async function Contact({ section, ctx }: { section: ContactSection; ctx: SiteCtx }) {
+  const t = await getTranslations({ locale: ctx.locale, namespace: "site" });
   const p = ctx.property;
   return (
     <section id="contact" className="scroll-mt-20 py-16">
@@ -28,16 +30,28 @@ export default function Contact({ section, ctx }: { section: ContactSection; ctx
               )}
               <p className="flex items-center gap-2.5 text-[var(--site-muted)]">
                 <Clock size={16} strokeWidth={2} className="flex-none text-[var(--site-primary)]" />
-                zameldowanie od {p.checkInFrom} · wymeldowanie do {p.checkOutTo}
+                {t("contact.checkInOut", { from: p.checkInFrom, to: p.checkOutTo })}
               </p>
             </div>
-            <InquiryForm siteKey={ctx.siteKey} />
+            <InquiryForm
+              siteKey={ctx.siteKey}
+              labels={{
+                name: t("contact.name"),
+                email: t("contact.email"),
+                phone: t("contact.phone"),
+                message: t("contact.message"),
+                send: t("contact.send"),
+                sentTitle: t("contact.sentTitle"),
+                sentBody: t("contact.sentBody"),
+                error: t("contact.error"),
+              }}
+            />
           </div>
           {p.address && (
             <div className="overflow-hidden rounded-2xl border border-[var(--site-text)]/10">
               <iframe
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(p.address)}&output=embed`}
-                title={`Mapa: ${p.address}`}
+                title={t("contact.mapTitle", { address: p.address })}
                 loading="lazy"
                 className="h-72 w-full"
               />
