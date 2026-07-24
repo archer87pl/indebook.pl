@@ -10,6 +10,7 @@ export type EventKind =
   | "MAIL"
   | "SMS"
   | "ICAL"
+  | "CHANNEX"
   | "ADMIN"
   | "AUTH";
 
@@ -19,6 +20,7 @@ export const EVENT_KINDS: { key: EventKind; label: string }[] = [
   { key: "MAIL", label: "E-maile" },
   { key: "SMS", label: "SMS-y" },
   { key: "ICAL", label: "iCal" },
+  { key: "CHANNEX", label: "Channex" },
   { key: "ADMIN", label: "Akcje admina" },
   { key: "AUTH", label: "Logowania" },
 ];
