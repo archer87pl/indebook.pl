@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Plus, Search } from "lucide-react";
+import { NavPending } from "./NavProgress";
 
 const TITLES: [string, string][] = [
   ["/admin/rezerwacje/nowa", "Nowa rezerwacja"],
@@ -57,6 +58,7 @@ export default function AdminTopbar({ today }: { today: string }) {
       <Link href="/admin/rezerwacje/nowa" className="btn-primary ml-auto h-9 px-4 py-0 text-[13px]">
         <Plus size={14} strokeWidth={2.4} />
         <span className="hidden sm:inline">Nowa rezerwacja</span>
+        <NavPending />
       </Link>
     </header>
   );

@@ -4,6 +4,7 @@ import Logo from "@/components/Logo";
 import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import MobileAdminNav from "@/components/admin/MobileAdminNav";
+import { NavPending, NavProgressProvider } from "@/components/admin/NavProgress";
 import Avatar from "@/components/ui/Avatar";
 import { logout } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
@@ -59,6 +60,7 @@ export default async function AdminLayout({
   );
 
   return (
+    <NavProgressProvider>
     <div className="min-h-screen w-full lg:flex">
       {/* Rail nawigacji (desktop) wg 1c */}
       <aside className="sticky top-0 z-20 hidden h-screen w-[216px] flex-none flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] lg:flex print:hidden">
@@ -84,6 +86,7 @@ export default async function AdminLayout({
               {planDef(property.plan).label}
             </span>
           </span>
+          <NavPending />
         </Link>
 
         <AdminNav items={items} />
@@ -128,5 +131,6 @@ export default async function AdminLayout({
         <main className="flex-1 px-4 py-4 lg:px-6 lg:py-5">{children}</main>
       </div>
     </div>
+    </NavProgressProvider>
   );
 }

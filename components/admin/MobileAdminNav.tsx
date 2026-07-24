@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import Logo from "@/components/Logo";
 import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
+import { NavPending } from "@/components/admin/NavProgress";
 import Avatar from "@/components/ui/Avatar";
 
 /**
@@ -102,6 +103,7 @@ export default function MobileAdminNav({
                   {planLabel}
                 </span>
               </span>
+              <NavPending />
             </Link>
 
             <AdminNav items={items} />

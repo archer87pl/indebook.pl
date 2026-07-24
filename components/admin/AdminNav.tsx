@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useReportNavPending } from "./NavProgress";
 
 const ICONS = {
   pulpit: LayoutGrid,
@@ -55,6 +56,8 @@ function isActive(pathname: string, href: string) {
  */
 function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
   const { pending } = useLinkStatus();
+  // zasil górny pasek postępu panelu (obok podmiany ikony na spinner)
+  useReportNavPending(pending);
   return pending ? (
     <Loader2 size={16} strokeWidth={2} className="animate-spin" />
   ) : (

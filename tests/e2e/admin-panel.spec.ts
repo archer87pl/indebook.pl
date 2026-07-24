@@ -21,11 +21,13 @@ test.describe("panel recepcji", () => {
     const link = page.locator("aside").getByRole("link", { name: "Raporty" });
     await link.click();
 
-    // 1) szkielet ładowania z loading.tsx
+    // 1) górny pasek postępu nawigacji (app-shell loader)
+    await expect(page.locator(".navprog-run")).toBeVisible();
+    // 2) szkielet ładowania z loading.tsx
     await expect(page.getByRole("status")).toBeVisible();
-    // 2) spinner na ikonie klikniętej pozycji (useLinkStatus)
+    // 3) spinner na ikonie klikniętej pozycji (useLinkStatus)
     await expect(link.locator(".animate-spin")).toBeVisible();
-    // 3) rail pozostaje interaktywny (jest w layoucie, nie przeładowuje się)
+    // 4) rail pozostaje interaktywny (jest w layoucie, nie przeładowuje się)
     await expect(page.getByText("Willa Rezio").first()).toBeVisible();
 
     // finalnie wchodzi treść

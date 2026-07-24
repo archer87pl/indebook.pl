@@ -125,6 +125,26 @@ h3 {
   to { opacity: 1; translate: 0 0; }
 }
 
+/* Górny pasek postępu nawigacji panelu (app-shell loader) */
+@keyframes navprog {
+  from { width: 0; }
+  to { width: 92%; }
+}
+@keyframes navprog-done {
+  from { width: 92%; opacity: 1; }
+  to { width: 100%; opacity: 0; }
+}
+.navprog-run {
+  animation: navprog 9s cubic-bezier(0.12, 0.8, 0.25, 1) forwards;
+}
+.navprog-done {
+  animation: navprog-done 0.4s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .navprog-run { animation-duration: 0.01ms; width: 92%; }
+  .navprog-done { animation-duration: 0.01ms; }
+}
+
 .aurora-blob {
   position: absolute;
   border-radius: 9999px;
