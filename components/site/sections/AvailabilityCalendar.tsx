@@ -5,7 +5,7 @@
 // rezerwacji na stronie aplikacji (flow hybrydowy).
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Day = { date: string; free: number; priceGr: number };
 
@@ -142,8 +142,16 @@ export default function AvailabilityCalendar({
       </div>
 
       {loading ? (
-        <div className="flex h-48 items-center justify-center text-[var(--site-muted)]">
-          <Loader2 size={22} className="animate-spin" />
+        // skeleton siatki — stała wysokość obszaru, brak skoku układu ani
+        // migotania przy zmianie miesiąca (spinner zastępowałby całą siatkę)
+        <div className="grid grid-cols-7 gap-1" aria-hidden>
+          {Array.from({ length: 35 }, (_, i) => (
+            <div
+              key={i}
+              className="h-10 animate-pulse rounded-lg bg-[var(--site-text)]/[0.06]"
+              style={{ animationDelay: `${(i % 7) * 40}ms` }}
+            />
+          ))}
         </div>
       ) : days ? (
         <div className="grid grid-cols-7 gap-1">

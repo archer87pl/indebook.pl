@@ -125,6 +125,46 @@ h3 {
   to { opacity: 1; translate: 0 0; }
 }
 
+/* Responsywna tabela: poniżej sm każdy wiersz staje się kartą, a komórki
+   dostają etykietę z atrybutu data-label (bez duplikowania markupu). */
+@media (max-width: 639px) {
+  table.cards-sm thead {
+    display: none;
+  }
+  table.cards-sm,
+  table.cards-sm tbody {
+    display: block;
+  }
+  table.cards-sm tr {
+    display: block;
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+  table.cards-sm td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 7px 14px !important;
+    text-align: right;
+    border: none !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+  table.cards-sm td:first-child {
+    border-top: none !important;
+  }
+  table.cards-sm td[data-label]::before {
+    content: attr(data-label);
+    flex: none;
+    font-weight: 600;
+    color: #64748b;
+    text-align: left;
+  }
+}
+
 /* Toast panelu — wejście z prawej */
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }

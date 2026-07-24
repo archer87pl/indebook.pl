@@ -120,7 +120,7 @@ export default async function ReservationsPage(props: {
 
       <Card>
         <div className="overflow-x-auto">
-          <table className="w-full text-[12.5px]">
+          <table className="cards-sm w-full text-[12.5px]">
             <thead>
               <tr className="bg-slate-50 text-left">
                 <th className="th px-[18px] py-2.5">Kod</th>
@@ -140,7 +140,7 @@ export default async function ReservationsPage(props: {
                   key={r.id}
                   className="border-t border-slate-100 align-middle transition-colors hover:bg-slate-50"
                 >
-                  <td className="px-[18px] py-2.5">
+                  <td data-label="Kod" className="px-[18px] py-2.5">
                     <Link
                       href={`/admin/rezerwacje/${r.id}`}
                       className="tnum text-[11px] font-semibold text-brand-600 hover:underline"
@@ -148,7 +148,7 @@ export default async function ReservationsPage(props: {
                       {r.code}
                     </Link>
                   </td>
-                  <td className="px-2 py-2.5">
+                  <td data-label="Gość" className="px-2 py-2.5">
                     <span className="font-semibold">{r.guestName}</span>
                     {r._count.messages > 0 && (
                       <Link
@@ -172,19 +172,19 @@ export default async function ReservationsPage(props: {
                       )}
                     </p>
                   </td>
-                  <td className="px-2 py-2.5 text-slate-600">
+                  <td data-label="Jednostka" className="px-2 py-2.5 text-slate-600">
                     {r.unit.unitType.name} ({r.unit.name})
                   </td>
-                  <td className="tnum px-2 py-2.5 text-slate-600">
+                  <td data-label="Termin" className="tnum px-2 py-2.5 text-slate-600">
                     {formatRangeShortPl(r.checkIn, r.checkOut)}
                   </td>
-                  <td className="tnum px-2 py-2.5 text-center text-slate-600">
+                  <td data-label="Noce" className="tnum px-2 py-2.5 text-center text-slate-600">
                     {nightsBetween(r.checkIn, r.checkOut)}
                   </td>
-                  <td className="px-2 py-2.5 text-slate-600">
+                  <td data-label="Kanał" className="px-2 py-2.5 text-slate-600">
                     {r.source === "MANUAL" ? "Ręczna" : "Bezpośrednia"}
                   </td>
-                  <td className="tnum px-2 py-2.5 text-right font-semibold">
+                  <td data-label="Kwota" className="tnum px-2 py-2.5 text-right font-semibold">
                     {formatPln(r.totalGr)}
                     {r.discountGr > 0 && (
                       <p className="text-[10.5px] font-normal text-brand-600">
@@ -192,7 +192,7 @@ export default async function ReservationsPage(props: {
                       </p>
                     )}
                   </td>
-                  <td className="px-2 py-2.5 text-right">
+                  <td data-label="Status" className="px-2 py-2.5 text-right">
                     {r.status === "CONFIRMED" ? (
                       <Badge tone="success">Potwierdzona</Badge>
                     ) : r.status === "PENDING" ? (
@@ -201,7 +201,7 @@ export default async function ReservationsPage(props: {
                       <Badge tone="danger">Anulowana</Badge>
                     )}
                   </td>
-                  <td className="px-[18px] py-2.5">
+                  <td data-label="Akcje" className="px-[18px] py-2.5">
                     <div className="flex items-center justify-end gap-2.5 text-xs font-semibold">
                       <Link
                         href={`/admin/rezerwacje/${r.id}`}

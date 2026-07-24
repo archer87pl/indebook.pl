@@ -47,7 +47,7 @@ export default async function InvoicesPage() {
           }
         />
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="cards-sm w-full text-[13px]">
             <thead>
               <tr className="bg-slate-50 text-left">
                 <th className="th px-[18px] py-2.5">Numer</th>
@@ -65,13 +65,13 @@ export default async function InvoicesPage() {
                   key={inv.id}
                   className="border-t border-slate-100 transition-colors hover:bg-slate-50"
                 >
-                  <td className="tnum whitespace-nowrap px-[18px] py-2.5 text-[11px] font-semibold text-brand-600">
+                  <td data-label="Numer" className="tnum whitespace-nowrap px-[18px] py-2.5 text-[11px] font-semibold text-brand-600">
                     {inv.number}
                   </td>
-                  <td className="px-2 py-2.5">
+                  <td data-label="Rodzaj" className="px-2 py-2.5">
                     {invoiceKindDef(inv.kind)?.label ?? inv.kind}
                   </td>
-                  <td className="px-2 py-2.5">
+                  <td data-label="Nabywca" className="px-2 py-2.5">
                     <span className="font-semibold text-slate-900">
                       {inv.buyerName}
                     </span>
@@ -81,13 +81,13 @@ export default async function InvoicesPage() {
                       </p>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-2 py-2.5 text-slate-500">
+                  <td data-label="Wystawiono" className="whitespace-nowrap px-2 py-2.5 text-slate-500">
                     {formatDateShortPl(inv.issueDate)}
                   </td>
-                  <td className="tnum whitespace-nowrap px-2 py-2.5 text-right font-semibold text-slate-900">
+                  <td data-label="Brutto" className="tnum whitespace-nowrap px-2 py-2.5 text-right font-semibold text-slate-900">
                     {formatPln(inv.grossGr)}
                   </td>
-                  <td className="px-2 py-2.5">
+                  <td data-label="Rezerwacja" className="px-2 py-2.5">
                     {inv.reservation ? (
                       <Link
                         href={`/admin/rezerwacje/${inv.reservation.id}`}

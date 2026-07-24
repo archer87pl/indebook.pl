@@ -3,8 +3,9 @@
 // Prosty lightbox galerii bez zależności: grid miniatur + overlay ze
 // strzałkami. Sterowanie klawiaturą: Esc zamyka, strzałki przewijają.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useFocusTrap } from "@/components/ui/useFocusTrap";
 
 export default function GalleryLightbox({
   photos,
@@ -14,6 +15,9 @@ export default function GalleryLightbox({
   alt: string;
 }) {
   const [open, setOpen] = useState<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(null), []);
+  useFocusTrap(dialogRef, open !== null, close);
 
   const move = useCallback(
     (delta: number) => {
@@ -57,10 +61,12 @@ export default function GalleryLightbox({
 
       {open !== null && photos[open] && (
         <div
+          ref={dialogRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setOpen(null)}
           role="dialog"
           aria-modal="true"
+          aria-label={`Galeria — zdjęcie ${open + 1} z ${photos.length}`}
         >
           <button
             type="button"

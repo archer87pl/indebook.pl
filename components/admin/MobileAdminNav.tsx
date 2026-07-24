@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
@@ -8,6 +8,7 @@ import Logo from "@/components/Logo";
 import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
 import { NavPending } from "@/components/admin/NavProgress";
 import Avatar from "@/components/ui/Avatar";
+import { useFocusTrap } from "@/components/ui/useFocusTrap";
 
 /**
  * Mobilna nawigacja panelu: pasek z logo i hamburgerem, po otwarciu drawer
@@ -29,6 +30,9 @@ export default function MobileAdminNav({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useFocusTrap(drawerRef, open, close);
 
   // nawigacja = zamknięcie menu (korekta stanu w trakcie renderu,
   // wg wzorca "adjusting state when a prop changes" z dokumentacji React)
@@ -71,7 +75,10 @@ export default function MobileAdminNav({
             aria-label="Zamknij menu"
           />
           {/* drawer w stylu railu */}
-          <div className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] shadow-[8px_0_40px_rgba(0,0,0,0.4)]">
+          <div
+            ref={drawerRef}
+            className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] shadow-[8px_0_40px_rgba(0,0,0,0.4)]"
+          >
             <div className="flex items-center justify-between px-2 pb-5 pt-1">
               <Link href="/admin" aria-label="Rezio — pulpit">
                 <Logo size={31} tone="dark" />
