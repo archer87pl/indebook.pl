@@ -39,7 +39,7 @@ export async function sendArrivalReminders(): Promise<number> {
   for (const r of due) {
     const property = r.unit.unitType.property;
     const needsCheckIn = r.checkInStatus === "NONE";
-    if (r.email && !r.email.endsWith("@rezio.local")) {
+    if (r.email && !r.email.endsWith("@rezflow.local")) {
       await sendMail({
         to: r.email,
         subject: `Do zobaczenia jutro — ${property.name}`,
@@ -93,7 +93,7 @@ export async function sendReviewRequests(): Promise<number> {
   });
   for (const r of due) {
     const property = r.unit.unitType.property;
-    if (r.email && !r.email.endsWith("@rezio.local")) {
+    if (r.email && !r.email.endsWith("@rezflow.local")) {
       await sendMail({
         to: r.email,
         subject: `Jak minął pobyt w ${property.name}?`,

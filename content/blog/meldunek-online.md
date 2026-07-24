@@ -3,7 +3,7 @@ title: Meldunek online — koniec kolejki na recepcji
 date: 2026-07-08
 excerpt: Karta meldunkowa z e-podpisem wypełniona przed przyjazdem to krótszy check-in, mniej papieru i zadowolony gość. Zobacz, jak to działa i co zyskuje obiekt.
 tag: Obsługa gościa
-author: Zespół Rezio
+author: Zespół RezFlow
 ---
 
 Klasyczne zameldowanie to formularz na recepcji, długopis i przepisywanie danych
@@ -28,7 +28,7 @@ Ciebie.
 
 ## A co z RODO?
 
-Rezio celowo **nie zbiera skanów dokumentów** — wystarczy typ i numer, a numer
+RezFlow celowo **nie zbiera skanów dokumentów** — wystarczy typ i numer, a numer
 jest maskowany na listach. Karty meldunkowe (dane osobowe) są **automatycznie
 kasowane 12 miesięcy po wymeldowaniu**. Sam status „zameldowany online" zostaje
 jako informacja historyczna.

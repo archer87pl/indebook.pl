@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Kreator stron WWW obiektów w panelu (`/admin/strona`) publikujący strony na `*.rezop.pl` i własnych domenach (Vercel), wg specu `docs/superpowers/specs/2026-07-23-website-builder-design.md`.
+**Goal:** Kreator stron WWW obiektów w panelu (`/admin/strona`) publikujący strony na `*.rezflow.pl` i własnych domenach (Vercel), wg specu `docs/superpowers/specs/2026-07-23-website-builder-design.md`.
 
 **Architecture:** Rekord `Site` (1:1 z `Property`) z konfiguracją JSON draft/published; `proxy.ts` mapuje hosta na rewrite do `app/_sites/[host]` renderującego stronę komponentami React (ISR + revalidatePath przy publikacji). Edytor = server components + server actions (wzorzec `requireOwner` → `redirect(?error=)` / `revalidatePath` + `redirect(?saved=1)`), podgląd draftu w iframe. Domeny za interfejsem `DomainProvider` (impl. Vercel API).
 
@@ -13,8 +13,8 @@
 - Next.js 16: middleware to **`proxy.ts`** (named export `proxy`, Node runtime); `params`/`searchParams` są `Promise` — zawsze `await`; ISR modelem legacy (`export const revalidate`, `revalidatePath`) — projekt NIE używa `cacheComponents`.
 - Wzorce kodu: akcje w stylu `lib/actions.ts` (FormData, `str()`, `redirect(?error=)`, `revalidatePath` + `redirect(?saved=1)`); zdjęcia = pełne URL-e Blob w `Photo.path`, renderowane `<img loading="lazy">` (świadome odstępstwo od next/image — spójność z kodem, Blob wymagałby remotePatterns); ceny w groszach, `formatPln` z `lib/format`; UI: Tailwind + klasy `.card`, `.alert-error`, `.alert-success`, komponenty `components/ui/*` (`SubmitButton`, `Card`, `Toggle`); ikony lucide-react; teksty UI po polsku.
 - Gating planów: STANDARD/PRO = kreator + subdomena, PRO = własna domena, FREE = upsell. Jedna funkcja `sitePlanFeatures`.
-- Brak duplikacji danych: sekcje `units/gallery/amenities/calendar/reviews` czytają dane z tabel RezOp na żywo; w JSON tylko ustawienia wyglądu.
-- Env: `SITES_BASE_DOMAIN` (domyślnie `rezop.pl`), `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, opcjonalnie `VERCEL_TEAM_ID`; brak tokenów = sekcja domen ukryta (wzorzec „tryb symulacji" jak P24).
+- Brak duplikacji danych: sekcje `units/gallery/amenities/calendar/reviews` czytają dane z tabel RezFlow na żywo; w JSON tylko ustawienia wyglądu.
+- Env: `SITES_BASE_DOMAIN` (domyślnie `rezflow.pl`), `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`, opcjonalnie `VERCEL_TEAM_ID`; brak tokenów = sekcja domen ukryta (wzorzec „tryb symulacji" jak P24).
 - Testy: vitest dla czystej logiki (`lib/*.test.ts`, polskie opisy), playwright e2e (`tests/e2e/`, helper `loginAsOwner`, port 3100, subdomeny `*.localhost`).
 - Commity małe, po polsku, konwencja repo (`Feat:`/`Fix:`/opisowe).
 
@@ -66,7 +66,7 @@
 **Interfaces (Produces):**
 ```ts
 export type HostKind = { kind: "app" } | { kind: "site"; key: string }; // key = subdomena LUB pełna domena własna
-export function sitesBaseDomain(): string; // env SITES_BASE_DOMAIN ?? "rezop.pl"
+export function sitesBaseDomain(): string; // env SITES_BASE_DOMAIN ?? "rezflow.pl"
 export function classifyHost(hostHeader: string | null, opts?: { base?: string; appHost?: string }): HostKind;
 export function siteUrl(site: { subdomain: string; customDomain: string | null; domainStatus: string }): string; // kanoniczny publiczny URL strony
 ```
@@ -91,7 +91,7 @@ export const config = {
 (`/api/*` przechodzi bez rewrite'u — widget kalendarza i formularz kontaktowy biją w API z domeny strony.)
 
 **Steps:**
-- [ ] 1. Testy `classifyHost`: localhost→app, `willa.localhost:3000`→site/willa, `willa.rezop.pl`→site/willa, `rezop.pl`→app, `app-host z APP_URL`→app, `mojobiekt.pl`→site/mojobiekt.pl, `a.b.rezop.pl`→app. FAIL → implementacja → PASS.
+- [ ] 1. Testy `classifyHost`: localhost→app, `willa.localhost:3000`→site/willa, `willa.rezflow.pl`→site/willa, `rezflow.pl`→app, `app-host z APP_URL`→app, `mojobiekt.pl`→site/mojobiekt.pl, `a.b.rezflow.pl`→app. FAIL → implementacja → PASS.
 - [ ] 2. `proxy.ts` jak wyżej; `npm run build` przechodzi.
 - [ ] 3. Commit `Feat: strona WWW - routing hostow (proxy + classifyHost)`.
 
@@ -239,5 +239,5 @@ export function normalizeDomain(input: string): string | null; // lowercase, bez
 
 ## Self-review planu
 
-- Pokrycie specu: model+draft/publish (T1), sanityzacja/bezpieczeństwo (T2), routing hostów (T3), rendering+sekcje+JSON-LD+metadata (T4), kalendarz hybrydowy (T5), kontakt+mapa (T6), wizard/publikacja/podgląd/gating (T7), edytor+odpięcie sekcji+CSS (T8), domeny+DNS+SSL-via-Vercel+env (T9), sitemap/robots+e2e+docs (T10). Cookie sesji: `rezio_session` jest ustawiane bez atrybutu `Domain` (host-only) — do potwierdzenia w T7 przy przeglądzie `lib/auth.ts`, bez zmian jeśli tak jest.
+- Pokrycie specu: model+draft/publish (T1), sanityzacja/bezpieczeństwo (T2), routing hostów (T3), rendering+sekcje+JSON-LD+metadata (T4), kalendarz hybrydowy (T5), kontakt+mapa (T6), wizard/publikacja/podgląd/gating (T7), edytor+odpięcie sekcji+CSS (T8), domeny+DNS+SSL-via-Vercel+env (T9), sitemap/robots+e2e+docs (T10). Cookie sesji: `rezflow_session` jest ustawiane bez atrybutu `Domain` (host-only) — do potwierdzenia w T7 przy przeglądzie `lib/auth.ts`, bez zmian jeśli tak jest.
 - Odstępstwa od specu (świadome, do odnotowania przy realizacji): `<img loading="lazy">` zamiast next/image (konwencja repo), mapa Google embed zamiast OSM (brak współrzędnych w danych), formularz kontaktowy przez API route zamiast server action (rewrite hostów), lightbox minimalny.

@@ -12,7 +12,7 @@ test("gość rezerwuje pobyt, płaci zaliczkę i melduje się online", async ({ 
 
   // 1. Strona obiektu (16a): widget dostępności
   await page.goto(`/o/${PROPERTY_SLUG}`);
-  await expect(page.getByRole("heading", { name: "Willa Rezio" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Willa RezFlow" })).toBeVisible();
   await expect(page.getByText("0% prowizji")).toBeVisible();
 
   await page.locator('input[name="from"]').fill(from);

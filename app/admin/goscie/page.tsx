@@ -62,7 +62,7 @@ export default async function GuestsPage(props: {
   // agregacja po e-mailu; rezerwacje bez żywego adresu grupujemy po nazwisko+telefon
   const byKey = new Map<string, GuestRow>();
   for (const r of reservations) {
-    const liveEmail = r.email && !r.email.endsWith("@rezio.local");
+    const liveEmail = r.email && !r.email.endsWith("@rezflow.local");
     const key = liveEmail
       ? r.email.toLowerCase()
       : `${r.guestName.toLowerCase()}|${r.phone}`;

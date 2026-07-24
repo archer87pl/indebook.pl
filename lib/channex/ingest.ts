@@ -1,4 +1,4 @@
-// Import rezerwacji z OTA (Channex) do RezOp: auto-assign wolnego Unitu,
+// Import rezerwacji z OTA (Channex) do RezFlow: auto-assign wolnego Unitu,
 // upsert po channexBookingId, obsługa oversell (konflikt) i anulowań.
 import { randomInt } from "node:crypto";
 import { prisma } from "../db";

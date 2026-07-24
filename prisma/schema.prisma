@@ -128,7 +128,7 @@ model Site {
   id              Int       @id @default(autoincrement())
   propertyId      Int       @unique
   property        Property  @relation(fields: [propertyId], references: [id])
-  // adres nazwa.<SITES_BASE_DOMAIN>, np. przystanek-lesna.rezop.pl
+  // adres nazwa.<SITES_BASE_DOMAIN>, np. przystanek-lesna.rezflow.pl
   subdomain       String    @unique
   // własna domena klienta (plan PRO), np. mojobiekt.pl
   customDomain    String?   @unique

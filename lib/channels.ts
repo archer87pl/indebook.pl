@@ -2,9 +2,9 @@ export type ChannelDef = {
   key: string;
   label: string;
   emoji: string;
-  /** skąd wziąć URL importu (ich kalendarz → Rezio) */
+  /** skąd wziąć URL importu (ich kalendarz → RezFlow) */
   importHint: string;
-  /** gdzie wkleić URL eksportu Rezio (Rezio → ich kalendarz) */
+  /** gdzie wkleić URL eksportu RezFlow (RezFlow → ich kalendarz) */
   exportHint: string;
 };
 
@@ -16,7 +16,7 @@ export const CHANNELS: ChannelDef[] = [
     importHint:
       "Extranet → Ceny i dostępność → Synchronizacja kalendarzy → „Eksportuj kalendarz” — skopiuj URL pliku .ics i wklej poniżej.",
     exportHint:
-      "Extranet → Ceny i dostępność → Synchronizacja kalendarzy → „Dodaj kalendarz” — wklej URL eksportu Rezio.",
+      "Extranet → Ceny i dostępność → Synchronizacja kalendarzy → „Dodaj kalendarz” — wklej URL eksportu RezFlow.",
   },
   {
     key: "AIRBNB",
@@ -25,21 +25,21 @@ export const CHANNELS: ChannelDef[] = [
     importHint:
       "Kalendarz → Dostępność → Połącz z innym kalendarzem → „Eksportuj kalendarz” — skopiuj URL .ics.",
     exportHint:
-      "Kalendarz → Dostępność → Połącz z innym kalendarzem → „Importuj kalendarz” — wklej URL eksportu Rezio.",
+      "Kalendarz → Dostępność → Połącz z innym kalendarzem → „Importuj kalendarz” — wklej URL eksportu RezFlow.",
   },
   {
     key: "VRBO",
     label: "Vrbo / Abritel",
     emoji: "🟠",
     importHint: "Calendar → Import/Export → „Export calendar” — skopiuj URL .ics.",
-    exportHint: "Calendar → Import/Export → „Import calendar” — wklej URL eksportu Rezio.",
+    exportHint: "Calendar → Import/Export → „Import calendar” — wklej URL eksportu RezFlow.",
   },
   {
     key: "OTHER",
     label: "Inny (iCal)",
     emoji: "⚪",
     importHint: "Wklej dowolny publiczny URL kalendarza w formacie iCal (.ics).",
-    exportHint: "Wklej URL eksportu Rezio w systemie obsługującym import iCal.",
+    exportHint: "Wklej URL eksportu RezFlow w systemie obsługującym import iCal.",
   },
 ];
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import { PRODUCT_DOMAIN, PRODUCT_NAME } from "@/lib/brand";
 
 export default function SiteLayout({
   children,
@@ -10,7 +11,7 @@ export default function SiteLayout({
     <>
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 print:hidden">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Rezio — strona główna">
+          <Link href="/" aria-label="RezFlow — strona główna">
             <Logo size={31} ringColor="#ffffff" />
           </Link>
           <nav className="hidden items-center gap-1 text-[13.5px] font-medium text-slate-600 md:flex">
@@ -81,7 +82,7 @@ export default function SiteLayout({
           </div>
         </div>
         <div className="border-t border-white/10 text-center text-xs py-4 text-slate-400">
-          © {new Date().getFullYear()} Rezio · rezio.pl — rezerwuj bezpośrednio, bez prowizji portali
+          © {new Date().getFullYear()} {PRODUCT_NAME} · {PRODUCT_DOMAIN} — rezerwuj bezpośrednio, bez prowizji portali
         </div>
       </footer>
     </>

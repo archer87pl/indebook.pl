@@ -139,7 +139,7 @@ export default async function AdminDashboard() {
       <Card>
         <EmptyState
           icon={<BedDouble size={26} strokeWidth={2} />}
-          title="Witaj w Rezio! Zacznij od dodania pokoi."
+          title="Witaj w RezFlow! Zacznij od dodania pokoi."
           description="Dodaj typy pokoi (np. „Pokój Standard”, „Apartament”), liczbę jednostek i ceny — Twoja strona rezerwacji ruszy od razu."
           action={
             <Button href="/admin/pokoje">

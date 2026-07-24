@@ -28,7 +28,7 @@ test.describe("panel recepcji", () => {
     // 3) spinner na ikonie klikniętej pozycji (useLinkStatus)
     await expect(link.locator(".animate-spin")).toBeVisible();
     // 4) rail pozostaje interaktywny (jest w layoucie, nie przeładowuje się)
-    await expect(page.getByText("Willa Rezio").first()).toBeVisible();
+    await expect(page.getByText("Willa RezFlow").first()).toBeVisible();
 
     // finalnie wchodzi treść
     await expect(page.getByText("Przychód bezpośredni")).toBeVisible();
@@ -40,7 +40,7 @@ test.describe("panel recepcji", () => {
     await expect(page.getByText(/^Przychód · /)).toBeVisible();
     await expect(page.getByText("Obłożenie · 14 dni").first()).toBeVisible();
     // rail: obiekt + aktywna pozycja
-    await expect(page.getByText("Willa Rezio").first()).toBeVisible();
+    await expect(page.getByText("Willa RezFlow").first()).toBeVisible();
   });
 
   test("recepcja tworzy ręczną rezerwację i widzi ją na liście oraz w szczegółach", async ({

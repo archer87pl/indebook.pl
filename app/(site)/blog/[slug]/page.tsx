@@ -52,8 +52,8 @@ export default async function BlogPostPage(props: {
     headline: post.title,
     description: post.excerpt,
     datePublished: post.date,
-    author: { "@type": "Organization", name: post.author ?? "Rezio" },
-    publisher: { "@type": "Organization", name: "Rezio" },
+    author: { "@type": "Organization", name: post.author ?? "RezFlow" },
+    publisher: { "@type": "Organization", name: "RezFlow" },
     mainEntityOfPage: `${appUrl()}/blog/${post.slug}`,
     ...(post.cover ? { image: `${appUrl()}${post.cover}` } : {}),
   };

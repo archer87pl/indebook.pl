@@ -85,7 +85,7 @@ export default function StyleguidePage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-[10.5px] font-bold uppercase tracking-[0.17em] text-slate-500">
-            Rezio · design system
+            RezFlow · design system
           </p>
           <h1 className="mt-1 text-[28px] font-bold">
             Kierunek 1c „Zieleń wiodąca&rdquo;

@@ -21,7 +21,7 @@ const labelCls = "mb-1 block text-[12.5px] font-semibold";
 const iconBtnCls =
   "flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30";
 
-/** Sekcje generowane z danych RezOp — mają przycisk „odepnij". */
+/** Sekcje generowane z danych RezFlow — mają przycisk „odepnij". */
 const DATA_SECTIONS: SiteSection["type"][] = [
   "hero", "about", "units", "gallery", "amenities", "calendar", "attractions", "reviews", "contact",
 ];
@@ -154,7 +154,7 @@ function SectionFields({ section, photos }: { section: SiteSection; photos: Phot
           </label>
           <p className="text-xs leading-relaxed text-slate-400">
             Treść tej sekcji (zdjęcia, ceny, dostępność, opinie) pobiera się automatycznie
-            z Twoich danych w Rezio i zawsze jest aktualna.
+            z Twoich danych w RezFlow i zawsze jest aktualna.
           </p>
         </>
       );
@@ -240,7 +240,7 @@ export default function SectionEditor({
                     <div className="space-y-2 rounded-[11px] border border-amber-200 bg-amber-50 p-3">
                       <p className="text-xs leading-relaxed text-amber-800">
                         Po odpięciu sekcja stanie się zwykłym kodem HTML: przestanie
-                        aktualizować się z danych Rezio (ceny, zdjęcia, opinie), a jej
+                        aktualizować się z danych RezFlow (ceny, zdjęcia, opinie), a jej
                         formularz zniknie. Tej operacji nie można cofnąć.
                       </p>
                       <div className="flex gap-2">

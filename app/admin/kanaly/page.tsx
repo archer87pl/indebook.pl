@@ -169,7 +169,7 @@ export default async function ChannelsPage() {
               />
               <CardBody className="space-y-5">
                 <div className="space-y-1.5">
-                  <p className="th">Eksport (Rezio → kanał)</p>
+                  <p className="th">Eksport (RezFlow → kanał)</p>
                   <input
                     readOnly
                     value={exportUrl}
@@ -183,7 +183,7 @@ export default async function ChannelsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="th">Import (kanał → Rezio)</p>
+                  <p className="th">Import (kanał → RezFlow)</p>
                   {u.icalFeeds.map((f) => {
                     const ch = channelDef(f.channel);
                     return (
@@ -325,11 +325,11 @@ export default async function ChannelsPage() {
               </summary>
               <ol className="ml-5 mt-1 list-decimal space-y-1 text-slate-600">
                 <li>
-                  <span className="font-semibold">Import do Rezio:</span>{" "}
+                  <span className="font-semibold">Import do RezFlow:</span>{" "}
                   {c.importHint}
                 </li>
                 <li>
-                  <span className="font-semibold">Eksport z Rezio:</span>{" "}
+                  <span className="font-semibold">Eksport z RezFlow:</span>{" "}
                   {c.exportHint}
                 </li>
               </ol>

@@ -1,6 +1,6 @@
 // Konfiguracja strony WWW obiektu — struktura JSON trzymana w Site.draftConfig /
 // Site.publishedConfig. Sekcje danych (units/gallery/amenities/calendar/reviews)
-// trzymają tu wyłącznie ustawienia wyglądu; treść płynie na żywo z tabel RezOp.
+// trzymają tu wyłącznie ustawienia wyglądu; treść płynie na żywo z tabel RezFlow.
 
 import { siteTemplate } from "./site-themes";
 

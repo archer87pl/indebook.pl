@@ -6,10 +6,10 @@ import { formatBlogDate, getPublishedPosts } from "@/lib/blog";
 export const metadata: Metadata = {
   title: "Blog — poradnik dla obiektów noclegowych",
   description:
-    "Praktyczne porady o rezerwacjach bez prowizji, meldunku online, cenach dynamicznych i prowadzeniu obiektu noclegowego. Wiedza z Rezio.",
+    "Praktyczne porady o rezerwacjach bez prowizji, meldunku online, cenach dynamicznych i prowadzeniu obiektu noclegowego. Wiedza z RezFlow.",
   alternates: { canonical: "/blog" },
   openGraph: {
-    title: "Blog Rezio — poradnik dla obiektów noclegowych",
+    title: "Blog RezFlow — poradnik dla obiektów noclegowych",
     type: "website",
     locale: "pl_PL",
   },
@@ -26,7 +26,7 @@ export default function BlogIndexPage() {
     <div className="space-y-10">
       <header className="max-w-2xl">
         <p className="text-[10.5px] font-bold uppercase tracking-[0.17em] text-brand-600">
-          Poradnik Rezio
+          Poradnik RezFlow
         </p>
         <h1 className="mt-2 text-[32px] font-bold leading-tight tracking-[-0.02em] text-brand-900">
           Wiedza, która pomaga sprzedawać bezpośrednio

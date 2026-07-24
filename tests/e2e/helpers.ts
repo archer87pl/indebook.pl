@@ -3,8 +3,8 @@ import { type Page, expect } from "@playwright/test";
 /** Unikalny znacznik przebiegu — dane testowe nie zderzają się między uruchomieniami. */
 export const RUN = Date.now().toString(36);
 
-export const DEMO = { email: "demo@rezio.pl", password: "demo1234" };
-export const PROPERTY_SLUG = "willa-rezio";
+export const DEMO = { email: "demo@rezflow.pl", password: "demo1234" };
+export const PROPERTY_SLUG = "willa-rezflow";
 
 /**
  * Losowe okno dat per przebieg (120–4000 dni w przód): kolejne uruchomienia

@@ -3,7 +3,7 @@ title: Ceny dynamiczne w praktyce — trzy reguły, które pracują za Ciebie
 date: 2026-06-30
 excerpt: Weekend drożej, last minute taniej, pełne obłożenie w cenie premium. Ustawiasz reguły raz, a cennik sam dopasowuje stawki za każdą noc — spójnie we wszystkich wycenach.
 tag: Sprzedaż
-author: Zespół Rezio
+author: Zespół RezFlow
 ---
 
 Ręczne żonglowanie cenami w sezonie to droga do błędów. Ceny dynamiczne to

@@ -136,7 +136,7 @@ export default function SiteWizard({
         <div className="space-y-4">
           <h2 className="text-lg font-bold">Stronę wypełnimy Twoimi danymi</h2>
           <p className="text-sm text-slate-500">
-            Kreator użyje danych, które masz już w Rezio — bez ponownego wpisywania.
+            Kreator użyje danych, które masz już w RezFlow — bez ponownego wpisywania.
             Braki możesz uzupełnić teraz albo później.
           </p>
           <ul className="space-y-2">

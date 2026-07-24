@@ -4,10 +4,10 @@ Data: 2026-07-23 · Status: zaakceptowany przez właściciela projektu
 
 ## Cel
 
-Właściciel obiektu buduje z panelu RezOp własną stronę-wizytówkę (long-scroll, styl
+Właściciel obiektu buduje z panelu RezFlow własną stronę-wizytówkę (long-scroll, styl
 apartamentyhiszpania.com.pl / apartamentywslupsku.pl / przystaneklesna.pl) bez wiedzy
-technicznej, publikuje ją na subdomenie `*.rezop.pl`, a w planie PRO podpina własną
-domenę z automatycznym SSL. Strona jest zasilana danymi już wprowadzonymi w RezOp
+technicznej, publikuje ją na subdomenie `*.rezflow.pl`, a w planie PRO podpina własną
+domenę z automatycznym SSL. Strona jest zasilana danymi już wprowadzonymi w RezFlow
 (obiekt, apartamenty, zdjęcia, cennik, opinie) — bez duplikacji danych.
 
 ## Decyzje kluczowe (ustalone z właścicielem)
@@ -22,7 +22,7 @@ domenę z automatycznym SSL. Strona jest zasilana danymi już wprowadzonymi w Re
    własny kod" — jednokierunkowe odpięcie sekcji generowanej (z ostrzeżeniem, że dane
    przestaną się aktualizować).
 5. **Rezerwacja: hybryda** — widget kalendarza i ceny inline na stronie klienta,
-   finalizacja (formularz + płatność) na istniejącym flow `rezop.pl/rezerwuj/…`.
+   finalizacja (formularz + płatność) na istniejącym flow `rezflow.pl/rezerwuj/…`.
 6. **Gating planów:** FREE — zakładka z zachętą do upgrade'u; STANDARD — kreator +
    subdomena; PRO — dodatkowo własna domena. Jedna funkcja `sitePlanFeatures(plan)`.
 
@@ -39,7 +39,7 @@ Nowa tabela `Site` (1:1 z `Property`):
 
 | Pole | Opis |
 |---|---|
-| `subdomain` | unikalna, generowana ze sluga, edytowalna (`przystanek-lesna` → `przystanek-lesna.rezop.pl`) |
+| `subdomain` | unikalna, generowana ze sluga, edytowalna (`przystanek-lesna` → `przystanek-lesna.rezflow.pl`) |
 | `customDomain` | opcjonalna, unikalna |
 | `domainStatus` | `NONE / PENDING / VERIFIED / ERROR` |
 | `template` | `gorski / nadmorski / miejski / uniwersalny` |
@@ -65,19 +65,19 @@ Wersjonowanie w MVP: **Publikuj** = draft → published + revalidate cache;
 ```
 
 Sekcje danych (`units`, `gallery`, `calendar`, `reviews`) trzymają w `data` wyłącznie
-ustawienia wyglądu — treść ciągną na żywo z tabel RezOp (brak duplikacji).
+ustawienia wyglądu — treść ciągną na żywo z tabel RezFlow (brak duplikacji).
 
 ### Sekcje MVP
 
 hero · o obiekcie · apartamenty (karty z danych + link rezerwacji) · galeria ·
 udogodnienia (ikony lucide) · kalendarz dostępności + cennik (dane na żywo) ·
-atrakcje okolicy (ręczna lista) · opinie (zebrane w RezOp) · kontakt + mapa
+atrakcje okolicy (ręczna lista) · opinie (zebrane w RezFlow) · kontakt + mapa
 (OpenStreetMap embed, bez klucza API) · własny kod · stopka (automatyczna: kontakt,
 linki do regulaminu i polityki prywatności z pól `Property`).
 
 ### Routing domen
 
-- Middleware/proxy Next.js czyta `Host`: subdomena `*.rezop.pl` lub zweryfikowana
+- Middleware/proxy Next.js czyta `Host`: subdomena `*.rezflow.pl` lub zweryfikowana
   domena własna → rewrite na `app/(www)/[host]/…` renderujące opublikowaną stronę.
 - Domena bazowa działa jak dziś (panel, `o/[slug]` — bez zmian).
 - Baza domeny w env `SITES_BASE_DOMAIN`; lokalnie `nazwa.localhost:3000` bez konfiguracji.
@@ -91,7 +91,7 @@ linki do regulaminu i polityki prywatności z pól `Property`).
 
 **Wizard przy pierwszym uruchomieniu:**
 1. Wybór szablonu (4 kafle z miniaturami),
-2. Potwierdzenie danych zaciąganych z RezOp (braki podświetlone z linkami do modułów),
+2. Potwierdzenie danych zaciąganych z RezFlow (braki podświetlone z linkami do modułów),
 3. Personalizacja: paleta (gotowe warianty per szablon, nie dowolny RGB), czcionka
    (2–3 pary), logo, zdjęcie hero,
 4. Podgląd + akceptacja subdomeny + „Opublikuj".

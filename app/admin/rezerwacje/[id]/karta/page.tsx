@@ -1,4 +1,5 @@
 import { ArrowLeft, Check } from "lucide-react";
+import { PRODUCT_NAME } from "@/lib/brand";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import PrintButton from "@/components/PrintButton";
@@ -82,7 +83,7 @@ export default async function CheckInCardPage(props: {
             )}
           </div>
           <div className="flex-none text-right">
-            <p className="text-sm font-bold tracking-[-0.02em]">Rezio</p>
+            <p className="text-sm font-bold tracking-[-0.02em]">{PRODUCT_NAME}</p>
             <p className="tnum text-xs text-slate-500">{reservation.code}</p>
           </div>
         </div>

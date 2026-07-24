@@ -27,18 +27,18 @@ export async function GET(
   const events = [
     ...unit.reservations.map(
       (r) =>
-        `BEGIN:VEVENT\r\nUID:res-${r.code}@rezio\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${toIcs(r.checkIn)}\r\nDTEND;VALUE=DATE:${toIcs(r.checkOut)}\r\nSUMMARY:Rezerwacja ${r.code}\r\nEND:VEVENT`
+        `BEGIN:VEVENT\r\nUID:res-${r.code}@rezflow\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${toIcs(r.checkIn)}\r\nDTEND;VALUE=DATE:${toIcs(r.checkOut)}\r\nSUMMARY:Rezerwacja ${r.code}\r\nEND:VEVENT`
     ),
     ...unit.blocks.map(
       (b) =>
-        `BEGIN:VEVENT\r\nUID:block-${b.id}@rezio\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${toIcs(b.startDate)}\r\nDTEND;VALUE=DATE:${toIcs(b.endDate)}\r\nSUMMARY:Niedostępne\r\nEND:VEVENT`
+        `BEGIN:VEVENT\r\nUID:block-${b.id}@rezflow\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${toIcs(b.startDate)}\r\nDTEND;VALUE=DATE:${toIcs(b.endDate)}\r\nSUMMARY:Niedostępne\r\nEND:VEVENT`
     ),
   ];
 
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//Rezio//${unit.name}//PL`,
+    `PRODID:-//RezFlow//${unit.name}//PL`,
     "CALSCALE:GREGORIAN",
     ...events,
     "END:VCALENDAR",
@@ -47,7 +47,7 @@ export async function GET(
   return new Response(ics, {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="rezio-unit-${unit.id}.ics"`,
+      "Content-Disposition": `attachment; filename="rezflow-unit-${unit.id}.ics"`,
     },
   });
 }

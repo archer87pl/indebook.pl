@@ -12,7 +12,7 @@ describe("normalizeDomain", () => {
     expect(normalizeDomain("")).toBeNull();
     expect(normalizeDomain("bez-kropki")).toBeNull();
     expect(normalizeDomain("z spacją.pl")).toBeNull();
-    expect(normalizeDomain("mojobiekt.rezop.pl")).toBeNull(); // subdomeny bazy nie wolno
+    expect(normalizeDomain("mojobiekt.rezflow.pl")).toBeNull(); // subdomeny bazy nie wolno
     expect(normalizeDomain("localhost")).toBeNull();
   });
 });

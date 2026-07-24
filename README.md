@@ -1,4 +1,4 @@
-# Rezio — platforma rezerwacji dla wielu obiektów (MVP) 
+# RezFlow — platforma rezerwacji dla wielu obiektów (MVP) 
 
 Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, wille, apartamenty) rejestrują się samodzielnie, dostają własną stronę rezerwacji i panel recepcji. Inspirowany zestawieniem Profitroom / Hotres / IdoBooking.
 
@@ -26,9 +26,9 @@ Konta:
 
 | E-mail | Hasło | Rola |
 |---|---|---|
-| `demo@rezio.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa Rezio, plan Pro |
-| `marina@rezio.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
-| `admin@rezio.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
+| `demo@rezflow.pl` | `demo1234` | konto demo (przycisk „Zobacz demo panelu" loguje na nie 1 klikiem) — Willa RezFlow, plan Pro |
+| `marina@rezflow.pl` | `marina123` | właściciel — Apartamenty Marina Sopot, plan Standard |
+| `admin@rezflow.pl` | `admin1234` | **superadmin** → `/superadmin` (konta, obiekty, plany, MRR, GMV) |
 
 Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 149 zł (bez limitu) — limit jednostek egzekwowany przy dodawaniu pokoi; plan zmienia superadmin.
 
@@ -66,7 +66,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **Faktury** (zakładka Faktury): wystawianie z rezerwacji (VAT / zaliczkowa / proforma), numeracja kolejna per seria i rok (FV/FZ/PRO), rozbicie brutto→netto+VAT (8/23/5/0%), snapshot sprzedawcy i nabywcy, widok do druku/PDF (`window.print()`), rejestr z sumą; dane sprzedawcy (NIP, konto) w ustawieniach obiektu,
 - **Pokoje**: CRUD typów pokoi i jednostek (z linkami iCal per jednostka),
 - **Obiekt**: nazwa, opis, adres, godziny, % zaliczki, instrukcje przyjazdu (widoczne po meldunku); podgląd publicznego adresu,
-- **Strona WWW** (`/admin/strona`, Standard+): kreator strony-wizytówki obiektu — 4 szablony, wizard startowy wypełniany danymi z Rezio, edytor sekcji z podglądem draft/publikacja, publikacja na subdomenie `nazwa.rezop.pl` (env `SITES_BASE_DOMAIN`), własna domena z automatycznym SSL w planie Pro (Vercel API za abstrakcją `DomainProvider`), SEO (JSON-LD, sitemap/robots per host), widget kalendarza z cenami na żywo i formularz zapytań; szczegóły w `docs/FUNKCJE.md` §12.
+- **Strona WWW** (`/admin/strona`, Standard+): kreator strony-wizytówki obiektu — 4 szablony, wizard startowy wypełniany danymi z RezFlow, edytor sekcji z podglądem draft/publikacja, publikacja na subdomenie `nazwa.rezflow.pl` (env `SITES_BASE_DOMAIN`), własna domena z automatycznym SSL w planie Pro (Vercel API za abstrakcją `DomainProvider`), SEO (JSON-LD, sitemap/robots per host), widget kalendarza z cenami na żywo i formularz zapytań; szczegóły w `docs/FUNKCJE.md` §12.
 
 **Superadmin (`/superadmin`)**
 - pulpit platformy: konta, obiekty, MRR wg planów, rezerwacje i GMV (30 dni / od początku), rozkład planów, **trend wzrostu 6 miesięcy** (GMV/rezerwacje/nowe obiekty), **zdrowie platformy** (feedy iCal z błędami, zawieszone, oczekujące płatności), wyszukiwarka obiektów,
@@ -107,7 +107,7 @@ Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **
    ```
 2. **Blob** — w dashboardzie Vercel: Storage → Create → Blob; token `BLOB_READ_WRITE_TOKEN` wstrzyknie się automatycznie do deploymentu (`vercel env pull` do dev).
 3. **Zmienne środowiskowe** (Vercel → Settings → Environment Variables): `DATABASE_URL`, `DIRECT_URL`, `APP_URL` (adres produkcyjny), `CRON_SECRET` (dowolny losowy ciąg), oraz opcjonalnie `RESEND_API_KEY`, `EMAIL_FROM`. Pełna lista w `.env.example`.
-4. **Strony WWW obiektów** (opcjonalnie): dodaj do projektu domenę wildcard `*.rezop.pl` (subdomeny stron) i ustaw `SITES_BASE_DOMAIN`; dla podpinania własnych domen klientów ustaw `VERCEL_TOKEN` + `VERCEL_PROJECT_ID` (+ `VERCEL_TEAM_ID` w teamie) — bez nich sekcja domen jest ukryta.
+4. **Strony WWW obiektów** (opcjonalnie): dodaj do projektu domenę wildcard `*.rezflow.pl` (subdomeny stron) i ustaw `SITES_BASE_DOMAIN`; dla podpinania własnych domen klientów ustaw `VERCEL_TOKEN` + `VERCEL_PROJECT_ID` (+ `VERCEL_TEAM_ID` w teamie) — bez nich sekcja domen jest ukryta.
 4. **Cron** — harmonogram w `vercel.json`: `expire-reservations` o 8:00 UTC (wygaszanie PENDING + retencja kart meldunkowych + przypomnienia o przyjeździe; pora dobrana pod SMS-y do gości), `sync-ical` o 4:00. Endpointy `app/api/cron/*` chroni `CRON_SECRET`. Uwaga: plan **Hobby** ogranicza do 2 cronów 1×/dobę — do częstszego harmonogramu potrzebny plan Pro.
 5. Deploy przez `git push` (integracja GitHub) lub `vercel --prod`. Build sam odpala `prisma generate` (`postinstall`).
 

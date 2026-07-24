@@ -36,5 +36,5 @@ test("blog: nawigacja z landingu, indeks i artykuł renderują się", async ({
 
 test("blog: sekcja poradnika widoczna na landingu", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Z poradnika Rezio" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Z poradnika RezFlow" })).toBeVisible();
 });

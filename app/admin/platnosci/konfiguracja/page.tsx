@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 /**
  * Konfiguracja płatności online obiektu (Przelewy24). Właściciel podpina
  * własne konto P24 — zaliczki gości trafiają bezpośrednio na jego konto,
- * prowizję bramki rozlicza z P24, Rezio nie pobiera nic od rezerwacji.
+ * prowizję bramki rozlicza z P24, RezFlow nie pobiera nic od rezerwacji.
  * Bez kompletu danych bramka działa w trybie symulacji (dev/demo).
  */
 export default async function PaymentsConfigPage(props: {
@@ -93,7 +93,7 @@ export default async function PaymentsConfigPage(props: {
       <Card>
         <CardHeader
           title="Płatności online — Przelewy24"
-          sub="Zaliczki BLIK, kartą i szybkim przelewem trafiają bezpośrednio na Twoje konto. Prowizję bramki (ok. 1%) rozliczasz z Przelewy24 — Rezio nie pobiera prowizji od rezerwacji."
+          sub="Zaliczki BLIK, kartą i szybkim przelewem trafiają bezpośrednio na Twoje konto. Prowizję bramki (ok. 1%) rozliczasz z Przelewy24 — RezFlow nie pobiera prowizji od rezerwacji."
         />
         <form action={updatePaymentSettings}>
           <CardBody className="space-y-4">

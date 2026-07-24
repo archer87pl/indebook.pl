@@ -1,14 +1,14 @@
-# Rezio — dokument biznesowy
+# RezFlow — dokument biznesowy
 
 > System rezerwacji dla obiektów noclegowych, który sprzedaje **abonament zamiast prowizji**.
 > Dokument opisuje stan produktu, pozycjonowanie rynkowe, model biznesowy i kierunki rozwoju.
-> Stan na: lipiec 2026 · domena: **rezio.pl**
+> Stan na: lipiec 2026 · domena: **rezflow.pl**
 
 ---
 
 ## 1. Streszczenie (TL;DR)
 
-Rezio to wielotenantowa platforma SaaS dla małych i średnich obiektów noclegowych w Polsce (pensjonaty, wille, apartamenty, domki). Zamiast pobierać 15–25% prowizji jak Booking.com czy Airbnb, Rezio bierze **stały miesięczny abonament (0 / 79 / 149 zł)**, a wszystkie rezerwacje z własnej strony obiektu są bez prowizji.
+RezFlow to wielotenantowa platforma SaaS dla małych i średnich obiektów noclegowych w Polsce (pensjonaty, wille, apartamenty, domki). Zamiast pobierać 15–25% prowizji jak Booking.com czy Airbnb, RezFlow bierze **stały miesięczny abonament (0 / 79 / 149 zł)**, a wszystkie rezerwacje z własnej strony obiektu są bez prowizji.
 
 Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji na stronie obiektu, przez płatności online, channel manager, meldunek online z e-podpisem, komunikację z gościem (czat + SMS), ceny dynamiczne, opinie, aż po faktury. Poziomem funkcji dorównuje polskiemu liderowi (HOTRES), a w kilku obszarach (opinie z gwiazdkami w Google, prostota wdrożenia) go wyprzedza.
 
@@ -43,9 +43,9 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 |---|---|
 | **Właściciel** | 0% prowizji, własna marka i strona, dane gościa od pierwszej chwili, jeden panel zamiast pięciu narzędzi, wdrożenie w 30 minut bez wdrożeniowca. |
 | **Gość** | Rezerwuje bezpośrednio u obiektu, samoobsługa (zmiana terminu, meldunek online, czat), instrukcje przyjazdu, płatność BLIK. |
-| **Platforma (my)** | Powtarzalny przychód abonamentowy (MRR), niski koszt obsługi (self-service SaaS), efekt katalogu (obiekty na rezio.pl). |
+| **Platforma (my)** | Powtarzalny przychód abonamentowy (MRR), niski koszt obsługi (self-service SaaS), efekt katalogu (obiekty na rezflow.pl). |
 
-**Pozycjonowanie jednym zdaniem:** *Rezio to recepcja w chmurze dla małych obiektów — pełnia funkcji dużego PMS-u w cenie abonamentu, bez prowizji od rezerwacji.*
+**Pozycjonowanie jednym zdaniem:** *RezFlow to recepcja w chmurze dla małych obiektów — pełnia funkcji dużego PMS-u w cenie abonamentu, bez prowizji od rezerwacji.*
 
 ---
 
@@ -118,15 +118,15 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 ### 4.11 Fundament
 - **Wielotenantowość** z pełną izolacją danych per obiekt.
 - **SEO**: JSON-LD (FAQ, SoftwareApplication z ofertami planów, Organization, aggregateRating), sitemap, robots.
-- **Marka Rezio**: nowoczesny UX 2026 (elektryczny błękit + granat), responsywny, dynamiczny favicon.
+- **Marka RezFlow**: nowoczesny UX 2026 (elektryczny błękit + granat), responsywny, dynamiczny favicon.
 
 ---
 
 ## 5. Pozycjonowanie konkurencyjne
 
-### 5.1 Rezio vs portale OTA (Booking.com, Airbnb)
+### 5.1 RezFlow vs portale OTA (Booking.com, Airbnb)
 
-| | Rezio | Portale OTA |
+| | RezFlow | Portale OTA |
 |---|---|---|
 | Prowizja | **0 zł — stały abonament** | 15–25% każdej rezerwacji |
 | Dane i kontakt do gościa | Twoje, od pierwszej chwili | ukryte za portalem |
@@ -135,9 +135,9 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 | Opinie | na Twojej stronie i w Google | zostają na portalu |
 | Faktura | jedno kliknięcie z rezerwacji | poza systemem |
 
-> Rezio nie zastępuje OTA jako źródła ruchu — **współistnieje** z nimi (channel manager) i przejmuje rezerwacje bezpośrednie, które inaczej i tak trafiłyby przez portal z prowizją.
+> RezFlow nie zastępuje OTA jako źródła ruchu — **współistnieje** z nimi (channel manager) i przejmuje rezerwacje bezpośrednie, które inaczej i tak trafiłyby przez portal z prowizją.
 
-### 5.2 Rezio vs HOTRES (polski lider)
+### 5.2 RezFlow vs HOTRES (polski lider)
 
 **Mamy na równi z HOTRES:** silnik rezerwacji bez prowizji, channel manager (u nas iCal), płatności, meldunek online z e-podpisem, czat z gościem, SMS-y, ceny dynamiczne, faktury, cennik sezonowy, kody promocyjne, raporty.
 
@@ -181,7 +181,7 @@ Produkt jest kompletnym „systemem recepcji w chmurze": od silnika rezerwacji n
 ### 6.3 Jednostkowa ekonomia (kierunkowo)
 - Koszt obsługi obiektu bliski zera (self-service, tania infrastruktura serverless).
 - Główny koszt zmienny: SMS-y (SMSAPI, ~7–16 gr/szt.) — do rozważenia limity SMS per plan lub przerzucenie kosztu. Bramka płatności nie obciąża platformy: każdy obiekt ma własne konto P24 i sam rozlicza prowizję bramki.
-- Dźwignia wzrostu: **efekt katalogu** (obiekty na rezio.pl generują ruch i wiarygodność) + SEO (JSON-LD, opinie w Google).
+- Dźwignia wzrostu: **efekt katalogu** (obiekty na rezflow.pl generują ruch i wiarygodność) + SEO (JSON-LD, opinie w Google).
 
 ### 6.4 Uwaga o gatingu funkcji
 Obecnie w kodzie egzekwowany jest **tylko limit jednostek** per plan. Przypisanie pozostałych funkcji do planów (np. „meldunek online od Standard") to na razie **komunikacja marketingowa** w cenniku. Twarde ograniczanie funkcji per plan to jeden z pierwszych kroków monetyzacyjnych do wdrożenia (patrz roadmapa).
@@ -227,7 +227,7 @@ Priorytetyzacja: wartość biznesowa × wykonalność (bez sprzętu/certyfikacji
 |---|---|---|
 | **Zależność od jednokierunkowego iCal** | Bez API OTA synchronizacja jest wolniejsza (godzina) i bez cen — ryzyko rzadkich podwójnych rezerwacji. | Wykrywanie konfliktów już działa; docelowo API po certyfikacji. |
 | **Koszt SMS** | Rosnie z wolumenem; może zjeść marżę na tanich planach. | Limity per plan lub przerzucenie kosztu; e-mail jako domyślny kanał. |
-| **Akwizycja** | Freemium wymaga ruchu; mały obiekt trudno dotrzeć. | SEO (opinie w Google, katalog rezio.pl), efekt polecenia, treści. |
+| **Akwizycja** | Freemium wymaga ruchu; mały obiekt trudno dotrzeć. | SEO (opinie w Google, katalog rezflow.pl), efekt polecenia, treści. |
 | **Zgodność (RODO, KSeF)** | Dane gości i faktury to obszar regulowany. | Minimalizacja danych (brak skanów), retencja PII, KSeF na roadmapie. |
 | **Gating tylko na limitach** | Wyższe plany mogą nie mieć wystarczającej wartości bez twardego gatingu. | Priorytet 1 roadmapy. |
 

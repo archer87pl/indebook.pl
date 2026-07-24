@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import { appUrl } from "@/lib/payments";
+import { PRODUCT_NAME } from "@/lib/brand";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -16,13 +17,13 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl()),
   title: {
-    default: "Rezio — rezerwacje online bez prowizji",
-    template: "%s | Rezio",
+    default: `${PRODUCT_NAME} — rezerwacje online bez prowizji`,
+    template: `%s | ${PRODUCT_NAME}`,
   },
   description:
     "System rezerwacji dla obiektów noclegowych: silnik rezerwacji, channel manager, płatności online i panel recepcji. Abonament zamiast prowizji.",
   openGraph: {
-    siteName: "Rezio",
+    siteName: PRODUCT_NAME,
     locale: "pl_PL",
     type: "website",
   },

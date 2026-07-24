@@ -50,7 +50,7 @@ ${section.data.intro ? `<p>${esc(section.data.intro)}</p>` : ""}
     case "reviews": {
       const title = "title" in section.data ? section.data.title : "";
       return `<h2>${esc(title)}</h2>
-<p><!-- Ta sekcja pokazywała dane na żywo z Rezio (${section.type}). Po odpięciu wstaw własną treść. --></p>`;
+<p><!-- Ta sekcja pokazywała dane na żywo z RezFlow (${section.type}). Po odpięciu wstaw własną treść. --></p>`;
     }
   }
 }

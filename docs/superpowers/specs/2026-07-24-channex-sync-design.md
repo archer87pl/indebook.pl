@@ -6,14 +6,14 @@ Data: 2026-07-24 · Status: zaakceptowany przez właściciela projektu
 
 Umożliwić obiektom sprzedaż przez OTA (Booking.com, Airbnb, Expedia…) bez podwójnych
 rezerwacji i bez ręcznego przepisywania kalendarzy — przez pełną, dwukierunkową
-integrację z channel managerem **Channex**. RezOp jest źródłem prawdy dostępności:
+integrację z channel managerem **Channex**. RezFlow jest źródłem prawdy dostępności:
 pushuje ARI (dostępność, restrykcje) do Channex, a rezerwacje z OTA wracają webhookiem.
 Integracja uzupełnia/zastępuje obecny jednokierunkowy iCal i daje właścicielowi łatwe
 podłączanie kanałów z panelu oraz log synchronizacji.
 
 ## Decyzje kluczowe (ustalone z właścicielem)
 
-1. **Model konta: RezOp zarządza** — jedno konto biznesowe RezOp w Channex; każdy obiekt
+1. **Model konta: RezFlow zarządza** — jedno konto biznesowe RezFlow w Channex; każdy obiekt
    provisionowany przez API pod tym kontem. Właściciel nie widzi Channex — wszystko w panelu.
 2. **Mapowanie: UnitType → Room Type** — dostępność = liczba wolnych Unitów danego typu;
    rezerwacja z OTA auto-przypisywana do konkretnego wolnego Unitu.
@@ -27,10 +27,10 @@ podłączanie kanałów z panelu oraz log synchronizacji.
 
 ## Architektura
 
-RezOp ↔ Channex (hub) ↔ OTA. Nie komunikujemy się z OTA bezpośrednio — Channex trzyma
+RezFlow ↔ Channex (hub) ↔ OTA. Nie komunikujemy się z OTA bezpośrednio — Channex trzyma
 certyfikowane połączenia. Nowy moduł `lib/channex/`:
 
-- `client.ts` — cienki klient REST Channex (auth kluczem konta RezOp, retry/timeout, mapowanie
+- `client.ts` — cienki klient REST Channex (auth kluczem konta RezFlow, retry/timeout, mapowanie
   błędów) za abstrakcją `ChannelProvider` (furtka na innego CM, jak `DomainProvider`).
 - `mapping.ts` — provisioning: obiekt → Channex Property; `UnitType` → Room Type + Rate Plan.
 - `ari.ts` — liczenie i push dostępności/restrykcji.
@@ -88,7 +88,7 @@ na Rate Plan. `closed_to_arrival/departure` — poza MVP.
 **Okno i idempotencja:** kroczące `dziś .. +18 mies.`; push wysyła wartości bezwzględne (nie delty) →
 ponowne przetworzenie bezpieczne. Codzienny pełny re-sync (cron) jako samonaprawa.
 
-## Inbound (rezerwacja z OTA → RezOp)
+## Inbound (rezerwacja z OTA → RezFlow)
 
 **Endpoint** `/api/channex/webhook` (booking utworzony/zmieniony/anulowany):
 - **Bezpieczeństwo:** po odebraniu powiadomienia **dociągamy pełną rezerwację z API Channex** po ID
@@ -132,7 +132,7 @@ Podłączony/Błąd) + „Podłącz"/„Zarządzaj"; status Room Type'ów; panel
 **Powrót do iCal:** wstrzymanie pushu (mapowanie `PAUSED`, ponowne włączenie natychmiastowe),
 feedy iCal reaktywują się; UI radzi rozłączyć kanały w Channex, by OTA nie trzymały stałej dostępności.
 
-**Wymóg biznesowy (spoza kodu):** konto RezOp w Channex musi mieć certyfikowane połączenia
+**Wymóg biznesowy (spoza kodu):** konto RezFlow w Channex musi mieć certyfikowane połączenia
 Booking.com i Airbnb — dostarcza Channex jako partner connectivity.
 
 ## Log synchronizacji

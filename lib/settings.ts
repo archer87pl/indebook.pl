@@ -40,7 +40,7 @@ export const SETTING_SECTIONS: SettingSection[] = [
         key: "EMAIL_FROM",
         label: "Nadawca",
         secret: false,
-        placeholder: "Rezio <rezerwacje@twojadomena.pl>",
+        placeholder: "RezFlow <rezerwacje@twojadomena.pl>",
         hint: "domena nadawcy musi być zweryfikowana w Resend",
       },
     ],

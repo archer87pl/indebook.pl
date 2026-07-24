@@ -30,7 +30,7 @@ import { PLANS } from "@/lib/plans";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Rezio — system rezerwacji online bez prowizji dla obiektów noclegowych",
+  title: "RezFlow — system rezerwacji online bez prowizji dla obiektów noclegowych",
   description:
     "Silnik rezerwacji, channel manager (Booking.com, Airbnb), płatności BLIK, meldunek online z e-podpisem, SMS-y, opinie gości, ceny dynamiczne i faktury. Stały abonament od 0 zł — zero prowizji od rezerwacji.",
   keywords: [
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Rezio — rezerwacje online bez prowizji",
+    title: "RezFlow — rezerwacje online bez prowizji",
     description:
       "Strona rezerwacji, channel manager, meldunek online, SMS-y i faktury — kompletna recepcja dla małych obiektów noclegowych. Abonament zamiast prowizji.",
     type: "website",
@@ -58,15 +58,15 @@ export const metadata: Metadata = {
 
 const FAQ = [
   {
-    q: "Czy Rezio pobiera prowizję od rezerwacji?",
+    q: "Czy RezFlow pobiera prowizję od rezerwacji?",
     a: "Nie. Płacisz stały miesięczny abonament (od 0 zł w planie Start), a wszystkie rezerwacje z Twojej strony są bez prowizji. Portale OTA pobierają 15–25% — u nas gość rezerwuje bezpośrednio u Ciebie.",
   },
   {
     q: "Jak działa synchronizacja z Booking.com i Airbnb?",
-    a: "Przez kalendarze iCal w obie strony: Rezio importuje zajęte terminy z portali i wystawia własny kalendarz do podpięcia u nich. Synchronizacja odbywa się automatycznie co godzinę, a system ostrzega przed podwójnymi rezerwacjami.",
+    a: "Przez kalendarze iCal w obie strony: RezFlow importuje zajęte terminy z portali i wystawia własny kalendarz do podpięcia u nich. Synchronizacja odbywa się automatycznie co godzinę, a system ostrzega przed podwójnymi rezerwacjami.",
   },
   {
-    q: "Jakie płatności online obsługuje Rezio?",
+    q: "Jakie płatności online obsługuje RezFlow?",
     a: "Zaliczki przez Przelewy24: BLIK, karty płatnicze i szybkie przelewy. Rezerwacja potwierdza się automatycznie po wpłacie, a nieopłacone rezerwacje same zwalniają termin po 30 minutach.",
   },
   {
@@ -86,7 +86,7 @@ const FAQ = [
     a: "Po potwierdzeniu rezerwacji gość dostaje link do karty meldunkowej: wypełnia dane, podpisuje się palcem lub myszką i od razu widzi instrukcje przyjazdu (kody do drzwi, WiFi, dojazd). Ty masz gotową kartę meldunkową do druku — bez kolejki na recepcji i bez skanowania dowodów.",
   },
   {
-    q: "Czy Rezio wysyła SMS-y i prosi gości o opinie?",
+    q: "Czy RezFlow wysyła SMS-y i prosi gości o opinie?",
     a: "Tak. Gość dostaje SMS z potwierdzeniem rezerwacji i przypomnienie dzień przed przyjazdem, a dzień po wymeldowaniu — prośbę o opinię. Opinie z gwiazdkami trafiają na Twoją stronę obiektu (także do wyników Google), a Ty możesz na nie publicznie odpowiadać.",
   },
   {
@@ -319,7 +319,7 @@ export default async function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: "Rezio",
+      name: "RezFlow",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
@@ -336,7 +336,7 @@ export default async function HomePage() {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Rezio",
+      name: "RezFlow",
       url: base,
       description: "Platforma rezerwacji bezpośrednich dla obiektów noclegowych.",
     },
@@ -413,9 +413,9 @@ export default async function HomePage() {
                   R
                 </span>
                 <span className="text-[13px] font-bold tracking-[-0.02em] text-white">
-                  Rezio
+                  RezFlow
                 </span>
-                <span className="ml-2 text-[11px] text-[#8fb5a2]">· Pulpit · Willa Rezio</span>
+                <span className="ml-2 text-[11px] text-[#8fb5a2]">· Pulpit · Willa RezFlow</span>
                 <span className="ml-auto rounded-full bg-brand-400 px-2 py-0.5 text-[9.5px] font-bold text-brand-950">
                   PRO
                 </span>
@@ -581,7 +581,7 @@ export default async function HomePage() {
             Rezerwacja bezpośrednia się opłaca
           </h2>
           <p className="text-slate-500">
-            Przy 100 000 zł obrotu rocznie portale zabierają 15–25 tys. zł. Rezio — od
+            Przy 100 000 zł obrotu rocznie portale zabierają 15–25 tys. zł. RezFlow — od
             0 do 1788 zł rocznie.
           </p>
         </div>
@@ -590,7 +590,7 @@ export default async function HomePage() {
             <thead>
               <tr className="border-b border-slate-200 text-left">
                 <th className="w-2/5 px-5 py-3.5" />
-                <th className="bg-brand-50 px-5 py-3.5 font-bold text-brand-800">Rezio</th>
+                <th className="bg-brand-50 px-5 py-3.5 font-bold text-brand-800">RezFlow</th>
                 <th className="px-5 py-3.5 font-semibold text-slate-500">Portale OTA</th>
               </tr>
             </thead>
@@ -620,7 +620,7 @@ export default async function HomePage() {
       {/* ---------- OPINIE WŁAŚCICIELI ---------- */}
       <section className="reveal space-y-8">
         <h2 className="text-center text-3xl font-bold text-brand-900">
-          Właściciele o Rezio
+          Właściciele o RezFlow
         </h2>
         <div className="grid gap-5 md:grid-cols-3">
           {QUOTES.map((q) => (
@@ -790,7 +790,7 @@ export default async function HomePage() {
         <section className="reveal space-y-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-brand-900">Z poradnika Rezio</h2>
+              <h2 className="text-3xl font-bold text-brand-900">Z poradnika RezFlow</h2>
               <p className="mt-1 text-slate-500">
                 Praktyczna wiedza o rezerwacjach bez prowizji i prowadzeniu obiektu.
               </p>

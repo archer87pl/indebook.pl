@@ -5,6 +5,7 @@
 import { logEvent } from "./log";
 import { appUrl } from "./payments";
 import { getSetting } from "./settings";
+import { PRODUCT_NAME } from "./brand";
 
 type Mail = {
   to: string;
@@ -41,7 +42,7 @@ function toHtml(mail: Mail): string {
   <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6ede9;border-radius:16px;overflow:hidden">
     <div style="background:#123829;padding:22px;text-align:center">
       <span style="display:inline-block;width:28px;height:28px;border-radius:8px;background:#4ade9b;color:#0d2b1e;font-size:19px;font-weight:700;line-height:28px;letter-spacing:-.04em;vertical-align:middle">R</span>
-      <span style="font-weight:700;font-size:17px;color:#ffffff;letter-spacing:-.02em;vertical-align:middle;margin-left:9px">Rezio</span>
+      <span style="font-weight:700;font-size:17px;color:#ffffff;letter-spacing:-.02em;vertical-align:middle;margin-left:9px">RezFlow</span>
     </div>
     <div style="padding:26px">
       <h1 style="font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0 0 12px;text-align:center">${escapeHtml(mail.heading ?? mail.subject)}</h1>
@@ -53,7 +54,7 @@ function toHtml(mail: Mail): string {
       }
     </div>
     <div style="background:#f7faf8;border-top:1px solid #eef3f0;padding:15px 26px;text-align:center">
-      <div style="font-size:11.5px;font-weight:700">${escapeHtml(mail.footer ?? "Rezio")}</div>
+      <div style="font-size:11.5px;font-weight:700">${escapeHtml(mail.footer ?? "RezFlow")}</div>
       <div style="font-size:10.5px;color:#8ba498;margin-top:2px">rezerwuj bezpośrednio, bez prowizji portali</div>
     </div>
   </div>
@@ -83,7 +84,7 @@ export async function sendMail(mail: Mail): Promise<void> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        from: (await getSetting("EMAIL_FROM")) || "Rezio <onboarding@resend.dev>",
+        from: (await getSetting("EMAIL_FROM")) || `${PRODUCT_NAME} <onboarding@resend.dev>`,
         to: [mail.to],
         subject: mail.subject,
         text: mail.body,

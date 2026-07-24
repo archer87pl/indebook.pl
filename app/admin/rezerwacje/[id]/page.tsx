@@ -340,7 +340,7 @@ export default async function EditReservationPage(props: {
             />
             <CardBody className="space-y-3">
               <ChatThread messages={messages} viewer="OWNER" />
-              {r.email && !r.email.endsWith("@rezio.local") ? (
+              {r.email && !r.email.endsWith("@rezflow.local") ? (
                 <form
                   action={sendOwnerMessage}
                   className="flex items-end gap-2 rounded-[11px] border border-slate-200 p-1.5 pl-3"
@@ -513,7 +513,7 @@ export default async function EditReservationPage(props: {
                   <p className="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">
                     Gość nie wypełnił jeszcze karty meldunkowej.
                   </p>
-                  {r.email && !r.email.endsWith("@rezio.local") ? (
+                  {r.email && !r.email.endsWith("@rezflow.local") ? (
                     <form action={adminSendCheckInInvite} className="mt-3">
                       <input type="hidden" name="id" value={r.id} />
                       <Button variant="quiet" size="sm" type="submit" className="w-full">

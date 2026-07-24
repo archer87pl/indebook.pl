@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { classifyHost, siteUrl } from "./site-host";
 
-const opts = { base: "rezop.pl", appHosts: ["app.rezio.pl"] };
+const opts = { base: "rezflow.pl", appHosts: ["app.rezflow.pl"] };
 
 describe("classifyHost", () => {
   it("pusty host / localhost / 127.0.0.1 → aplikacja", () => {
@@ -15,19 +15,19 @@ describe("classifyHost", () => {
   });
 
   it("host aplikacji (także z www) i goła domena bazowa → aplikacja", () => {
-    expect(classifyHost("app.rezio.pl", opts)).toEqual({ kind: "app" });
-    expect(classifyHost("www.app.rezio.pl", opts)).toEqual({ kind: "app" });
-    expect(classifyHost("rezop.pl", opts)).toEqual({ kind: "app" });
-    expect(classifyHost("www.rezop.pl", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("app.rezflow.pl", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("www.app.rezflow.pl", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("rezflow.pl", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("www.rezflow.pl", opts)).toEqual({ kind: "app" });
   });
 
   it("hosty deploymentów *.vercel.app → aplikacja (preview/prod alias)", () => {
-    expect(classifyHost("rezio-abc123.vercel.app", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("rezflow-abc123.vercel.app", opts)).toEqual({ kind: "app" });
   });
 
   it("subdomena bazy → strona obiektu", () => {
-    expect(classifyHost("willa.rezop.pl", opts)).toEqual({ kind: "subdomain", key: "willa" });
-    expect(classifyHost("Willa.Rezop.PL:443", opts)).toEqual({ kind: "subdomain", key: "willa" });
+    expect(classifyHost("willa.rezflow.pl", opts)).toEqual({ kind: "subdomain", key: "willa" });
+    expect(classifyHost("Willa.Rezflow.PL:443", opts)).toEqual({ kind: "subdomain", key: "willa" });
   });
 
   it("subdomena .localhost (dev) → strona obiektu", () => {
@@ -38,7 +38,7 @@ describe("classifyHost", () => {
   });
 
   it("zagnieżdżone subdomeny bazy → aplikacja (nie obsługujemy)", () => {
-    expect(classifyHost("a.b.rezop.pl", opts)).toEqual({ kind: "app" });
+    expect(classifyHost("a.b.rezflow.pl", opts)).toEqual({ kind: "app" });
   });
 
   it("obca domena → potencjalna domena własna (bez www); DB weryfikuje proxy", () => {
@@ -57,7 +57,7 @@ describe("classifyHost", () => {
   });
 
   it("APP_HOSTS pozwala dopisać dodatkowe hosty aplikacji", () => {
-    const withExtra = { ...opts, appHosts: ["app.rezio.pl", "mvp-booking.notelo.pl"] };
+    const withExtra = { ...opts, appHosts: ["app.rezflow.pl", "mvp-booking.notelo.pl"] };
     expect(classifyHost("mvp-booking.notelo.pl", withExtra)).toEqual({ kind: "app" });
   });
 });
@@ -67,7 +67,7 @@ describe("siteUrl", () => {
     expect(
       siteUrl(
         { subdomain: "willa", customDomain: "mojobiekt.pl", domainStatus: "VERIFIED" },
-        { base: "rezop.pl" }
+        { base: "rezflow.pl" }
       )
     ).toBe("https://mojobiekt.pl");
   });
@@ -76,11 +76,11 @@ describe("siteUrl", () => {
     expect(
       siteUrl(
         { subdomain: "willa", customDomain: "mojobiekt.pl", domainStatus: "PENDING" },
-        { base: "rezop.pl" }
+        { base: "rezflow.pl" }
       )
-    ).toBe("https://willa.rezop.pl");
+    ).toBe("https://willa.rezflow.pl");
     expect(
-      siteUrl({ subdomain: "willa", customDomain: null, domainStatus: "NONE" }, { base: "rezop.pl" })
-    ).toBe("https://willa.rezop.pl");
+      siteUrl({ subdomain: "willa", customDomain: null, domainStatus: "NONE" }, { base: "rezflow.pl" })
+    ).toBe("https://willa.rezflow.pl");
   });
 });

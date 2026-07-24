@@ -13,7 +13,7 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen">
       <aside className="relative hidden w-[440px] flex-none flex-col overflow-hidden bg-brand-900 p-10 text-white lg:flex">
-        <Link href="/" aria-label="Rezio — strona główna">
+        <Link href="/" aria-label="RezFlow — strona główna">
           <Logo size={40} tone="dark" />
         </Link>
         <div className="mt-auto">
@@ -44,7 +44,7 @@ export default function AuthLayout({
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col items-center justify-center bg-white px-6 py-10">
-        <Link href="/" className="mb-8 lg:hidden" aria-label="Rezio — strona główna">
+        <Link href="/" className="mb-8 lg:hidden" aria-label="RezFlow — strona główna">
           <Logo size={34} ringColor="#ffffff" />
         </Link>
         <div className="w-full max-w-[340px]">{children}</div>

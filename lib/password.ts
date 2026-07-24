@@ -17,7 +17,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 // Hash nieistniejącego (nierozwiązywalnego) hasła — do wykonania „na pusto"
 // przy logowaniu, gdy konto nie istnieje, żeby czas odpowiedzi nie zdradzał
 // istnienia e-maila (ochrona przed enumeracją użytkowników).
-export const DUMMY_PASSWORD_HASH = hashPassword("rezio-dummy-password");
+export const DUMMY_PASSWORD_HASH = hashPassword("rezflow-dummy-password");
 
 // Stałoczasowe porównanie dwóch stringów (podpisy, tokeny). Najpierw długość
 // przez timingSafeEqual na buforach równej długości, potem właściwe porównanie.

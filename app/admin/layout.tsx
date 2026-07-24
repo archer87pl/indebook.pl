@@ -66,7 +66,7 @@ export default async function AdminLayout({
     <div className="min-h-screen w-full lg:flex">
       {/* Rail nawigacji (desktop) wg 1c */}
       <aside className="sticky top-0 z-20 hidden h-screen w-[216px] flex-none flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] lg:flex print:hidden">
-        <Link href="/admin" className="px-2 pb-5 pt-1" aria-label="Rezio — pulpit">
+        <Link href="/admin" className="px-2 pb-5 pt-1" aria-label="RezFlow — pulpit">
           <Logo size={31} tone="dark" />
         </Link>
 

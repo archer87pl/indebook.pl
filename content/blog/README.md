@@ -14,7 +14,7 @@ title: Tytuł artykułu
 date: 2026-07-14
 excerpt: Jedno–dwa zdania zajawki (widoczne na liście i w wynikach Google).
 tag: Sprzedaż
-author: Zespół Rezio
+author: Zespół RezFlow
 cover: /blog/nazwa-obrazka.jpg
 draft: false
 ---
@@ -31,7 +31,7 @@ Treść w **Markdown**: nagłówki (## i ###), listy, **pogrubienia**,
 | `date` | tak | Data `YYYY-MM-DD` (sortowanie i wyświetlanie) |
 | `excerpt` | zalecane | Zajawka na liście i w meta description |
 | `tag` | nie | Etykieta kategorii (np. „Finanse”) |
-| `author` | nie | Autor (domyślnie „Rezio”) |
+| `author` | nie | Autor (domyślnie „RezFlow”) |
 | `cover` | nie | Ścieżka do obrazka w `public/`, np. `/blog/foto.jpg`; brak = tekstura |
 | `draft` | nie | `true` = szkic, niewidoczny na produkcji |
 

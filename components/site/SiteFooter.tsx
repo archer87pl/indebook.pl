@@ -1,4 +1,5 @@
 import type { SiteCtx } from "./SiteRenderer";
+import { PRODUCT_NAME } from "@/lib/brand";
 
 export default function SiteFooter({ ctx }: { ctx: SiteCtx }) {
   const p = ctx.property;
@@ -38,7 +39,7 @@ export default function SiteFooter({ ctx }: { ctx: SiteCtx }) {
       <p className="mt-8 text-center text-xs text-[var(--site-muted)]">
         Strona stworzona w{" "}
         <a href={ctx.appUrl} className="font-semibold underline-offset-2 hover:underline">
-          Rezio
+          {PRODUCT_NAME}
         </a>
       </p>
     </footer>

@@ -1,9 +1,9 @@
-# Rezio — dokumentacja funkcji
+# RezFlow — dokumentacja funkcji
 
 Szczegółowy opis wszystkich funkcji platformy: co robią, jak działają pod spodem,
 gdzie mieszkają w kodzie i w którym planie są dostępne.
 
-Rezio to **multi-tenant system rezerwacji bez prowizji** dla małych obiektów
+RezFlow to **multi-tenant system rezerwacji bez prowizji** dla małych obiektów
 noclegowych (wille, pensjonaty, apartamenty, domki). Obiekt płaci stały abonament,
 a wszystkie rezerwacje z własnej strony są w 100% jego — zamiast oddawania 15–25%
 portalom OTA. Każdy obiekt dostaje publiczną stronę rezerwacji, panel recepcji
@@ -308,7 +308,7 @@ zakładek Faktury i Konfiguracja oraz eksport CSV.
 Zakładka **Konfiguracja** (`/admin/platnosci/konfiguracja`): właściciel
 podpina własne konto Przelewy24 (Merchant ID, POS ID, klucz API, CRC,
 przełącznik sandbox) — zaliczki gości trafiają bezpośrednio na jego konto,
-prowizję bramki rozlicza z P24 (Rezio nie pobiera prowizji od rezerwacji).
+prowizję bramki rozlicza z P24 (RezFlow nie pobiera prowizji od rezerwacji).
 Sekrety maskowane, przycisk „Testuj połączenie” (P24 `/testAccess`),
 instrukcja onboardingu w 3 krokach; usunięcie danych przywraca symulację.
 
@@ -403,7 +403,7 @@ Zakładka **Kanały** (`/admin/kanaly`), plan Standard+:
 iCal / Channex`): `OFF` — brak, `ICAL` — powyższe, `CHANNEX` — dwukierunkowa
 integracja przez channel managera Channex (plan Pro).
 
-**Channex (2-way)**: RezOp jest źródłem prawdy dostępności. Zmiana (rezerwacja,
+**Channex (2-way)**: RezFlow jest źródłem prawdy dostępności. Zmiana (rezerwacja,
 blokada, liczba jednostek) zapisuje zadanie do kolejki `AriOutbox`; worker liczy
 dostępność per typ pokoju (liczba wolnych jednostek) i pushuje ARI (availability
 + min. pobyt) do Channex — best-effort po akcji (`after()`) + zamiatanie cronem.
@@ -609,7 +609,7 @@ i wszystkie komponenty z przykładami.
 | `/admin/obiekt`, `/admin/plan` | ustawienia, abonament |
 | `/admin/strona` | kreator strony WWW obiektu (Standard+) |
 | `/podglad-strony` | podgląd roboczej wersji strony WWW (tylko właściciel) |
-| `nazwa.rezop.pl` → `/sites/[host]` | opublikowana strona WWW obiektu (+ `sitemap.xml`, `robots.txt` per host) |
+| `nazwa.rezflow.pl` → `/sites/[host]` | opublikowana strona WWW obiektu (+ `sitemap.xml`, `robots.txt` per host) |
 | `/superadmin` (+ `/rezerwacje`, `/opinie`, `/obiekt/[id]`) | panel platformy |
 | `/api/ical/[unitId]`, `/api/payments/p24`, `/api/cron/*`, `/api/admin/export` | integracje |
 | `/api/sites/availability`, `/api/sites/inquiry` | widget kalendarza i formularz kontaktowy stron WWW |
@@ -620,19 +620,19 @@ i wszystkie komponenty z przykładami.
 
 Moduł **„Strona WWW"** w panelu (`/admin/strona`) pozwala właścicielowi zbudować
 stronę-wizytówkę obiektu bez wiedzy technicznej i opublikować ją na subdomenie
-`nazwa.rezop.pl` (env `SITES_BASE_DOMAIN`), a w planie Pro — pod własną domeną.
+`nazwa.rezflow.pl` (env `SITES_BASE_DOMAIN`), a w planie Pro — pod własną domeną.
 
 - **Gating planów** (`sitePlanFeatures`): FREE — zachęta do upgrade'u;
   Standard — kreator + subdomena; Pro — dodatkowo własna domena.
 - **Wizard startowy** (4 kroki): szablon (górski / nadmorski / miejski /
-  uniwersalny) → potwierdzenie danych z Rezio → paleta i typografia → adres.
+  uniwersalny) → potwierdzenie danych z RezFlow → paleta i typografia → adres.
   Strona od razu wypełnia się danymi obiektu (nazwa, opis, pokoje, zdjęcia) —
   nigdy nie startuje pusta.
 - **Edytor sekcji**: hero, o obiekcie, apartamenty, galeria (lightbox),
   udogodnienia, kalendarz dostępności i cen (dane na żywo z API), atrakcje
   okolicy, opinie, kontakt (formularz + mapa), własny kod HTML. Widoczność
   i kolejność sekcji, formularze per sekcja, podgląd draftu w iframie
-  (desktop/mobile). Sekcje danych nie kopiują treści — czytają z tabel Rezio.
+  (desktop/mobile). Sekcje danych nie kopiują treści — czytają z tabel RezFlow.
 - **Draft/publikacja**: edytor pracuje na `Site.draftConfig`; „Opublikuj"
   kopiuje draft → `publishedConfig` (+ revalidate ISR), „Cofnij zmiany"
   przywraca opublikowaną wersję. Strona publiczna renderuje wyłącznie

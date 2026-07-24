@@ -53,7 +53,7 @@ export default function MobileAdminNav({
   return (
     <>
       <div className="flex items-center justify-between bg-brand-900 px-4 py-3">
-        <Link href="/admin" aria-label="Rezio — pulpit">
+        <Link href="/admin" aria-label="RezFlow — pulpit">
           <Logo size={26} tone="dark" />
         </Link>
         <button
@@ -80,7 +80,7 @@ export default function MobileAdminNav({
             className="absolute inset-y-0 left-0 flex w-[280px] max-w-[85vw] flex-col overflow-y-auto bg-brand-900 px-3.5 py-[18px] shadow-[8px_0_40px_rgba(0,0,0,0.4)]"
           >
             <div className="flex items-center justify-between px-2 pb-5 pt-1">
-              <Link href="/admin" aria-label="Rezio — pulpit">
+              <Link href="/admin" aria-label="RezFlow — pulpit">
                 <Logo size={31} tone="dark" />
               </Link>
               <button

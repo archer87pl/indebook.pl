@@ -1,11 +1,13 @@
 /**
- * Logo Rezio — wariant D: litera „R" na kaflu z odznaką potwierdzenia (✓).
+ * Logo RezFlow — wariant D: litera „R" na kaflu z odznaką potwierdzenia (✓).
  *
  * tone="light" (domyślny, na jasnym tle): ciemny kafel #123829, mintowe „R",
  *   mintowa odznaka z ciemnym ✓, obwódka odznaki w kolorze tła strony (ringColor).
  * tone="dark" (na ciemnym tle, np. rail/stopka): mintowy kafel, ciemne „R",
  *   ciemna odznaka z mintowym ✓.
  */
+import { PRODUCT_NAME } from "@/lib/brand";
+
 export default function Logo({
   size = 32,
   tone = "light",
@@ -78,7 +80,7 @@ export default function Logo({
             color: dark ? "#ffffff" : "#123829",
           }}
         >
-          Rezio
+          {PRODUCT_NAME}
         </span>
       )}
     </span>

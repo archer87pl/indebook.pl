@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const ADMIN = { email: "admin@rezio.pl", password: "admin1234" };
+const ADMIN = { email: "admin@rezflow.pl", password: "admin1234" };
 
 // Panel platformy: pulpit z trendem i zdrowiem, globalne rezerwacje i opinie,
 // karta obiektu z impersonacją na konto właściciela.
@@ -20,7 +20,7 @@ test("superadmin przegląda platformę i loguje się jako właściciel", async (
 
   // wyszukiwarka obiektów
   await page.goto("/superadmin?q=willa");
-  await expect(page.getByText("/o/willa-rezio")).toBeVisible();
+  await expect(page.getByText("/o/willa-rezflow")).toBeVisible();
   await expect(page.getByText("apartamenty-marina-sopot")).toHaveCount(0);
 
   // globalne rezerwacje
@@ -56,5 +56,5 @@ test("superadmin przegląda platformę i loguje się jako właściciel", async (
   await page.getByRole("button", { name: "Zaloguj jako właściciel" }).click();
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Plan dnia · dziś")).toBeVisible();
-  await expect(page.getByText("Willa Rezio").first()).toBeVisible();
+  await expect(page.getByText("Willa RezFlow").first()).toBeVisible();
 });

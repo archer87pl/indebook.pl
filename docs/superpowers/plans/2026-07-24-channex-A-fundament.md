@@ -4,7 +4,7 @@
 
 **Goal:** Zbudować fundament synchronizacji kanałów: model danych, liczenie dostępności per Room Type, kolejkę outbox z workerem (na stubie providera), przełącznik trybu `OFF/ICAL/CHANNEX` z gatingiem PRO i panel „Log synchronizacji" — wszystko testowalne bez konta Channex.
 
-**Architecture:** RezOp źródłem prawdy dostępności. Zmiana dostępności → zapis zadania do `AriOutbox` → worker liczy dostępność per doba i woła `ChannelProvider.pushAri` (w Planie A: stub). `ChannelProvider` za abstrakcją (jak `DomainProvider`), `channelProvider()` = `null` gdy brak konfiguracji. Wszystkie plany B/C/D wpinają się w interfejsy zdefiniowane tutaj.
+**Architecture:** RezFlow źródłem prawdy dostępności. Zmiana dostępności → zapis zadania do `AriOutbox` → worker liczy dostępność per doba i woła `ChannelProvider.pushAri` (w Planie A: stub). `ChannelProvider` za abstrakcją (jak `DomainProvider`), `channelProvider()` = `null` gdy brak konfiguracji. Wszystkie plany B/C/D wpinają się w interfejsy zdefiniowane tutaj.
 
 **Tech Stack:** Next.js 16 (App Router, server actions, `after()`), Prisma + Postgres (Supabase), vitest, Tailwind 4.
 

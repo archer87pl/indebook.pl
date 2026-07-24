@@ -16,18 +16,18 @@ function addDays(base: Date, days: number): Date {
 async function main() {
   // globalny administrator platformy (niezależnie od reszty seedu)
   const admin = await prisma.user.findUnique({
-    where: { email: "admin@rezio.pl" },
+    where: { email: "admin@rezflow.pl" },
   });
   if (!admin) {
     await prisma.user.create({
       data: {
-        email: "admin@rezio.pl",
-        name: "Administrator Rezio",
+        email: "admin@rezflow.pl",
+        name: "Administrator RezFlow",
         passwordHash: hashPassword("admin1234"),
         isAdmin: true,
       },
     });
-    console.log("Superadmin: admin@rezio.pl / admin1234");
+    console.log("Superadmin: admin@rezflow.pl / admin1234");
   }
 
   const existing = await prisma.property.findFirst();
@@ -39,18 +39,18 @@ async function main() {
   const today = new Date();
   const year = today.getFullYear();
 
-  // ---------- Obiekt 1: Willa Rezio ----------
+  // ---------- Obiekt 1: Willa RezFlow ----------
   const willa = await prisma.property.create({
     data: {
       owner: {
         create: {
-          email: "demo@rezio.pl",
+          email: "demo@rezflow.pl",
           name: "Dariusz Demo",
           passwordHash: hashPassword("demo1234"),
         },
       },
-      slug: "willa-rezio",
-      name: "Willa Rezio",
+      slug: "willa-rezflow",
+      name: "Willa RezFlow",
       plan: "PRO",
       description:
         "Kameralna willa nad jeziorem — 6 pokoi, prywatny pomost i sauna. Rezerwuj bezpośrednio, bez prowizji portali.",
@@ -58,7 +58,7 @@ async function main() {
       checkInFrom: "15:00",
       checkOutTo: "11:00",
       depositPercent: 30,
-      sellerName: "Willa Rezio Sp. z o.o.",
+      sellerName: "Willa RezFlow Sp. z o.o.",
       sellerNip: "8451234567",
       sellerAddress: "ul. Nadbrzeżna 12, 11-500 Giżycko",
       bankAccount: "PL61 1090 1014 0000 0712 1981 2874",
@@ -259,7 +259,7 @@ async function main() {
     data: {
       owner: {
         create: {
-          email: "marina@rezio.pl",
+          email: "marina@rezflow.pl",
           name: "Marta Marina",
           passwordHash: hashPassword("marina123"),
         },
@@ -319,8 +319,8 @@ async function main() {
   });
 
   console.log("Seed OK:");
-  console.log("  demo@rezio.pl / demo1234   → Willa Rezio (/o/willa-rezio)");
-  console.log("  marina@rezio.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
+  console.log("  demo@rezflow.pl / demo1234   → Willa RezFlow (/o/willa-rezflow)");
+  console.log("  marina@rezflow.pl / marina123 → Apartamenty Marina Sopot (/o/apartamenty-marina-sopot)");
 }
 
 main()

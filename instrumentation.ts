@@ -10,13 +10,13 @@ const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000; // retencja kart meldunkowych raz
 const REMINDER_INTERVAL_MS = 60 * 60 * 1000; // przypomnienia o przyjeździe co godzinę (idempotentne, 8–21)
 const REVIEW_INTERVAL_MS = 60 * 60 * 1000; // prośby o opinię co godzinę (idempotentne, 8–21)
 
-const flag = globalThis as unknown as { __rezioJobs?: boolean };
+const flag = globalThis as unknown as { __rezflowJobs?: boolean };
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.VERCEL) return; // na Vercel zadania odpala Cron, nie setInterval
-  if (flag.__rezioJobs) return;
-  flag.__rezioJobs = true;
+  if (flag.__rezflowJobs) return;
+  flag.__rezflowJobs = true;
 
   const {
     expireReservations,

@@ -143,7 +143,7 @@ export async function login(formData: FormData) {
 
 /** Konto demo: logowanie jednym kliknięciem na wspólne konto pokazowe. */
 export async function demoLogin() {
-  const user = await prisma.user.findUnique({ where: { email: "demo@rezio.pl" } });
+  const user = await prisma.user.findUnique({ where: { email: "demo@rezflow.pl" } });
   if (!user) redirect("/login?error=1");
   await createSession(user!.id);
   redirect("/admin");
@@ -169,7 +169,7 @@ export async function requestPasswordReset(formData: FormData) {
     ]);
     mailAfter({
       to: user.email,
-      subject: "Rezio — reset hasła",
+      subject: "RezFlow — reset hasła",
       body: `Cześć ${user.name},\n\nAby ustawić nowe hasło, otwórz link (ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}\n\nJeśli to nie Ty prosiłeś o reset — zignoruj tę wiadomość.`,
     });
   }
@@ -620,7 +620,7 @@ export async function submitCheckIn(formData: FormData) {
         : ""
     }\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
   });
-  if (!property.owner.email.endsWith("@rezio.local")) {
+  if (!property.owner.email.endsWith("@rezflow.local")) {
     mailAfter({
       to: property.owner.email,
       subject: `Gość wypełnił meldunek online — ${code}`,
@@ -677,7 +677,7 @@ export async function submitReview(formData: FormData) {
       comment,
     },
   });
-  if (!property.owner.email.endsWith("@rezio.local")) {
+  if (!property.owner.email.endsWith("@rezflow.local")) {
     mailAfter({
       to: property.owner.email,
       subject: `Nowa opinia (${rating}/5) — rezerwacja ${r.code}`,
@@ -749,7 +749,7 @@ export async function sendGuestMessage(formData: FormData) {
     data: { reservationId: r.id, sender: "GUEST", body },
   });
   const property = r.unit.unitType.property;
-  if (!property.owner.email.endsWith("@rezio.local")) {
+  if (!property.owner.email.endsWith("@rezflow.local")) {
     mailAfter({
       to: property.owner.email,
       subject: `Nowa wiadomość od gościa — ${r.code}`,
@@ -778,7 +778,7 @@ export async function sendOwnerMessage(formData: FormData) {
   await prisma.message.create({
     data: { reservationId: r.id, sender: "OWNER", body },
   });
-  if (r.email && !r.email.endsWith("@rezio.local")) {
+  if (r.email && !r.email.endsWith("@rezflow.local")) {
     mailAfter({
       to: r.email,
       subject: `Wiadomość od ${property.name} — rezerwacja ${r.code}`,
@@ -837,7 +837,7 @@ export async function adminSetStatus(formData: FormData) {
     data: { status, ...(status === "CONFIRMED" ? { expiresAt: null } : {}) },
   });
   if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
-    if (reservation.email && !reservation.email.endsWith("@rezio.local")) {
+    if (reservation.email && !reservation.email.endsWith("@rezflow.local")) {
       mailAfter({
         to: reservation.email,
         subject: `Rezerwacja ${reservation.code} potwierdzona`,
@@ -868,7 +868,7 @@ export async function adminSendCheckInInvite(formData: FormData) {
   const r = reservation!;
   if (!canCheckIn(r))
     fail("Meldunek online jest dostępny tylko dla potwierdzonych rezerwacji przed wymeldowaniem.");
-  if (!r.email || r.email.endsWith("@rezio.local"))
+  if (!r.email || r.email.endsWith("@rezflow.local"))
     fail("Uzupełnij e-mail gościa, aby wysłać link do meldunku.");
 
   mailAfter({
@@ -887,7 +887,7 @@ export async function adminCreateReservation(formData: FormData) {
   const guests = Number(str(formData, "guests")) || 1;
   const guestName = str(formData, "guestName");
   const phone = str(formData, "phone");
-  const email = str(formData, "email") || "brak@rezio.local";
+  const email = str(formData, "email") || "brak@rezflow.local";
   const notes = str(formData, "notes");
   const priceOverride = str(formData, "totalZl");
 
@@ -934,7 +934,7 @@ export async function adminCreateReservation(formData: FormData) {
     throw e;
   }
   // rezerwacje telefoniczne/ręczne: od razu zaproś gościa do meldunku online
-  if (!email.endsWith("@rezio.local")) {
+  if (!email.endsWith("@rezflow.local")) {
     mailAfter({
       to: email,
       subject: `Rezerwacja ${code} w ${property.name}`,
@@ -1008,7 +1008,7 @@ export async function adminUpdateReservation(formData: FormData) {
     throw e;
   }
 
-  if (datesChanged && email && !email.endsWith("@rezio.local")) {
+  if (datesChanged && email && !email.endsWith("@rezflow.local")) {
     mailAfter({
       to: email,
       subject: `Rezerwacja ${r.code} — zmiana terminu`,
@@ -1899,7 +1899,7 @@ export async function superSendPasswordReset(formData: FormData) {
     ]);
     mailAfter({
       to: user.email,
-      subject: "Rezio — reset hasła",
+      subject: "RezFlow — reset hasła",
       body: `Cześć ${user.name},\n\nAdministrator platformy zainicjował reset hasła. Ustaw nowe hasło (link ważny 1 godzinę):\n${appUrl()}/reset-hasla/${token}`,
     });
   }
@@ -2062,7 +2062,7 @@ export async function superSendTestMail() {
   const admin = await requireSuperadmin();
   mailAfter({
     to: admin.email,
-    subject: "Rezio — test konfiguracji e-mail",
+    subject: "RezFlow — test konfiguracji e-mail",
     body: `Jeśli czytasz tę wiadomość, konfiguracja wysyłki e-maili działa poprawnie.\n\nWysłano z panelu superadmina (${appUrl()}/superadmin/ustawienia).`,
   });
   redirect("/superadmin/ustawienia?testmail=1");

@@ -1,6 +1,6 @@
 "use client";
 
-// Widget dostępności i cen zasilany na żywo z API RezOp. Gość wybiera typ
+// Widget dostępności i cen zasilany na żywo z API RezFlow. Gość wybiera typ
 // pokoju i klika termin (start/koniec) — CTA prowadzi do finalizacji
 // rezerwacji na stronie aplikacji (flow hybrydowy).
 

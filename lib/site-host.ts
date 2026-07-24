@@ -1,4 +1,4 @@
-// Klasyfikacja hosta żądania: aplikacja Rezio vs strona WWW obiektu.
+// Klasyfikacja hosta żądania: aplikacja RezFlow vs strona WWW obiektu.
 // Czysta logika (bez DB) — używana w proxy.ts przy każdym żądaniu.
 //
 // Zasada bezpieczeństwa: subdomeny bazy przepisujemy zawsze, ale obce domeny
@@ -6,13 +6,15 @@
 // gdy domena istnieje w bazie (Site.customDomain). Dzięki temu błędna
 // konfiguracja APP_URL nie wyłącza całej aplikacji na produkcji.
 
+import { PRODUCT_DOMAIN } from "./brand";
+
 export type HostKind =
   | { kind: "app" }
   | { kind: "subdomain"; key: string }
   | { kind: "custom"; key: string };
 
 export function sitesBaseDomain(): string {
-  return (process.env.SITES_BASE_DOMAIN || "rezop.pl").toLowerCase();
+  return (process.env.SITES_BASE_DOMAIN || PRODUCT_DOMAIN).toLowerCase();
 }
 
 function hostnameOf(value: string): string | null {
@@ -61,7 +63,7 @@ export function classifyHost(
     return sub.includes(".") ? { kind: "app" } : { kind: "subdomain", key: sub };
   }
 
-  // subdomena bazy: nazwa.rezop.pl (bez zagnieżdżeń)
+  // subdomena bazy: nazwa.rezflow.pl (bez zagnieżdżeń)
   if (host.endsWith(`.${base}`)) {
     const sub = host.slice(0, -(base.length + 1));
     return sub.includes(".") ? { kind: "app" } : { kind: "subdomain", key: sub };
