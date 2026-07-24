@@ -49,6 +49,14 @@ export interface ChannelProvider {
   ): Promise<void>;
   getBooking(apiKey: string, bookingId: string): Promise<BookingData | null>;
   registerWebhook(channexPropertyId: string, callbackUrl: string, secret: string): Promise<void>;
+  connectBooking(
+    channexPropertyId: string,
+    hotelId: string,
+    mapping: { roomTypeId: string; ratePlanId: string }[]
+  ): Promise<{ channelId: string; status: string }>;
+  startAirbnbOAuth(channexPropertyId: string, redirectUrl: string): Promise<{ authUrl: string }>;
+  finishAirbnbOAuth(channexPropertyId: string, code: string): Promise<{ channelId: string; status: string }>;
+  channelStatus(channelId: string): Promise<{ status: string; message: string }>;
 }
 
 type StubCall = {
@@ -80,6 +88,18 @@ export const stubProvider: ChannelProvider & { calls: StubCall[] } = {
   },
   async registerWebhook() {
     // no-op w stubie
+  },
+  async connectBooking() {
+    return { channelId: "stub-booking", status: "connected" };
+  },
+  async startAirbnbOAuth() {
+    return { authUrl: "/api/channex/airbnb/callback?code=stub&state=STATE" };
+  },
+  async finishAirbnbOAuth() {
+    return { channelId: "stub-airbnb", status: "connected" };
+  },
+  async channelStatus() {
+    return { status: "connected", message: "" };
   },
 };
 

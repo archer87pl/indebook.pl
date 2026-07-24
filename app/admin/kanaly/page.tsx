@@ -15,6 +15,7 @@ import { CHANNELS, channelDef } from "@/lib/channels";
 import { channelProvider } from "@/lib/channex/provider";
 import SyncModeSwitch from "@/components/admin/SyncModeSwitch";
 import SyncLog from "@/components/admin/SyncLog";
+import ChannelTiles from "@/components/admin/channels/ChannelTiles";
 import { formatRangeShortPl } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { findChannelConflicts } from "@/lib/ical";
@@ -46,6 +47,10 @@ export default async function ChannelsPage() {
   const feedCount = units.reduce((s, u) => s + u.icalFeeds.length, 0);
   const mode = property.syncMode;
   const channexEnabled = channelSyncFeatures(property.plan).channex && channelProvider() !== null;
+  const channexProperty =
+    mode === "CHANNEX"
+      ? await prisma.channexProperty.findUnique({ where: { propertyId: property.id } })
+      : null;
 
   return (
     <div className="space-y-4">
@@ -78,14 +83,21 @@ export default async function ChannelsPage() {
       )}
 
       {mode === "CHANNEX" && (
-        <Card>
-          <CardBody>
-            <p className="text-[13px] text-slate-600">
-              Tryb <b>Channex</b> jest włączony. Konfiguracja integracji (provisioning obiektu,
-              podłączanie Booking.com/Airbnb) dochodzi w kolejnym etapie wdrożenia.
-            </p>
-          </CardBody>
-        </Card>
+        channexProperty?.status === "ACTIVE" ? (
+          <div className="space-y-4">
+            <ChannelTiles propertyId={property.id} />
+          </div>
+        ) : (
+          <Card>
+            <CardBody>
+              <p className="text-[13px] text-slate-600">
+                {channexProperty?.status === "ERROR"
+                  ? `Konfiguracja Channex nie powiodła się: ${channexProperty.lastError}`
+                  : "Trwa konfiguracja integracji Channex (provisioning obiektu). Odśwież za chwilę."}
+              </p>
+            </CardBody>
+          </Card>
+        )
       )}
 
       {mode === "ICAL" && conflicts.length > 0 && (

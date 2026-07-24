@@ -136,4 +136,25 @@ export class ChannexClient implements ChannelProvider {
     const attrs = json.data?.attributes;
     return attrs ? mapChannexBooking(attrs) : null;
   }
+
+  // Metody podłączania kanałów zależą od dokładnej schemy /channels danego OTA,
+  // którą trzeba potwierdzić na żywym sandboxie (Plan D, Task 1) — do tego czasu
+  // nie zgadujemy payloadu. W dev/testach używać stubProvider (CHANNEX_STUB=1).
+  private notReady(): never {
+    throw new Error(
+      "Podłączanie kanałów Channex wymaga potwierdzenia schemy /channels na sandboxie (Plan D)."
+    );
+  }
+  async connectBooking(): Promise<{ channelId: string; status: string }> {
+    this.notReady();
+  }
+  async startAirbnbOAuth(): Promise<{ authUrl: string }> {
+    this.notReady();
+  }
+  async finishAirbnbOAuth(): Promise<{ channelId: string; status: string }> {
+    this.notReady();
+  }
+  async channelStatus(): Promise<{ status: string; message: string }> {
+    this.notReady();
+  }
 }

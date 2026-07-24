@@ -403,14 +403,20 @@ Zakładka **Kanały** (`/admin/kanaly`), plan Standard+:
 iCal / Channex`): `OFF` — brak, `ICAL` — powyższe, `CHANNEX` — dwukierunkowa
 integracja przez channel managera Channex (plan Pro).
 
-**Channex (2-way, fundament — Plan A)**: RezOp jest źródłem prawdy dostępności.
-Zmiana (rezerwacja, blokada, liczba jednostek) zapisuje zadanie do kolejki
-`AriOutbox`; worker liczy dostępność per typ pokoju (liczba wolnych jednostek)
-i pushuje ARI do Channex (`lib/channex/*`) — best-effort po akcji (`after()`) +
-zamiatanie cronem. Za abstrakcją `ChannelProvider` (stub do dev/testów;
-`CHANNEX_STUB=1`). Realny klient Channex, provisioning, webhooki rezerwacji i
-podłączanie Booking.com/Airbnb — kolejne etapy (Plany B–D, patrz
-`docs/superpowers/plans/2026-07-24-channex-*`).
+**Channex (2-way)**: RezOp jest źródłem prawdy dostępności. Zmiana (rezerwacja,
+blokada, liczba jednostek) zapisuje zadanie do kolejki `AriOutbox`; worker liczy
+dostępność per typ pokoju (liczba wolnych jednostek) i pushuje ARI (availability
++ min. pobyt) do Channex — best-effort po akcji (`after()`) + zamiatanie cronem.
+Za abstrakcją `ChannelProvider` (stub do dev/testów; `CHANNEX_STUB=1`; realny
+klient wybierany po `CHANNEX_API_KEY`). Włączenie trybu **provisionuje** obiekt
+(Property + Room Type + Rate Plan) i rejestruje webhook. **Rezerwacje z OTA**
+wracają webhookiem (`/api/channex/webhook`, autorytatywny re-fetch, idempotencja
+po `channexBookingId`, auto-assign wolnej jednostki, oversell → konflikt).
+**Podłączanie kanałów** z panelu: Booking.com (Hotel ID) i Airbnb (OAuth) —
+kafle statusu w karcie Channex. Ceny (cennik→OTA) — kolejny etap. Uwaga: dokładny
+payload połączeń kanałów `/channels` wypełnia się po potwierdzeniu schemy na
+sandboxie Channex (`lib/channex/client.ts` — metody kanałów). Plany:
+`docs/superpowers/plans/2026-07-24-channex-*`.
 
 **Log synchronizacji** (`/admin/kanaly`): chronologia zdarzeń iCal/Channex
 obiektu (`EventLog` `kind IN (ICAL, CHANNEX)`) — importy, pushy, błędy.

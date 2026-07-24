@@ -438,3 +438,17 @@ model AriOutbox {
   @@index([status])
   @@index([propertyId])
 }
+
+// Połączenie kanału OTA (Booking.com/Airbnb/…) obiektu z Channex (Plan D).
+// type: BOOKING | AIRBNB | EXPEDIA | OTHER; status: NONE | PENDING | CONNECTED | ERROR
+model ChannexChannel {
+  id               Int      @id @default(autoincrement())
+  propertyId       Int
+  type             String
+  channexChannelId String   @default("")
+  status           String   @default("NONE")
+  lastError        String   @default("")
+  createdAt        DateTime @default(now())
+
+  @@unique([propertyId, type])
+}
