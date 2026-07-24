@@ -12,7 +12,14 @@ export async function afterAri(
   to: string
 ): Promise<void> {
   await enqueueAri(propertyId, unitTypeId, from, to);
-  after(() => processOutbox(propertyId));
+  // W kontekście żądania odkładamy push przez after(); poza nim (webhook after,
+  // cron, skrypty) after() rzuca — wtedy przetwarzamy inline (fire-and-forget).
+  // Gdyby push przepadł, dobierze go zamiatanie cronem.
+  try {
+    after(() => processOutbox(propertyId));
+  } catch {
+    void processOutbox(propertyId).catch(() => {});
+  }
 }
 
 /**

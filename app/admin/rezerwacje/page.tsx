@@ -21,6 +21,16 @@ const FILTERS = [
 
 const PAGE_SIZE = 50;
 
+// etykieta kanału wg Reservation.source
+const CHANNEL_LABELS: Record<string, string> = {
+  MANUAL: "Ręczna",
+  ONLINE: "Bezpośrednia",
+  BOOKING: "Booking.com",
+  AIRBNB: "Airbnb",
+  EXPEDIA: "Expedia",
+  CHANNEX_OTHER: "OTA (Channex)",
+};
+
 export default async function ReservationsPage(props: {
   searchParams: Promise<{ status?: string; error?: string; page?: string; q?: string }>;
 }) {
@@ -182,7 +192,7 @@ export default async function ReservationsPage(props: {
                     {nightsBetween(r.checkIn, r.checkOut)}
                   </td>
                   <td data-label="Kanał" className="px-2 py-2.5 text-slate-600">
-                    {r.source === "MANUAL" ? "Ręczna" : "Bezpośrednia"}
+                    {CHANNEL_LABELS[r.source] ?? "Bezpośrednia"}
                   </td>
                   <td data-label="Kwota" className="tnum px-2 py-2.5 text-right font-semibold">
                     {formatPln(r.totalGr)}
