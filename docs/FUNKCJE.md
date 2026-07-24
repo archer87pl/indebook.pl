@@ -29,6 +29,7 @@ i komplet automatyzacji (płatności, meldunek, SMS-y, opinie, faktury).
 10. [Testy](#10-testy)
 11. [Mapa tras](#11-mapa-tras)
 12. [Strona WWW obiektu (kreator)](#12-strona-www-obiektu-kreator)
+13. [Wielojęzyczność interfejsu gościa](#13-wielojęzyczność-interfejsu-gościa-pl--en--de)
 
 ---
 
@@ -655,3 +656,63 @@ stronę-wizytówkę obiektu bez wiedzy technicznej i opublikować ją na subdome
 - **Rezerwacja (hybryda)**: widget kalendarza i ceny na stronie klienta,
   finalizacja na istniejącym flow `appUrl/rezerwuj/[unitTypeId]`; zapytania
   z formularza kontaktowego idą e-mailem do właściciela (honeypot antyspam).
+
+---
+
+## 13. Wielojęzyczność interfejsu gościa (PL / EN / DE)
+
+Tłumaczymy **interfejs**, nie treści właściciela. Opisy obiektu i pokoi,
+tytuły sekcji strony WWW czy nazwy planów pozostają w oryginale — właściciel
+wpisuje je raz i decyduje, w jakim języku. Panel recepcji i superadmin
+zostają po polsku (język pracy zespołu).
+
+### Mechanizm
+
+- **next-intl** (`i18n/routing.ts`, `i18n/request.ts`, `i18n/navigation.ts`).
+  Języki: `pl` (domyślny), `en`, `de`. `localePrefix: "as-needed"` — polski
+  bez prefiksu (`/o/willa`), pozostałe z prefiksem (`/en/o/willa`).
+- **Auto-detekcja** z nagłówka `Accept-Language` przy pierwszej wizycie;
+  wybór użytkownika ma pierwszeństwo (przełącznik `PL / EN / DE` w nagłówku).
+- **Kompozycja w `proxy.ts`**: middleware next-intl uruchamia się wyłącznie
+  dla tras gościa na hoście aplikacji (`lib/guest-paths.ts`: `/o`, `/rezerwuj`,
+  `/r`, `/moja-rezerwacja`). Panel, landing, API i strony WWW obiektów idą
+  dotychczasową ścieżką — routing hostów działa bez zmian.
+- **Słowniki**: `messages/<locale>/<namespace>.json`, przestrzenie:
+  `nav, common, property, search, booking, guest, checkin, review, account,
+  site, email`. Polski jest źródłem prawdy; test `i18n/messages.test.ts`
+  pilnuje parzystości kluczy i pustych wartości w EN/DE.
+- **Ścieżki**: w trasach gościa używaj `Link` z `@/i18n/navigation` (sam
+  dokłada prefiks). Dla `href` przekazywanego do komponentów współdzielonych
+  z panelem (np. `components/ui/Button`) użyj `localePath(path, locale)`
+  z `lib/locale-urls.ts` — `Button` celowo korzysta ze zwykłego `next/link`,
+  bo działa też poza kontekstem językowym (login, panel).
+- **SEO**: `generateMetadata` na stronie obiektu ustawia `canonical`
+  i `alternates.languages` (`pl`, `en`, `de`, `x-default`); `app/sitemap.ts`
+  emituje trasy gościa we wszystkich językach z `alternates`.
+- **`<html lang>`**: root layout renderuje `getLocale()`, a
+  `components/HtmlLangSync.tsx` utrzymuje atrybut przy nawigacji klienckiej
+  (root layout się wtedy nie przerysowuje).
+
+### Powiadomienia w języku gościa
+
+`Reservation.locale` zapisuje język, w którym gość rezerwował
+(`createReservation` bierze go z `getLocale()`). Maile i SMS-y do gościa lecą
+w tym języku (`lib/guest-mail.ts` → przestrzeń `email`); powiadomienia dla
+właściciela zostają po polsku. Nieznany język degraduje do PL.
+
+### Strony WWW obiektów
+
+Strony obiektów są poza routingiem next-intl (proxy przepisuje host na
+`/sites/<klucz>`), więc język trzyma **cookie `SITE_LOCALE`** — bez prefiksu
+w URL. Przełącznik (`components/site/SiteLangSwitcher.tsx`) zapisuje wybór
+przez `POST /api/sites/locale` i przeładowuje stronę. Tłumaczy się chrome:
+nawigacja, etykiety kart apartamentów, widget kalendarza, formularz kontaktowy
+i stopka; tytuły sekcji oraz opisy z kreatora zostają w oryginale. CTA do
+rezerwacji prowadzi do wersji językowej aplikacji (`/en/o/...`).
+
+### Czego (jeszcze) nie tłumaczymy
+
+Formatowanie dat i kwot jest na razie `pl-PL` (`lib/format.ts`,
+`lib/dates.ts`), etykiety udogodnień (`lib/amenities.ts`) i komunikaty błędów
+server actions są po polsku. To świadomy zakres pierwszej iteracji —
+interfejs najpierw, treści i formaty w kolejnej.

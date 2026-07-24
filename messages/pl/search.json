@@ -12,5 +12,6 @@
   "noResults": {
     "title": "Brak dostępnych pokoi w tym terminie",
     "description": "Spróbuj innych dat — dostępność zmienia się na bieżąco."
-  }
+  },
+  "bookCta": "Rezerwuję"
 }

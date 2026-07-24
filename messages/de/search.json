@@ -12,5 +12,6 @@
   "noResults": {
     "title": "Keine Zimmer für diesen Zeitraum verfügbar",
     "description": "Versuchen Sie andere Daten — die Verfügbarkeit ändert sich laufend."
-  }
+  },
+  "bookCta": "Buchen"
 }

@@ -4,8 +4,12 @@
 import { routing, type AppLocale } from "@/i18n/routing";
 import { appUrl } from "./payments";
 
-/** Ścieżka w danym języku: „/o/willa" → „/en/o/willa" (PL bez prefiksu). */
-export function localePath(path: string, locale: AppLocale): string {
+/**
+ * Ścieżka w danym języku: „/o/willa" → „/en/o/willa" (PL bez prefiksu).
+ * Przyjmuje zwykły `string`, bo wołamy ją z `getLocale()` na trasach, które
+ * layout `[locale]` już zweryfikował (nieznany język = notFound).
+ */
+export function localePath(path: string, locale: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
   return locale === routing.defaultLocale ? clean : `/${locale}${clean}`;
 }

@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localePath } from "@/lib/locale-urls";
 import { notFound, redirect } from "next/navigation";
 import { CalendarX, Lock } from "lucide-react";
 import Button from "@/components/ui/Button";
@@ -38,6 +39,7 @@ export default async function BookPage(props: {
     redirect("/");
   }
 
+  const locale = await getLocale();
   const t = await getTranslations("booking");
   const tCommon = await getTranslations("common");
 
@@ -65,7 +67,9 @@ export default async function BookPage(props: {
         <p className="text-sm text-slate-600">
           {t("soldOut.hint", { property: unitType.property.name })}
         </p>
-        <Button href={`/o/${unitType.property.slug}`}>{t("soldOut.cta")}</Button>
+        <Button href={localePath(`/o/${unitType.property.slug}`, locale)}>
+          {t("soldOut.cta")}
+        </Button>
       </div>
     );
   }

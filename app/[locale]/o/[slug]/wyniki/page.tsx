@@ -1,5 +1,6 @@
 import { ArrowLeft, Ban, CalendarX, Users } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localePath } from "@/lib/locale-urls";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import SearchForm from "@/components/SearchForm";
@@ -23,6 +24,7 @@ export default async function ResultsPage(props: {
   searchParams: Promise<{ from?: string; to?: string; guests?: string }>;
 }) {
   const { slug } = await props.params;
+  const locale = await getLocale();
   const t = await getTranslations("search");
   const tp = await getTranslations("property");
   const tc = await getTranslations("common");
@@ -46,7 +48,11 @@ export default async function ResultsPage(props: {
           <EmptyState
             icon={<Ban size={26} strokeWidth={2} />}
             title={tp("suspended.title")}
-            action={<Button href="/">{tp("suspended.browseOther")}</Button>}
+            action={
+              <Button href={localePath("/", locale)}>
+                {tp("suspended.browseOther")}
+              </Button>
+            }
           />
         </Card>
       </div>
@@ -168,9 +174,12 @@ export default async function ResultsPage(props: {
                       </Badge>
                     ) : (
                       <Button
-                        href={`/rezerwuj/${o.unitTypeId}?from=${from}&to=${to}&guests=${guests}`}
+                        href={localePath(
+                          `/rezerwuj/${o.unitTypeId}?from=${from}&to=${to}&guests=${guests}`,
+                          locale,
+                        )}
                       >
-                        {tc("book")}
+                        {t("bookCta")}
                       </Button>
                     )}
                   </div>

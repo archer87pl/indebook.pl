@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
+import type { AppLocale } from "@/i18n/routing";
+import { localePath, localeAlternates, localeUrl } from "@/lib/locale-urls";
 import { Clock, Construction, FileText, MapPin, ShieldCheck, Star } from "lucide-react";
 import SearchForm from "@/components/SearchForm";
 import Badge from "@/components/ui/Badge";
@@ -40,10 +43,35 @@ function Stars({ value, size = 13 }: { value: number; size?: number }) {
   );
 }
 
+/** Metadane per język: tytuł/opis z danych obiektu + hreflang na wersje PL/EN/DE. */
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string; locale: string }>;
+}): Promise<Metadata> {
+  const { slug, locale } = await props.params;
+  const property = await prisma.property.findUnique({
+    where: { slug },
+    select: { name: true, description: true, address: true, suspended: true },
+  });
+  if (!property || property.suspended) return {};
+  const description =
+    property.description.slice(0, 155) ||
+    [property.name, property.address].filter(Boolean).join(" — ");
+  return {
+    title: property.name,
+    description,
+    alternates: {
+      canonical: localeUrl(`/o/${slug}`, locale as AppLocale),
+      languages: localeAlternates(`/o/${slug}`),
+    },
+    openGraph: { title: property.name, description, type: "website" },
+  };
+}
+
 export default async function PropertyPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
+  const locale = await getLocale();
   const t = await getTranslations("property");
   const tc = await getTranslations("common");
   const property = await prisma.property.findUnique({
@@ -68,7 +96,7 @@ export default async function PropertyPage(props: {
         <p className="text-sm text-slate-600">
           {t("suspended.description", { name: property.name })}
         </p>
-        <Button href="/">{t("suspended.browseOther")}</Button>
+        <Button href={localePath("/", locale)}>{t("suspended.browseOther")}</Button>
       </div>
     );
   }
@@ -278,7 +306,10 @@ export default async function PropertyPage(props: {
                         </div>
                         <div className="text-[10.5px] text-slate-400">{tc("perNight")}</div>
                       </div>
-                      <Button size="sm" href={`/o/${property.slug}/pokoj/${ut.id}`}>
+                      <Button
+                        size="sm"
+                        href={localePath(`/o/${property.slug}/pokoj/${ut.id}`, locale)}
+                      >
                         {t("viewRoom")}
                       </Button>
                     </div>

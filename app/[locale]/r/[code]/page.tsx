@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localePath } from "@/lib/locale-urls";
 import { notFound } from "next/navigation";
 import {
   CalendarDays,
@@ -54,6 +55,7 @@ export default async function ReservationPage(props: {
 }) {
   const { code } = await props.params;
   const sp = await props.searchParams;
+  const locale = await getLocale();
   const t = await getTranslations("guest");
   const tCommon = await getTranslations("common");
   const reservation = await prisma.reservation.findUnique({
@@ -241,7 +243,9 @@ export default async function ReservationPage(props: {
                     : t("checkin.desc")}
                 </div>
               </div>
-              <Button href={`/r/${r.code}/meldunek`}>{t("checkin.cta")}</Button>
+              <Button href={localePath(`/r/${r.code}/meldunek`, locale)}>
+                {t("checkin.cta")}
+              </Button>
             </div>
           )}
 

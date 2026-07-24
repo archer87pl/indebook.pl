@@ -12,5 +12,6 @@
   "noResults": {
     "title": "No rooms available for these dates",
     "description": "Try different dates — availability changes all the time."
-  }
+  },
+  "bookCta": "Book"
 }

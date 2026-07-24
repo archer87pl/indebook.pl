@@ -7,6 +7,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import Logo from "@/components/Logo";
 import LangSwitcher from "@/components/LangSwitcher";
+import HtmlLangSync from "@/components/HtmlLangSync";
 import { Link } from "@/i18n/navigation";
 import { isAppLocale, routing } from "@/i18n/routing";
 import { PRODUCT_DOMAIN, PRODUCT_NAME } from "@/lib/brand";
@@ -29,6 +30,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider>
+      <HtmlLangSync locale={locale} />
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/" aria-label={PRODUCT_NAME}>

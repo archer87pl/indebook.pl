@@ -50,6 +50,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **SMS-y** (gdy gość podał telefon): potwierdzenie rezerwacji z linkiem do meldunku + przypomnienie dzień przed przyjazdem,
 - **opinie po pobycie** `/r/[kod]/opinia`: ocena 1–5 gwiazdek + komentarz (prośba e-mail/SMS dzień po wymeldowaniu, cron); publikacja na stronie obiektu pod imieniem i inicjałem,
 - wyszukiwanie rezerwacji `/moja-rezerwacja` (kod + e-mail), zgoda RODO.
+- **wielojęzyczny interfejs (PL / EN / DE)**: prefiks w URL (`/en/o/...`, polski bez prefiksu), auto-detekcja z `Accept-Language`, przełącznik w nagłówku, hreflang; maile i SMS-y lecą w języku, w którym gość rezerwował. Tłumaczymy interfejs — treści właściciela zostają w oryginale. Panel recepcji po polsku.
 
 **Blog / poradnik (`/blog`)**
 - artykuły jako pliki Markdown w `content/blog/*.md` (frontmatter: tytuł, data, zajawka, tag, okładka, `draft`), generowane statycznie; treść przez `marked`, JSON-LD `BlogPosting`, sekcja najnowszych na landingu i wpisy w `sitemap.xml`. Instrukcja dla autorów: `content/blog/README.md`.
@@ -92,6 +93,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - Daty pobytu: stringi `YYYY-MM-DD`, przedziały półotwarte `[checkIn, checkOut)`, porównania leksykograficzne.
 - Kwoty w groszach (int, sufiks `Gr`); formatowanie i odmiana nocy w `lib/format.ts`.
 - Dostępność i przydział jednostki w transakcji (`lib/availability.ts`); PENDING po 30 min zwalnia termin.
+- Teksty interfejsu gościa: `messages/<pl|en|de>/<namespace>.json` (polski źródłem prawdy, test parzystości kluczy w `i18n/messages.test.ts`). W trasach gościa linkuj przez `Link` z `@/i18n/navigation`, a `href` dla `components/ui/Button` buduj `localePath()` z `lib/locale-urls.ts`.
 
 ## Wdrożenie na Vercel (zalecane)
 

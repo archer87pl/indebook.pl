@@ -111,6 +111,39 @@ test.describe("kreator strony WWW", () => {
     expect(await robots.text()).toContain("Allow: /");
   });
 
+  test("przełącznik języka tłumaczy chrome strony, treść właściciela zostaje", async ({
+    page,
+  }) => {
+    const sub = `e2e-strona-${RUN}`;
+    const headline = `Nagłówek E2E ${RUN}`;
+    await page.goto(`http://${sub}.localhost:3100/`);
+
+    // start po polsku
+    await expect(page.getByRole("link", { name: "Apartamenty" })).toBeVisible();
+
+    await page.getByRole("button", { name: "EN", exact: true }).click();
+
+    // etykiety systemowe po angielsku (nawigacja, widget kalendarza)…
+    await expect(page.getByRole("link", { name: "Apartments" })).toBeVisible();
+    await expect(page.getByText("Click your arrival and departure dates")).toBeVisible();
+    // …a treść właściciela (nagłówek hero, tytuły sekcji z wizarda) zostaje
+    // w oryginale — tłumaczymy tylko chrome
+    await expect(page.getByRole("heading", { name: headline })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Nasze apartamenty" })).toBeVisible();
+
+    // wybór jest zapamiętany w cookie SITE_LOCALE i przeżywa przeładowanie
+    const cookie = (await page.context().cookies()).find((c) => c.name === "SITE_LOCALE");
+    expect(cookie?.value).toBe("en");
+    await page.reload();
+    await expect(page.getByRole("link", { name: "Apartments" })).toBeVisible();
+
+    // CTA do rezerwacji niesie prefiks języka
+    await expect(page.getByRole("link", { name: "Book now" }).first()).toHaveAttribute(
+      "href",
+      /\/en\/o\//
+    );
+  });
+
   test("nieznana subdomena zwraca 404", async ({ page }) => {
     const res = await page.request.get("http://localhost:3100/", {
       headers: { Host: `nie-ma-takiej-${RUN}.localhost` },
