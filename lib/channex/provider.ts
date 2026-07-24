@@ -1,6 +1,7 @@
-// Abstrakcja channel managera (jak DomainProvider). Realny klient Channex
-// dochodzi w Planie B; tu interfejs + stub do dev/testów. pushAri przyjmuje
+// Abstrakcja channel managera (jak DomainProvider): interfejs + stub do
+// dev/testów + realny klient Channex wybierany po env. pushAri przyjmuje
 // channexPropertyId, bo Channex wymaga property_id w payloadzie ARI.
+import { ChannexClient } from "./client";
 
 export type AriDay = { date: string; availability: number; minStay: number };
 
@@ -47,6 +48,7 @@ export interface ChannelProvider {
     days: AriDay[]
   ): Promise<void>;
   getBooking(apiKey: string, bookingId: string): Promise<BookingData | null>;
+  registerWebhook(channexPropertyId: string, callbackUrl: string, secret: string): Promise<void>;
 }
 
 type StubCall = {
@@ -76,12 +78,18 @@ export const stubProvider: ChannelProvider & { calls: StubCall[] } = {
   async getBooking() {
     return null;
   },
+  async registerWebhook() {
+    // no-op w stubie
+  },
 };
 
-// Realny provider dochodzi w Planie B (gdy jest CHANNEX_API_KEY). Bez
-// konfiguracji zwracamy null → tryb Channex ukryty w panelu. W dev/testach
-// można wymusić stub przez CHANNEX_STUB=1.
+// Wybór providera: CHANNEX_STUB=1 → stub (dev/testy); w przeciwnym razie realny
+// klient Channex, gdy jest CHANNEX_API_KEY; inaczej null → tryb Channex ukryty
+// w panelu (wzorzec jak P24/Vercel). Konfiguracja z env (bez rippla async).
 export function channelProvider(): ChannelProvider | null {
   if (process.env.CHANNEX_STUB === "1") return stubProvider;
-  return null;
+  const apiKey = process.env.CHANNEX_API_KEY;
+  if (!apiKey) return null;
+  const baseUrl = process.env.CHANNEX_BASE_URL || "https://staging.channex.io/api/v1";
+  return new ChannexClient(apiKey, baseUrl);
 }
