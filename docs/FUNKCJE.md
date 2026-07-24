@@ -399,10 +399,25 @@ Zakładka **Kanały** (`/admin/kanaly`), plan Standard+:
 - **wykrywanie podwójnych rezerwacji**: przecięcie blokady iCal z rezerwacją
   bezpośrednią podnosi alert na pulpicie i listę konfliktów w zakładce.
 
-Pełne API dwukierunkowe (ceny, dostępność real-time) — faza 2, wymaga
-certyfikacji partnerskiej u OTA.
+**Tryb synchronizacji** przełączany na obiekcie (segment `Bez synchronizacji /
+iCal / Channex`): `OFF` — brak, `ICAL` — powyższe, `CHANNEX` — dwukierunkowa
+integracja przez channel managera Channex (plan Pro).
+
+**Channex (2-way, fundament — Plan A)**: RezOp jest źródłem prawdy dostępności.
+Zmiana (rezerwacja, blokada, liczba jednostek) zapisuje zadanie do kolejki
+`AriOutbox`; worker liczy dostępność per typ pokoju (liczba wolnych jednostek)
+i pushuje ARI do Channex (`lib/channex/*`) — best-effort po akcji (`after()`) +
+zamiatanie cronem. Za abstrakcją `ChannelProvider` (stub do dev/testów;
+`CHANNEX_STUB=1`). Realny klient Channex, provisioning, webhooki rezerwacji i
+podłączanie Booking.com/Airbnb — kolejne etapy (Plany B–D, patrz
+`docs/superpowers/plans/2026-07-24-channex-*`).
+
+**Log synchronizacji** (`/admin/kanaly`): chronologia zdarzeń iCal/Channex
+obiektu (`EventLog` `kind IN (ICAL, CHANNEX)`) — importy, pushy, błędy.
 
 *Pliki:* `app/admin/kanaly/page.tsx`, `lib/ical.ts`, `lib/channels.ts`,
+`lib/channex/` (provider, availability, ari, outbox, enqueue-helpers,
+sync-actions), `components/admin/SyncModeSwitch.tsx`, `components/admin/SyncLog.tsx`,
 `app/api/ical/[unitId]/route.ts`, `app/api/cron/sync-ical/route.ts`
 
 ---
@@ -545,7 +560,7 @@ i wszystkie komponenty z przykładami.
 
 ## 10. Testy
 
-- **Jednostkowe** (`npm test`, Vitest — 119 testów): daty, wyceny, faktury,
+- **Jednostkowe** (`npm test`, Vitest — 133 testy): daty, wyceny, faktury,
   meldunek, SMS-y, opinie, płatności P24, konfiguracja stron WWW, sanityzacja
   HTML, routing hostów, domeny (`lib/*.test.ts`).
 - **E2E** (`npm run test:e2e`, Playwright — 12 scenariuszy,
