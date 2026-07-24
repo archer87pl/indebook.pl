@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { planDef, sitePlanFeatures } from "./plans";
+import { channelSyncFeatures, planDef, sitePlanFeatures } from "./plans";
+
+describe("channelSyncFeatures", () => {
+  it("FREE bez kanałów", () =>
+    expect(channelSyncFeatures("FREE")).toEqual({ ical: false, channex: false }));
+  it("STANDARD: iCal, bez Channex", () =>
+    expect(channelSyncFeatures("STANDARD")).toEqual({ ical: true, channex: false }));
+  it("PRO: iCal i Channex", () =>
+    expect(channelSyncFeatures("PRO")).toEqual({ ical: true, channex: true }));
+});
 
 describe("sitePlanFeatures", () => {
   it("FREE: bez kreatora i bez domeny", () => {

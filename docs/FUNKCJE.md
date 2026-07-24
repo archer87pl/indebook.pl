@@ -399,10 +399,31 @@ Zakładka **Kanały** (`/admin/kanaly`), plan Standard+:
 - **wykrywanie podwójnych rezerwacji**: przecięcie blokady iCal z rezerwacją
   bezpośrednią podnosi alert na pulpicie i listę konfliktów w zakładce.
 
-Pełne API dwukierunkowe (ceny, dostępność real-time) — faza 2, wymaga
-certyfikacji partnerskiej u OTA.
+**Tryb synchronizacji** przełączany na obiekcie (segment `Bez synchronizacji /
+iCal / Channex`): `OFF` — brak, `ICAL` — powyższe, `CHANNEX` — dwukierunkowa
+integracja przez channel managera Channex (plan Pro).
+
+**Channex (2-way)**: RezOp jest źródłem prawdy dostępności. Zmiana (rezerwacja,
+blokada, liczba jednostek) zapisuje zadanie do kolejki `AriOutbox`; worker liczy
+dostępność per typ pokoju (liczba wolnych jednostek) i pushuje ARI (availability
++ min. pobyt) do Channex — best-effort po akcji (`after()`) + zamiatanie cronem.
+Za abstrakcją `ChannelProvider` (stub do dev/testów; `CHANNEX_STUB=1`; realny
+klient wybierany po `CHANNEX_API_KEY`). Włączenie trybu **provisionuje** obiekt
+(Property + Room Type + Rate Plan) i rejestruje webhook. **Rezerwacje z OTA**
+wracają webhookiem (`/api/channex/webhook`, autorytatywny re-fetch, idempotencja
+po `channexBookingId`, auto-assign wolnej jednostki, oversell → konflikt).
+**Podłączanie kanałów** z panelu: Booking.com (Hotel ID) i Airbnb (OAuth) —
+kafle statusu w karcie Channex. Ceny (cennik→OTA) — kolejny etap. Uwaga: dokładny
+payload połączeń kanałów `/channels` wypełnia się po potwierdzeniu schemy na
+sandboxie Channex (`lib/channex/client.ts` — metody kanałów). Plany:
+`docs/superpowers/plans/2026-07-24-channex-*`.
+
+**Log synchronizacji** (`/admin/kanaly`): chronologia zdarzeń iCal/Channex
+obiektu (`EventLog` `kind IN (ICAL, CHANNEX)`) — importy, pushy, błędy.
 
 *Pliki:* `app/admin/kanaly/page.tsx`, `lib/ical.ts`, `lib/channels.ts`,
+`lib/channex/` (provider, availability, ari, outbox, enqueue-helpers,
+sync-actions), `components/admin/SyncModeSwitch.tsx`, `components/admin/SyncLog.tsx`,
 `app/api/ical/[unitId]/route.ts`, `app/api/cron/sync-ical/route.ts`
 
 ---
@@ -545,7 +566,7 @@ i wszystkie komponenty z przykładami.
 
 ## 10. Testy
 
-- **Jednostkowe** (`npm test`, Vitest — 119 testów): daty, wyceny, faktury,
+- **Jednostkowe** (`npm test`, Vitest — 133 testy): daty, wyceny, faktury,
   meldunek, SMS-y, opinie, płatności P24, konfiguracja stron WWW, sanityzacja
   HTML, routing hostów, domeny (`lib/*.test.ts`).
 - **E2E** (`npm run test:e2e`, Playwright — 12 scenariuszy,

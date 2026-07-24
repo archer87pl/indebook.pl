@@ -97,6 +97,8 @@ model Property {
   p24ApiKey      String     @default("")
   p24Crc         String     @default("")
   p24Sandbox     Boolean    @default(true)
+  // tryb synchronizacji kanałów: OFF | ICAL | CHANNEX (patrz lib/channex)
+  syncMode       String     @default("ICAL")
   unitTypes      UnitType[]
   photos         Photo[]
   promoCodes     PromoCode[]
@@ -105,6 +107,7 @@ model Property {
   reviews        Review[]
   invoices       Invoice[]
   site           Site?
+  channex        ChannexProperty?
 }
 
 // Rate-limiter oknem stałym (login, reset hasła, formularz kontaktowy,
@@ -207,6 +210,7 @@ model UnitType {
   units       Unit[]
   seasons     RateSeason[]
   photos      Photo[]
+  channexRoom ChannexRoom?
 
   @@index([propertyId])
 }
@@ -289,6 +293,9 @@ model Reservation {
   status         String    @default("PENDING") // PENDING | CONFIRMED | CANCELLED
   source         String    @default("ONLINE") // ONLINE | MANUAL
   paymentOrderId String    @default("") // orderId z bramki (P24) po opłaceniu
+  // integracja Channex: id rezerwacji w Channex (idempotencja webhooka) + prowizja OTA
+  channexBookingId String? @unique
+  otaCommissionGr  Int     @default(0)
   createdAt      DateTime  @default(now())
   expiresAt      DateTime? // PENDING po tym czasie nie blokuje dostępności
   checkInStatus  String    @default("NONE") // NONE | COMPLETED — meldunek online
@@ -390,4 +397,58 @@ model CheckInCard {
   termsAccepted Boolean     @default(false)
   rodoAccepted  Boolean     @default(false)
   completedAt   DateTime    @default(now())
+}
+
+// Integracja Channex — odwzorowanie obiektu na Property w Channex.
+// status: NONE | PENDING | ACTIVE | PAUSED | ERROR
+model ChannexProperty {
+  id         Int       @id @default(autoincrement())
+  propertyId Int       @unique
+  property   Property  @relation(fields: [propertyId], references: [id])
+  channexId  String    @default("")
+  apiKey     String    @default("")
+  status     String    @default("NONE")
+  lastError  String    @default("")
+  syncedAt   DateTime?
+}
+
+// Odwzorowanie typu pokoju na Room Type + Rate Plan w Channex.
+model ChannexRoom {
+  id                Int      @id @default(autoincrement())
+  unitTypeId        Int      @unique
+  unitType          UnitType @relation(fields: [unitTypeId], references: [id])
+  channexRoomTypeId String   @default("")
+  channexRatePlanId String   @default("")
+}
+
+// Kolejka zmian dostępności do wypchnięcia do Channex (wzorzec outbox).
+// status: PENDING | SENT | ERROR
+model AriOutbox {
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  unitTypeId Int
+  dateFrom   String
+  dateTo     String
+  status     String   @default("PENDING")
+  attempts   Int      @default(0)
+  lastError  String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status])
+  @@index([propertyId])
+}
+
+// Połączenie kanału OTA (Booking.com/Airbnb/…) obiektu z Channex (Plan D).
+// type: BOOKING | AIRBNB | EXPEDIA | OTHER; status: NONE | PENDING | CONNECTED | ERROR
+model ChannexChannel {
+  id               Int      @id @default(autoincrement())
+  propertyId       Int
+  type             String
+  channexChannelId String   @default("")
+  status           String   @default("NONE")
+  lastError        String   @default("")
+  createdAt        DateTime @default(now())
+
+  @@unique([propertyId, type])
 }

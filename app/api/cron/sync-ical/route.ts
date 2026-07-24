@@ -1,4 +1,4 @@
-import { syncAllIcalFeeds } from "@/lib/jobs";
+import { processAllChannexOutbox, syncAllIcalFeeds } from "@/lib/jobs";
 import { safeEqual } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
@@ -13,5 +13,6 @@ export async function GET(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
   const feeds = await syncAllIcalFeeds();
-  return Response.json({ ok: true, feeds });
+  const channexAri = await processAllChannexOutbox();
+  return Response.json({ ok: true, feeds, channexAri });
 }
