@@ -5,6 +5,7 @@ import { CHECKIN_RETENTION_DAYS, checkInUrl } from "./checkin";
 import { addDaysISO, todayISO } from "./dates";
 import { prisma } from "./db";
 import { syncIcalFeed } from "./ical";
+import { processOutbox } from "./channex/outbox";
 import { sendMail } from "./mailer";
 import { appUrl } from "./payments";
 import { reviewUrl } from "./reviews";
@@ -143,6 +144,20 @@ export async function purgeExpiredSessions(): Promise<number> {
   if (sessions.count > 0)
     console.log(`[JOBS] usunięto ${sessions.count} wygasłych sesji`);
   return sessions.count;
+}
+
+/** Przetwarza zaległe zadania ARI (Channex) dla wszystkich aktywnych obiektów. */
+export async function processAllChannexOutbox(): Promise<number> {
+  const active = await prisma.channexProperty.findMany({
+    where: { status: "ACTIVE" },
+    select: { propertyId: true },
+  });
+  let total = 0;
+  for (const cp of active) {
+    const { sent } = await processOutbox(cp.propertyId);
+    total += sent;
+  }
+  return total;
 }
 
 /** Kasuje wygasłe okna rate-limitera (retencja licznika). */

@@ -14,7 +14,8 @@ import {
 import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from "./password";
 import { rateLimitOrRedirect } from "./rate-limit";
 import { assertPublicUrl } from "./net";
-import { isValidISO, todayISO } from "./dates";
+import { afterAri, syncUnitRange } from "./channex/enqueue-helpers";
+import { addDaysISO, isValidISO, todayISO } from "./dates";
 import { logEvent } from "./log";
 import { SETTING_SECTIONS } from "./settings";
 import { prisma } from "./db";
@@ -316,6 +317,9 @@ export async function createReservation(formData: FormData) {
     propertyId: unitType.property.id,
     meta: `${guestName} · ${from} → ${to} · ${formatPln(totalGr)}`,
   });
+  if (unitType.property.syncMode === "CHANNEX") {
+    await afterAri(unitType.property.id, unitType.id, from, to);
+  }
   mailAfter({
     to: email,
     subject: `Rezerwacja ${code} — oczekuje na wpłatę zaliczki`,
@@ -403,6 +407,7 @@ export async function cancelByGuest(formData: FormData) {
       propertyId: reservation.unit.unitType.propertyId,
       meta: reservation.guestName,
     });
+    await syncUnitRange(reservation.unitId, reservation.checkIn, reservation.checkOut);
     mailAfter({
       to: reservation.email,
       subject: `Rezerwacja ${code} anulowana`,
@@ -513,6 +518,12 @@ export async function changeReservationDates(formData: FormData) {
     throw e;
   }
 
+  // synchronizacja Channex: pokrywa okno stare∪nowe (ten sam typ pokoju)
+  await syncUnitRange(
+    r.unitId,
+    from < r.checkIn ? from : r.checkIn,
+    to > r.checkOut ? to : r.checkOut
+  );
   mailAfter({
     to: r.email,
     subject: `Rezerwacja ${code} — termin zmieniony`,
@@ -840,6 +851,7 @@ export async function adminSetStatus(formData: FormData) {
       });
     }
   }
+  await syncUnitRange(reservation.unitId, reservation.checkIn, reservation.checkOut);
   revalidatePath("/admin/rezerwacje");
   redirect("/admin/rezerwacje");
 }
@@ -1205,6 +1217,7 @@ export async function adminAddBlock(formData: FormData) {
   if (!isValidISO(startDate) || !isValidISO(endDate) || endDate <= startDate)
     fail("Nieprawidłowy zakres blokady (koniec musi być po początku).");
   await prisma.block.create({ data: { unitId, startDate, endDate, note } });
+  await syncUnitRange(unitId, startDate, endDate);
   revalidatePath("/admin/kalendarz");
   redirect("/admin/kalendarz");
 }
@@ -1218,6 +1231,7 @@ export async function adminDeleteBlock(formData: FormData) {
   });
   if (block && block.unit.unitType.propertyId === property.id) {
     await prisma.block.delete({ where: { id } });
+    await syncUnitRange(block.unitId, block.startDate, block.endDate);
   }
   revalidatePath("/admin/kalendarz");
   redirect("/admin/kalendarz");
@@ -1636,6 +1650,9 @@ export async function toggleUnitActive(formData: FormData) {
   const unit = await ownedUnit(id, property.id);
   if (unit) {
     await prisma.unit.update({ where: { id }, data: { active: !unit.active } });
+    if (property.syncMode === "CHANNEX") {
+      await afterAri(property.id, unit.unitTypeId, todayISO(), addDaysISO(todayISO(), 540));
+    }
   }
   revalidatePath("/admin/pokoje");
   redirect("/admin/pokoje");
