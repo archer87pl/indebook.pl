@@ -642,7 +642,21 @@ export default async function EditReservationPage(props: {
                   Kwota: {formatPln(r.totalGr)} brutto (zaliczkowa: {formatPln(r.depositGr)}).
                   Dane sprzedawcy z ustawień obiektu.
                 </p>
-                <Button size="sm" type="submit" className="w-full">
+                {!property.sellerNip.trim() && (
+                  <p className="rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] leading-snug text-amber-800">
+                    Aby wystawić fakturę, najpierw uzupełnij{" "}
+                    <Link href="/admin/obiekt" className="font-semibold underline">
+                      NIP sprzedawcy w ustawieniach obiektu
+                    </Link>
+                    .
+                  </p>
+                )}
+                <Button
+                  size="sm"
+                  type="submit"
+                  className="w-full"
+                  disabled={!property.sellerNip.trim()}
+                >
                   Wystaw fakturę
                 </Button>
               </form>

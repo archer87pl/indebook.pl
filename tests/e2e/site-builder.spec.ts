@@ -63,15 +63,15 @@ test.describe("kreator strony WWW", () => {
     await expect(page.getByText("Sekcje strony")).toBeVisible();
     await expect(page.getByText("Masz nieopublikowane zmiany")).toHaveCount(0);
 
-    // edycja nagłówka hero
+    // edycja nagłówka hero — sukces sygnalizuje toast (parametr ?saved=1 jest
+    // zdejmowany z URL przez Toaster, więc czekamy na powiadomienie)
     await page.locator("summary", { hasText: "Nagłówek (hero)" }).click();
     await page.locator('input[name="headline"]').fill(headline);
     await page.getByRole("button", { name: "Zapisz sekcję" }).first().click();
-    await expect(page).toHaveURL(/saved=1/);
+    await expect(page.getByText("Zapisano zmiany.")).toBeVisible();
 
     // publikacja
     await page.getByRole("button", { name: /Opublikuj/ }).click();
-    await expect(page).toHaveURL(/saved=1/);
     await expect(page.getByRole("link", { name: "Zobacz na żywo" })).toBeVisible();
 
     // strona live na subdomenie; poll — ISR ma semantykę stale-while-revalidate.

@@ -6,7 +6,7 @@
 // (history.replaceState — bez uruchamiania paska postępu). Bez zależności.
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, CircleAlert, X } from "lucide-react";
 
 type Kind = "success" | "error";
@@ -47,15 +47,21 @@ function ToastCard({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 export default function Toaster() {
   const params = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idRef = useRef(0);
   const seenRef = useRef("");
 
   useEffect(() => {
     const hits = PARAMS.filter((p) => params.get(p) !== null);
-    if (hits.length === 0) return;
+    // brak parametru wyniku → wyzeruj strażnika, żeby ten sam błąd/komunikat
+    // pokazany ponownie (np. druga próba akcji) znów wywołał toast
+    if (hits.length === 0) {
+      seenRef.current = "";
+      return;
+    }
     const key = `${pathname}|${hits.map((p) => `${p}=${params.get(p)}`).join("&")}`;
-    if (seenRef.current === key) return;
+    if (seenRef.current === key) return; // strażnik podwójnego wywołania (StrictMode)
     seenRef.current = key;
 
     const raf = requestAnimationFrame(() => {
@@ -69,14 +75,16 @@ export default function Toaster() {
       }
     });
 
-    // zdejmij obsłużone parametry z adresu (pozostałe zostają)
+    // zdejmij obsłużone parametry z adresu przez router (utrzymuje synchronizację
+    // stanu Next — inaczej useSearchParams zwracałby stary parametr i ten sam
+    // komunikat nie pokazałby się drugi raz). Pozostałe parametry zostają.
     const sp = new URLSearchParams(params.toString());
     for (const p of hits) sp.delete(p);
     const qs = sp.toString();
-    window.history.replaceState(null, "", qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
 
     return () => cancelAnimationFrame(raf);
-  }, [params, pathname]);
+  }, [params, pathname, router]);
 
   if (toasts.length === 0) return null;
   return (
