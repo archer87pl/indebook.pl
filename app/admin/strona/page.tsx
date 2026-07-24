@@ -24,9 +24,9 @@ import { SITE_FONTS, SITE_TEMPLATES, siteTemplate } from "@/lib/site-themes";
 export const dynamic = "force-dynamic";
 
 export default async function SitePage(props: {
-  searchParams: Promise<{ error?: string; saved?: string; detach?: string }>;
+  searchParams: Promise<{ detach?: string }>;
 }) {
-  const { error, saved, detach } = await props.searchParams;
+  const { detach } = await props.searchParams;
   const { property } = await requireOwner();
   const features = sitePlanFeatures(property.plan);
 
@@ -70,7 +70,6 @@ export default async function SitePage(props: {
             Zbuduj stronę swojego obiektu — poprowadzimy Cię krok po kroku.
           </p>
         </header>
-        {error && <p className="alert-error">{error}</p>}
         <SiteWizard
           templates={SITE_TEMPLATES}
           fonts={Object.entries(SITE_FONTS).map(([key, f]) => ({ key, label: f.label }))}
@@ -149,8 +148,6 @@ export default async function SitePage(props: {
         </div>
       </header>
 
-      {error && <p className="alert-error">{error}</p>}
-      {saved && <p className="alert-success">Zapisano.</p>}
       {dirty && site.publishedAt && (
         <p className="rounded-[11px] border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-800">
           Masz nieopublikowane zmiany — goście widzą poprzednią wersję strony, dopóki nie

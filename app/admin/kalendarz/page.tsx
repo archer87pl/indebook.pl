@@ -147,13 +147,6 @@ export default async function CalendarPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.synced && (
-        <p className="alert-success">
-          Synchronizacja iCal zakończona — zaimportowane terminy: {sp.synced}.
-        </p>
-      )}
-
       {/* Pasek sterowania */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-0.5">

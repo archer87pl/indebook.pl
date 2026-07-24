@@ -8,11 +8,8 @@ import { PLANS, planDef } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlanPage(props: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
-}) {
+export default async function PlanPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
   const units = await prisma.unit.count({
     where: { unitType: { propertyId: property.id } },
   });
@@ -33,9 +30,6 @@ export default async function PlanPage(props: {
           jednostek
         </p>
       </div>
-
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">Plan zmieniony.</p>}
 
       <div className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => {

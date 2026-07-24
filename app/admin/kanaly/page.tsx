@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Check, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { Check, RefreshCw, Share2, Trash2, TriangleAlert } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   addIcalFeed,
   deleteIcalFeed,
@@ -26,11 +27,8 @@ const CHANNEL_DOT: Record<string, string> = {
   OTHER: "#d5ddd8",
 };
 
-export default async function ChannelsPage(props: {
-  searchParams: Promise<{ error?: string; synced?: string }>;
-}) {
+export default async function ChannelsPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
 
   const units = await prisma.unit.findMany({
     where: { unitType: { propertyId: property.id } },
@@ -58,16 +56,6 @@ export default async function ChannelsPage(props: {
           </form>
         )}
       </div>
-
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.synced && (
-        <div className="alert-success flex items-center gap-2">
-          <Check size={14} strokeWidth={2.4} className="flex-none" />
-          <span>
-            Synchronizacja zakończona — zaimportowane terminy: {sp.synced}.
-          </span>
-        </div>
-      )}
 
       {conflicts.length > 0 && (
         <div className="space-y-3 rounded-[14px] border border-danger-600/30 bg-danger-100 p-[18px]">
@@ -110,6 +98,16 @@ export default async function ChannelsPage(props: {
       )}
 
       <div className="space-y-4">
+        {units.length === 0 && (
+          <Card>
+            <EmptyState
+              icon={<Share2 size={26} strokeWidth={2} />}
+              title="Najpierw dodaj pokoje"
+              description="Kanały sprzedaży (Booking.com, Airbnb) podpinasz do konkretnych jednostek. Dodaj pierwszy pokój, aby zsynchronizować kalendarze."
+              action={<Button href="/admin/pokoje">Przejdź do Pokoi</Button>}
+            />
+          </Card>
+        )}
         {units.map((u) => {
           const exportUrl = `${appUrl()}/api/ical/${u.id}?t=${u.icalToken}`;
           return (

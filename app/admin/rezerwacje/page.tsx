@@ -84,8 +84,6 @@ export default async function ReservationsPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs
           items={FILTERS.map((f) => ({

@@ -9,11 +9,8 @@ import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewReservationPage(props: {
-  searchParams: Promise<{ error?: string }>;
-}) {
+export default async function NewReservationPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
   const unitTypes = await prisma.unitType.findMany({
     where: { propertyId: property.id },
     orderBy: { id: "asc" },
@@ -23,8 +20,6 @@ export default async function NewReservationPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-
       <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
         <Card>
           <CardHeader

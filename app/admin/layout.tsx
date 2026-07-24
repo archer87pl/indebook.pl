@@ -5,6 +5,8 @@ import AdminNav, { type AdminNavItem } from "@/components/admin/AdminNav";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import MobileAdminNav from "@/components/admin/MobileAdminNav";
 import { NavPending, NavProgressProvider } from "@/components/admin/NavProgress";
+import Toaster from "@/components/ui/Toaster";
+import { Suspense } from "react";
 import Avatar from "@/components/ui/Avatar";
 import { logout } from "@/lib/actions";
 import { requireOwner } from "@/lib/auth";
@@ -130,6 +132,9 @@ export default async function AdminLayout({
         <AdminTopbar today={todayLabel()} />
         <main className="flex-1 px-4 py-4 lg:px-6 lg:py-5">{children}</main>
       </div>
+      <Suspense fallback={null}>
+        <Toaster />
+      </Suspense>
     </div>
     </NavProgressProvider>
   );

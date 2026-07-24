@@ -125,6 +125,18 @@ h3 {
   to { opacity: 1; translate: 0 0; }
 }
 
+/* Toast panelu — wejście z prawej */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast-in {
+  animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in { animation-duration: 0.01ms; }
+}
+
 /* Górny pasek postępu nawigacji panelu (app-shell loader) */
 @keyframes navprog {
   from { width: 0; }

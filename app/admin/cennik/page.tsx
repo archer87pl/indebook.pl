@@ -18,11 +18,8 @@ import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-export default async function PricingPage(props: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
-}) {
+export default async function PricingPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
   const [promoCodes, pricingRules, unitTypes] = await prisma.$transaction([
     prisma.promoCode.findMany({
       where: { propertyId: property.id },
@@ -38,9 +35,6 @@ export default async function PricingPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">Zapisano regułę cenową.</p>}
-
       {unitTypes.map((ut) => (
         <Card key={ut.id}>
           <CardHeader

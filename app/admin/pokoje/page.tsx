@@ -82,11 +82,8 @@ function AmenityCheckbox({
   );
 }
 
-export default async function RoomsPage(props: {
-  searchParams: Promise<{ error?: string }>;
-}) {
+export default async function RoomsPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
   const unitTypes = await prisma.unitType.findMany({
     where: { propertyId: property.id },
     include: {
@@ -98,8 +95,6 @@ export default async function RoomsPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-
       {unitTypes.map((ut) => (
         <Card key={ut.id}>
           <CardHeader

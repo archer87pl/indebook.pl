@@ -37,11 +37,8 @@ const SUBNAV = [
   { href: "/admin/kanaly", label: "Kanały i iCal", icon: Share2 },
 ];
 
-export default async function PropertySettingsPage(props: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
-}) {
+export default async function PropertySettingsPage() {
   const { property } = await requireOwner();
-  const sp = await props.searchParams;
   const [photos, faqs] = await prisma.$transaction([
     prisma.photo.findMany({
       where: { propertyId: property.id },
@@ -55,9 +52,6 @@ export default async function PropertySettingsPage(props: {
 
   return (
     <div className="space-y-4">
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">Zapisano zmiany.</p>}
-
       <div className="grid items-start gap-4 lg:grid-cols-[210px_1fr]">
         {/* Subnawigacja sekcji (11a) */}
         <nav className="top-[70px] flex gap-1 overflow-x-auto rounded-[14px] border border-slate-200 bg-white p-3 lg:sticky lg:flex-col">

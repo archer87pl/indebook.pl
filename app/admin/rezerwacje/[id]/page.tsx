@@ -82,11 +82,9 @@ function StepLine({ done }: { done: boolean }) {
 
 export default async function EditReservationPage(props: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; saved?: string; invited?: string }>;
 }) {
   const { property } = await requireOwner();
   const { id } = await props.params;
-  const sp = await props.searchParams;
 
   const reservation = await prisma.reservation.findUnique({
     where: { id: Number(id) },
@@ -193,10 +191,6 @@ export default async function EditReservationPage(props: {
           )}
         </div>
       </div>
-
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">Zapisano zmiany.</p>}
-      {sp.invited && <p className="alert-success">Link do meldunku online wysłany do gościa.</p>}
 
       <div className="grid items-start gap-4 xl:grid-cols-[1fr_320px]">
         {/* KOLUMNA GŁÓWNA */}

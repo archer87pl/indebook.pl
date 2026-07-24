@@ -68,8 +68,6 @@ export default async function PaymentsConfigPage(props: {
         )}
       </div>
 
-      {sp.error && <p className="alert-error">{sp.error}</p>}
-      {sp.saved && <p className="alert-success">Zapisano konfigurację płatności.</p>}
       {sp.cleared && (
         <p className="alert-success">
           Dane Przelewy24 usunięte — bramka wróciła do trybu symulacji.
