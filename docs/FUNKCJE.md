@@ -753,10 +753,24 @@ i **nie przepuszcza polskich wariantów** na powierzchniach gościa — inaczej
 łatwo byłoby przywrócić `formatPln` przy kolejnej zmianie i nikt by nie
 zauważył.
 
+### Udogodnienia
+
+W bazie (`UnitType.amenities`) siedzą **klucze**, nie etykiety — `wifi`, `ac`,
+`private-bathroom`. `AMENITIES` w `lib/amenities.ts` trzyma klucz, neutralną
+językowo ikonę i **polską** etykietę dla panelu recepcji; powierzchnie gościa
+tłumaczą po kluczu z `common.amenities.<key>`.
+
+Dzięki temu ta sama rezerwacja pokazuje „Klimatyzacja" polskiemu gościowi
+i „Klimaanlage" niemieckiemu, bez dublowania danych. `lib/amenities.test.ts`
+pilnuje trzech rzeczy: każdy klucz ma tłumaczenie we wszystkich językach,
+w słownikach nie ma osieroconych wpisów po usuniętych udogodnieniach, a żadna
+powierzchnia gościa nie sięga po polskie `label` z katalogu.
+
 ### Czego (jeszcze) nie tłumaczymy
 
-Etykiety udogodnień (`lib/amenities.ts`) są po polsku — to słownik treści,
-nie interfejsu, więc idzie razem z tłumaczeniem opisów obiektu.
+Treści wpisywane przez właściciela — nazwy i opisy pokoi, sekcje stron WWW,
+regulamin. To osobny etap: wymaga wersji językowych w bazie i edytora
+per język, nie samych słowników.
 
 ---
 

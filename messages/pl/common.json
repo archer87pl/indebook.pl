@@ -42,5 +42,23 @@
     "signatureRequired": "Podpis jest wymagany — złóż podpis w polu formularza.",
     "additionalGuestName": "Gość {n}: podaj imię i nazwisko.",
     "additionalGuestBirthDate": "Gość {n}: nieprawidłowa data urodzenia."
+  },
+  "amenities": {
+    "wifi": "Wi-Fi",
+    "tv": "TV",
+    "ac": "Klimatyzacja",
+    "heating": "Ogrzewanie",
+    "private-bathroom": "Prywatna łazienka",
+    "kitchenette": "Aneks kuchenny",
+    "fridge": "Lodówka",
+    "kettle": "Czajnik / kawa i herbata",
+    "balcony": "Balkon / taras",
+    "view": "Widok (jezioro/góry/morze)",
+    "parking": "Parking",
+    "pets": "Zwierzęta mile widziane",
+    "crib": "Łóżeczko dla dziecka",
+    "workspace": "Miejsce do pracy",
+    "washer": "Pralka",
+    "accessible": "Dostępny dla osób z niepełnosprawnością"
   }
 }

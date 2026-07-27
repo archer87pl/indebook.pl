@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
 import { PROPERTY_SLUG, futureISO, loginAsOwner } from "./helpers";
+
+// jeden test dosypuje udogodnienia do bazy, stad ladowanie .env
+loadEnvConfig(process.cwd());
+
+type Db = typeof import("../../lib/db");
 
 // Wielojęzyczność interfejsu gościa: prefiks w URL (PL bez, EN/DE z),
 // przełącznik, auto-detekcja z Accept-Language, hreflang, oraz regresja —
@@ -95,6 +101,36 @@ test.describe("i18n gościa", () => {
     expect(pl).toContain("zł");
     expect(de).toContain("PLN");
     expect(de).not.toBe(pl);
+  });
+
+  test("udogodnienia tlumacza sie na stronie pokoju", async ({ page }) => {
+    // klucz siedzi w bazie, etykieta w slowniku — te same dane, inny jezyk
+    const { prisma }: Db = await import("../../lib/db");
+    const unitType = await prisma.unitType.findFirstOrThrow({
+      where: { property: { slug: PROPERTY_SLUG } },
+      select: { id: true, amenities: true },
+    });
+    const original = unitType.amenities;
+    await prisma.unitType.update({
+      where: { id: unitType.id },
+      data: { amenities: JSON.stringify(["ac", "wifi"]) },
+    });
+
+    try {
+      const path = `/o/${PROPERTY_SLUG}/pokoj/${unitType.id}`;
+
+      await page.goto(path);
+      await expect(page.getByText("Klimatyzacja").first()).toBeVisible();
+
+      await page.goto(`/de${path}`);
+      await expect(page.getByText("Klimaanlage").first()).toBeVisible();
+      await expect(page.getByText("Klimatyzacja")).toHaveCount(0);
+    } finally {
+      await prisma.unitType.update({
+        where: { id: unitType.id },
+        data: { amenities: original },
+      });
+    }
   });
 
   test("panel recepcji zostaje po polsku, bez prefiksu języka", async ({ page }) => {

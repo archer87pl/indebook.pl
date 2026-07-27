@@ -288,7 +288,7 @@ export default async function PropertyPage(props: {
                               key={a.key}
                               className="rounded-md bg-slate-100 px-2 py-0.5 text-[10.5px] font-semibold text-slate-600"
                             >
-                              {a.icon} {a.label}
+                              {a.icon} {tc(`amenities.${a.key}`)}
                             </span>
                           ))}
                           {amenityDefs.length > 4 && (

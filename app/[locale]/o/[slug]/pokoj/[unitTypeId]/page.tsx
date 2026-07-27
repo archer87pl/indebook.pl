@@ -153,7 +153,7 @@ export default async function RoomPage(props: {
                       className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600"
                     >
                       <Icon size={13} strokeWidth={2} className="text-brand-600" />
-                      {a.label}
+                      {tc(`amenities.${a.key}`)}
                     </span>
                   );
                 })}

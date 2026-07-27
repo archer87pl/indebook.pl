@@ -42,5 +42,23 @@
     "signatureRequired": "A signature is required — please sign in the form field.",
     "additionalGuestName": "Guest {n}: enter the full name.",
     "additionalGuestBirthDate": "Guest {n}: invalid date of birth."
+  },
+  "amenities": {
+    "wifi": "Wi-Fi",
+    "tv": "TV",
+    "ac": "Air conditioning",
+    "heating": "Heating",
+    "private-bathroom": "Private bathroom",
+    "kitchenette": "Kitchenette",
+    "fridge": "Fridge",
+    "kettle": "Kettle / coffee and tea",
+    "balcony": "Balcony / terrace",
+    "view": "View (lake/mountains/sea)",
+    "parking": "Parking",
+    "pets": "Pets welcome",
+    "crib": "Baby cot",
+    "workspace": "Workspace",
+    "washer": "Washing machine",
+    "accessible": "Wheelchair accessible"
   }
 }

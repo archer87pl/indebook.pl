@@ -10,6 +10,7 @@ type UnitsSection = Extract<SiteSection, { type: "units" }>;
 
 export default async function Units({ section, ctx }: { section: UnitsSection; ctx: SiteCtx }) {
   const t = await getTranslations({ locale: ctx.locale, namespace: "site" });
+  const tc = await getTranslations({ locale: ctx.locale, namespace: "common" });
   const unitTypes = ctx.property.unitTypes;
   if (unitTypes.length === 0) return null;
   return (
@@ -64,7 +65,7 @@ export default async function Units({ section, ctx }: { section: UnitsSection; c
                           key={a.key}
                           className="rounded-md bg-[var(--site-text)]/5 px-2 py-0.5 text-[11px] font-medium text-[var(--site-muted)]"
                         >
-                          {a.icon} {a.label}
+                          {a.icon} {tc(`amenities.${a.key}`)}
                         </span>
                       ))}
                     </p>

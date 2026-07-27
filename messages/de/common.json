@@ -42,5 +42,23 @@
     "signatureRequired": "Eine Unterschrift ist erforderlich — bitte im Formularfeld unterschreiben.",
     "additionalGuestName": "Gast {n}: Vor- und Nachname angeben.",
     "additionalGuestBirthDate": "Gast {n}: ungültiges Geburtsdatum."
+  },
+  "amenities": {
+    "wifi": "WLAN",
+    "tv": "TV",
+    "ac": "Klimaanlage",
+    "heating": "Heizung",
+    "private-bathroom": "Eigenes Bad",
+    "kitchenette": "Küchenzeile",
+    "fridge": "Kühlschrank",
+    "kettle": "Wasserkocher / Kaffee und Tee",
+    "balcony": "Balkon / Terrasse",
+    "view": "Aussicht (See/Berge/Meer)",
+    "parking": "Parkplatz",
+    "pets": "Haustiere willkommen",
+    "crib": "Kinderbett",
+    "workspace": "Arbeitsplatz",
+    "washer": "Waschmaschine",
+    "accessible": "Barrierefrei"
   }
 }
