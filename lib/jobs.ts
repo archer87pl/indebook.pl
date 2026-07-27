@@ -7,6 +7,7 @@ import { prisma } from "./db";
 import { syncIcalFeed } from "./ical";
 import { guestT } from "./guest-mail";
 import { processOutbox } from "./channex/outbox";
+import { refreshRates } from "./rates/refresh";
 import { sendMail } from "./mailer";
 import { appUrl } from "./payments";
 import { reviewUrl } from "./reviews";
@@ -203,4 +204,17 @@ export async function syncAllIcalFeeds(): Promise<number> {
   if (feeds.length > 0)
     console.log(`[JOBS] zsynchronizowano ${feeds.length} kalendarzy iCal`);
   return feeds.length;
+}
+
+/** Odbudowa horyzontu rekomendacji (180 dni) dla obiektów w trybie SMARTRATE. */
+export async function refreshAllRates(): Promise<number> {
+  const from = todayISO();
+  const to = addDaysISO(from, 180);
+  const types = await prisma.unitType.findMany({
+    where: { property: { pricingMode: "SMARTRATE" } },
+    select: { id: true },
+  });
+  let days = 0;
+  for (const t of types) days += await refreshRates(t.id, from, to);
+  return days;
 }
