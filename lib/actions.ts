@@ -37,6 +37,9 @@ import {
   parseAdditionalGuests,
 } from "./checkin";
 import { PRICING_RULE_KINDS, quoteStayDynamic } from "./dynamic-pricing";
+import { pricingPlanFeatures } from "./plans";
+import { ratesProvider, type Market } from "./rates/provider";
+import { afterRates, defaultGuards, invalidateRates } from "./rates/refresh";
 import {
   INVOICE_KINDS,
   invoiceNumber,
@@ -1175,6 +1178,7 @@ export async function adminUpdatePricing(formData: FormData) {
       where: { id },
       data: { basePriceGr, minStay: Math.max(1, minStay) },
     });
+    await invalidateRates(id);
   }
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
@@ -1200,6 +1204,7 @@ export async function adminAddSeason(formData: FormData) {
   await prisma.rateSeason.create({
     data: { unitTypeId, name, startDate, endDate, priceGr, minStay: Math.max(1, minStay) },
   });
+  await invalidateRates(unitTypeId);
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
 }
@@ -1240,6 +1245,7 @@ export async function adminDeleteSeason(formData: FormData) {
   });
   if (season && season.unitType.propertyId === property.id) {
     await prisma.rateSeason.delete({ where: { id } });
+    await invalidateRates(season.unitTypeId);
   }
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
@@ -2135,4 +2141,79 @@ export async function deleteUnit(formData: FormData) {
   ]);
   revalidatePath("/admin/pokoje");
   redirect("/admin/pokoje");
+}
+
+/** Lista rynków SmartRate dla panelu; pusta, gdy integracja nieskonfigurowana. */
+export async function listMarkets(): Promise<Market[]> {
+  const provider = ratesProvider();
+  if (!provider) return [];
+  try {
+    return await provider.markets();
+  } catch {
+    return [];
+  }
+}
+
+/** Przełączenie silnika wyceny i wybór rynku SmartRate. */
+export async function setPricingMode(formData: FormData) {
+  const { property } = await requireOwner();
+  const mode = str(formData, "pricingMode") === "SMARTRATE" ? "SMARTRATE" : "BASIC";
+  const marketId = str(formData, "smartRateMarketId").slice(0, 60);
+  const fail = (msg: string) =>
+    redirect(`/admin/cennik?error=${encodeURIComponent(msg)}`);
+
+  if (mode === "SMARTRATE") {
+    if (!pricingPlanFeatures(property.plan).smartRate)
+      fail("Ceny dynamiczne SmartRate są dostępne w planie Pro.");
+    if (!marketId) fail("Wybierz rynek, na którym leży obiekt.");
+  }
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: { pricingMode: mode, smartRateMarketId: marketId, smartRateError: "" },
+  });
+
+  // zmiana trybu lub rynku unieważnia wszystkie rekomendacje obiektu
+  const types = await prisma.unitType.findMany({
+    where: { propertyId: property.id },
+    select: { id: true, basePriceGr: true, minPriceGr: true },
+  });
+  for (const t of types) {
+    await invalidateRates(t.id);
+    // pierwsze włączenie: uzupełnij widełki wyliczone z ceny bazowej
+    if (mode === "SMARTRATE" && t.minPriceGr === null) {
+      await prisma.unitType.update({
+        where: { id: t.id },
+        data: defaultGuards(t.basePriceGr),
+      });
+    }
+  }
+  if (mode === "SMARTRATE") {
+    const from = todayISO();
+    for (const t of types) await afterRates(t.id, from, addDaysISO(from, 180));
+  }
+
+  revalidatePath("/admin/cennik");
+  redirect("/admin/cennik?saved=1");
+}
+
+/** Widełki bezpieczeństwa dla typu pokoju (dolna i górna granica ceny nocy). */
+export async function saveRateGuards(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "unitTypeId"));
+  const minPriceGr = parsePlnToGr(str(formData, "minPriceZl"));
+  const maxPriceGr = parsePlnToGr(str(formData, "maxPriceZl"));
+  const fail = (msg: string) =>
+    redirect(`/admin/cennik?error=${encodeURIComponent(msg)}`);
+
+  if (!(await ownedUnitType(id, property.id))) redirect("/admin/cennik");
+  if (!Number.isFinite(minPriceGr) || !Number.isFinite(maxPriceGr) || minPriceGr < 1)
+    fail("Widełki muszą być liczbami większymi od zera.");
+  if (minPriceGr > maxPriceGr)
+    fail("Cena minimalna nie może być wyższa od maksymalnej.");
+
+  await prisma.unitType.update({ where: { id }, data: { minPriceGr, maxPriceGr } });
+  await invalidateRates(id);
+  revalidatePath("/admin/cennik");
+  redirect("/admin/cennik?saved=1");
 }
