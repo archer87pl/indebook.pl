@@ -80,3 +80,8 @@ export function sitePlanFeatures(plan: string): {
     customDomain: plan === "PRO",
   };
 }
+
+// Ceny dynamiczne z SmartRate: wyróżnik planu Pro (jak własna domena i Channex).
+export function pricingPlanFeatures(plan: string): { smartRate: boolean } {
+  return { smartRate: plan === "PRO" };
+}

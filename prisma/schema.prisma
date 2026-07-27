@@ -36,11 +36,11 @@ model EventLog {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
+  id           Int                  @id @default(autoincrement())
+  email        String               @unique
   passwordHash String
   name         String
-  isAdmin      Boolean   @default(false) // globalny administrator platformy
+  isAdmin      Boolean              @default(false) // globalny administrator platformy
   createdAt    DateTime             @default(now())
   sessions     Session[]
   resetTokens  PasswordResetToken[]
@@ -65,49 +65,54 @@ model PasswordResetToken {
 }
 
 model Property {
-  id             Int        @id @default(autoincrement())
-  ownerId        Int        @unique
-  owner          User       @relation(fields: [ownerId], references: [id])
-  slug           String     @unique
-  name           String
-  plan           String     @default("FREE") // FREE | STANDARD | PRO
+  id                Int              @id @default(autoincrement())
+  ownerId           Int              @unique
+  owner             User             @relation(fields: [ownerId], references: [id])
+  slug              String           @unique
+  name              String
+  plan              String           @default("FREE") // FREE | STANDARD | PRO
   // zawieszony przez administratora platformy: ukryty w katalogu,
   // strona obiektu niedostępna, brak nowych rezerwacji
-  suspended      Boolean    @default(false)
-  createdAt      DateTime   @default(now())
-  description    String     @default("")
-  address        String     @default("")
-  checkInFrom    String     @default("15:00")
-  checkOutTo     String     @default("11:00")
-  depositPercent Int        @default(30)
-  terms          String     @default("") // regulamin obiektu
-  privacyPolicy  String     @default("") // polityka prywatności
+  suspended         Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  description       String           @default("")
+  address           String           @default("")
+  checkInFrom       String           @default("15:00")
+  checkOutTo        String           @default("11:00")
+  depositPercent    Int              @default(30)
+  terms             String           @default("") // regulamin obiektu
+  privacyPolicy     String           @default("") // polityka prywatności
   // dane sprzedawcy na fakturach (puste name/address = nazwa/adres obiektu)
-  sellerName     String     @default("")
-  sellerNip      String     @default("")
-  sellerAddress  String     @default("")
-  bankAccount    String     @default("")
+  sellerName        String           @default("")
+  sellerNip         String           @default("")
+  sellerAddress     String           @default("")
+  bankAccount       String           @default("")
   // instrukcje przyjazdu (kody drzwi, WiFi, dojazd) — gość widzi je dopiero
   // po wypełnieniu meldunku online (zachęta do potwierdzenia tożsamości)
-  arrivalInfo    String     @default("")
+  arrivalInfo       String           @default("")
   // Przelewy24 obiektu — zaliczki gości trafiają bezpośrednio na konto
   // właściciela (własna umowa z P24). Brak kompletu danych = tryb symulacji.
-  p24MerchantId  String     @default("")
-  p24PosId       String     @default("")
-  p24ApiKey      String     @default("")
-  p24Crc         String     @default("")
-  p24Sandbox     Boolean    @default(true)
+  p24MerchantId     String           @default("")
+  p24PosId          String           @default("")
+  p24ApiKey         String           @default("")
+  p24Crc            String           @default("")
+  p24Sandbox        Boolean          @default(true)
   // tryb synchronizacji kanałów: OFF | ICAL | CHANNEX (patrz lib/channex)
-  syncMode       String     @default("ICAL")
-  unitTypes      UnitType[]
-  photos         Photo[]
-  promoCodes     PromoCode[]
-  faqs           PropertyFaq[]
-  pricingRules   PricingRule[]
-  reviews        Review[]
-  invoices       Invoice[]
-  site           Site?
-  channex        ChannexProperty?
+  syncMode          String           @default("ICAL")
+  // silnik wyceny: BASIC (reguły PricingRule) | SMARTRATE (API SmartRate)
+  pricingMode       String           @default("BASIC")
+  smartRateMarketId String           @default("") // np. mkt_gdansk
+  smartRateSyncedAt DateTime? // ostatnie udane pobranie rekomendacji
+  smartRateError    String           @default("") // ostatni błąd — pokazywany w panelu
+  unitTypes         UnitType[]
+  photos            Photo[]
+  promoCodes        PromoCode[]
+  faqs              PropertyFaq[]
+  pricingRules      PricingRule[]
+  reviews           Review[]
+  invoices          Invoice[]
+  site              Site?
+  channex           ChannexProperty?
 }
 
 // Rate-limiter oknem stałym (login, reset hasła, formularz kontaktowy,
@@ -198,19 +203,22 @@ model Photo {
 }
 
 model UnitType {
-  id          Int          @id @default(autoincrement())
-  propertyId  Int
-  property    Property     @relation(fields: [propertyId], references: [id])
-  name        String
-  description String       @default("")
-  maxGuests   Int
-  basePriceGr Int
-  minStay     Int          @default(1)
-  amenities   String       @default("[]") // JSON: lista kluczy z lib/amenities.ts
-  units       Unit[]
-  seasons     RateSeason[]
-  photos      Photo[]
-  channexRoom ChannexRoom?
+  id           Int           @id @default(autoincrement())
+  propertyId   Int
+  property     Property      @relation(fields: [propertyId], references: [id])
+  name         String
+  description  String        @default("")
+  maxGuests    Int
+  basePriceGr  Int
+  minStay      Int           @default(1)
+  minPriceGr   Int? // dolna granica dla silnika cen dynamicznych
+  maxPriceGr   Int? // górna granica dla silnika cen dynamicznych
+  amenities    String        @default("[]") // JSON: lista kluczy z lib/amenities.ts
+  units        Unit[]
+  seasons      RateSeason[]
+  photos       Photo[]
+  channexRoom  ChannexRoom?
+  dynamicRates DynamicRate[]
 
   @@index([propertyId])
 }
@@ -274,43 +282,43 @@ model Block {
 }
 
 model Reservation {
-  id        Int       @id @default(autoincrement())
-  code      String    @unique
-  unitId    Int
-  unit      Unit      @relation(fields: [unitId], references: [id])
-  checkIn   String // YYYY-MM-DD
-  checkOut  String // YYYY-MM-DD
-  guests    Int
-  guestName String
-  email     String
-  phone     String    @default("")
-  nip       String    @default("") // NIP do faktury (opcjonalny)
-  notes     String    @default("")
-  totalGr    Int
-  discountGr Int    @default(0) // udzielony rabat (kod promocyjny)
-  promoCode  String @default("") // użyty kod
-  depositGr  Int
-  status         String    @default("PENDING") // PENDING | CONFIRMED | CANCELLED
-  source         String    @default("ONLINE") // ONLINE | MANUAL
-  paymentOrderId String    @default("") // orderId z bramki (P24) po opłaceniu
+  id                Int          @id @default(autoincrement())
+  code              String       @unique
+  unitId            Int
+  unit              Unit         @relation(fields: [unitId], references: [id])
+  checkIn           String // YYYY-MM-DD
+  checkOut          String // YYYY-MM-DD
+  guests            Int
+  guestName         String
+  email             String
+  phone             String       @default("")
+  nip               String       @default("") // NIP do faktury (opcjonalny)
+  notes             String       @default("")
+  totalGr           Int
+  discountGr        Int          @default(0) // udzielony rabat (kod promocyjny)
+  promoCode         String       @default("") // użyty kod
+  depositGr         Int
+  status            String       @default("PENDING") // PENDING | CONFIRMED | CANCELLED
+  source            String       @default("ONLINE") // ONLINE | MANUAL
+  paymentOrderId    String       @default("") // orderId z bramki (P24) po opłaceniu
   // integracja Channex: id rezerwacji w Channex (idempotencja webhooka) + prowizja OTA
-  channexBookingId String? @unique
-  otaCommissionGr  Int     @default(0)
+  channexBookingId  String?      @unique
+  otaCommissionGr   Int          @default(0)
   // język gościa (pl|en|de) — w nim wysyłamy potwierdzenia i przypomnienia
-  locale           String  @default("pl")
-  createdAt      DateTime  @default(now())
-  expiresAt      DateTime? // PENDING po tym czasie nie blokuje dostępności
-  checkInStatus  String    @default("NONE") // NONE | COMPLETED — meldunek online
+  locale            String       @default("pl")
+  createdAt         DateTime     @default(now())
+  expiresAt         DateTime? // PENDING po tym czasie nie blokuje dostępności
+  checkInStatus     String       @default("NONE") // NONE | COMPLETED — meldunek online
   // ustawiane przy wypełnieniu meldunku: link szedł na ten e-mail, więc adres jest żywy
   emailVerifiedAt   DateTime?
   // przypomnienie o jutrzejszym przyjeździe (e-mail/SMS) — wysłane raz, przez cron
   arrivalReminderAt DateTime?
   // prośba o opinię po pobycie (e-mail/SMS) — wysłana raz, przez cron
   reviewRequestedAt DateTime?
-  checkInCard     CheckInCard?
-  messages        Message[]
-  review          Review?
-  invoices        Invoice[]
+  checkInCard       CheckInCard?
+  messages          Message[]
+  review            Review?
+  invoices          Invoice[]
 
   @@index([unitId, checkIn, checkOut]) // dostępność, kalendarz, plan dnia
   @@index([status, expiresAt]) // wygaszanie PENDING, filtry statusów
@@ -453,4 +461,23 @@ model ChannexChannel {
   createdAt        DateTime @default(now())
 
   @@unique([propertyId, type])
+}
+
+// Cache rekomendacji cenowych SmartRate: jeden wiersz = jedna doba dla typu
+// pokoju. Ścieżka gościa czyta wyłącznie stąd (zero HTTP), a odświeżanie idzie
+// przez after() i cron. components/drivers służą wyjaśnieniu ceny w panelu.
+model DynamicRate {
+  id          Int      @id @default(autoincrement())
+  unitTypeId  Int
+  unitType    UnitType @relation(fields: [unitTypeId], references: [id])
+  date        String // YYYY-MM-DD
+  priceGr     Int
+  clampedBy   String? // min | max | null
+  demandScore Int      @default(50)
+  drivers     String   @default("[]") // JSON: ["Boże Ciało", "ferie (małopolskie)"]
+  components  String   @default("{}") // JSON: 5 mnożników silnika
+  fetchedAt   DateTime @updatedAt
+
+  @@unique([unitTypeId, date])
+  @@index([unitTypeId, date])
 }

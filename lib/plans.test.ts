@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { channelSyncFeatures, planDef, sitePlanFeatures } from "./plans";
+import {
+  channelSyncFeatures,
+  planDef,
+  pricingPlanFeatures,
+  sitePlanFeatures,
+} from "./plans";
 
 describe("channelSyncFeatures", () => {
   it("FREE bez kanałów", () =>
@@ -32,5 +37,13 @@ describe("planDef — wpisy o stronie WWW", () => {
   it("STANDARD i PRO wspominają stronę WWW w features", () => {
     expect(planDef("STANDARD").features.join(" ")).toMatch(/stron/i);
     expect(planDef("PRO").features.join(" ")).toMatch(/domen/i);
+  });
+});
+
+describe("pricingPlanFeatures", () => {
+  it("SmartRate tylko w planie Pro", () => {
+    expect(pricingPlanFeatures("PRO").smartRate).toBe(true);
+    expect(pricingPlanFeatures("STANDARD").smartRate).toBe(false);
+    expect(pricingPlanFeatures("FREE").smartRate).toBe(false);
   });
 });
