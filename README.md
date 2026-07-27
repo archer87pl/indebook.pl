@@ -150,7 +150,8 @@ DATABASE_URL=postgresql://rezflow:rezflow@localhost:5433/rezflow DIRECT_URL=post
 
 - Obraz buduje standalone Next (`output: "standalone"` poza Vercelem), przy starcie robi `prisma db push`.
 - Zadania okresowe poza Vercelem odpala `instrumentation.ts` (długożyjący proces) — nie `vercel.json`.
-- Konfiguracja przez zmienne środowiskowe (patrz `.env.example`); wszystkie mają sensowne domyślne, więc `up` działa bez żadnego pliku `.env`. Uploady zdjęć wymagają `BLOB_READ_WRITE_TOKEN`.
+- Konfiguracja przez zmienne środowiskowe (patrz `.env.example`); wszystkie mają sensowne domyślne, więc `up` działa bez żadnego pliku `.env`.
+- Zdjęcia: z `BLOB_READ_WRITE_TOKEN` lecą do Vercel Blob, bez niego na dysk (wolumen `rezflow-uploads`, katalog z `UPLOADS_DIR`). Pliki serwuje trasa `/uploads/*`, bo Next w trybie standalone nie oddaje plików dopisanych do `public` po zbudowaniu obrazu.
 - Porty SmartRate są w `docker-compose.full.yml` przemapowane (Grafana 3000→3001, Loki 3100→3101), bo domyślne zderzają się z aplikacją i z testami e2e.
 - `SMARTRATE_API_KEY` ustawione po obu stronach włącza autoryzację silnika cen. Puste = endpointy SmartRate otwarte, co jest dopuszczalne tylko dlatego, że nie wychodzą poza sieć Compose.
 - Repo SmartRate w innej lokalizacji wskażesz zmienną `SMARTRATE_REPO`.

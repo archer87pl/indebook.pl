@@ -22,8 +22,10 @@ services:
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
       EMAIL_FROM: "${EMAIL_FROM:-RezFlow <onboarding@resend.dev>}"
       SMSAPI_TOKEN: "${SMSAPI_TOKEN:-}"
-      # zdjęcia obiektów (Vercel Blob) — bez tokenu upload jest wyłączony
+      # zdjęcia obiektów: z tokenem lecą do Vercel Blob, bez niego na dysk
+      # (katalog niżej to podmontowany wolumen rezflow-uploads)
       BLOB_READ_WRITE_TOKEN: "${BLOB_READ_WRITE_TOKEN:-}"
+      UPLOADS_DIR: "${UPLOADS_DIR:-/app/public/uploads}"
       # channel manager: bez klucza tryb Channex ukryty w panelu
       CHANNEX_API_KEY: "${CHANNEX_API_KEY:-}"
       CHANNEX_BASE_URL: "${CHANNEX_BASE_URL:-}"
