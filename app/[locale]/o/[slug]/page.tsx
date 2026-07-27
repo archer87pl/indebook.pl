@@ -10,9 +10,9 @@ import SearchForm from "@/components/SearchForm";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
-import { formatDatePl } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import { prisma } from "@/lib/db";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { averageRating } from "@/lib/reviews";
 
 // ISR: publiczna strona obiektu cache'owana, odświeżana co 2 min
@@ -302,7 +302,7 @@ export default async function PropertyPage(props: {
                     <div className="flex flex-none flex-col items-end justify-between gap-2">
                       <div className="text-right">
                         <div className="tnum text-[19px] font-bold">
-                          {formatPln(ut.basePriceGr)}
+                          {formatMoney(ut.basePriceGr, locale)}
                         </div>
                         <div className="text-[10.5px] text-slate-400">{tc("perNight")}</div>
                       </div>
@@ -337,7 +337,7 @@ export default async function PropertyPage(props: {
                       <Stars value={rev.rating} />
                     </div>
                     <p className="text-xs text-slate-400">
-                      {formatDatePl(rev.createdAt.toISOString().slice(0, 10))}
+                      {formatDate(rev.createdAt.toISOString().slice(0, 10), locale)}
                     </p>
                     {rev.comment && (
                       <p className="whitespace-pre-line text-sm text-slate-600">
@@ -386,7 +386,7 @@ export default async function PropertyPage(props: {
                 <>
                   <span className="tnum text-[22px] font-bold">
                     {tc("from")}{" "}
-                    {formatPln(Math.min(...property.unitTypes.map((ut) => ut.basePriceGr)))}
+                    {formatMoney(Math.min(...property.unitTypes.map((ut) => ut.basePriceGr)), locale)}
                   </span>
                   <span className="text-[13px] text-slate-400">{t("perNightShort")}</span>
                 </>

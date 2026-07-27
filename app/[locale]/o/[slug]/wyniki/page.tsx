@@ -9,10 +9,10 @@ import Button from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import { freeUnits } from "@/lib/availability";
-import { formatDatePl, isValidISO, nightsBetween, todayISO } from "@/lib/dates";
+import { formatDate, isValidISO, nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { quoteStayDynamic } from "@/lib/dynamic-pricing";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +112,7 @@ export default async function ResultsPage(props: {
       ) : (
         <>
           <h1 className="text-[25px] font-bold text-brand-950">
-            {formatDatePl(from)} – {formatDatePl(to)}{" "}
+            {formatDate(from, locale)} – {formatDate(to, locale)}{" "}
             <span className="font-normal text-slate-400">
               · {tc("nights", { count: nightsBetween(from, to) })} ·{" "}
               {tc("guests", { count: guests })}
@@ -162,7 +162,7 @@ export default async function ResultsPage(props: {
                   <div className="flex flex-col items-end justify-between gap-2 text-right">
                     <div>
                       <p className="tnum text-[19px] font-bold text-slate-900">
-                        {formatPln(o.totalGr)}
+                        {formatMoney(o.totalGr, locale)}
                       </p>
                       <p className="text-[10.5px] text-slate-400">
                         {t("totalFor", { count: o.nights })}

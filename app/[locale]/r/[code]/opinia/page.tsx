@@ -1,13 +1,13 @@
 import { Link } from "@/i18n/navigation";
 import GuestError from "@/components/GuestError";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import StarRating from "@/components/StarRating";
 import Button from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { submitReview } from "@/lib/actions";
-import { formatDatePl } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { canReview, REVIEW_MAX } from "@/lib/reviews";
 
@@ -28,6 +28,7 @@ export default async function ReviewPage(props: {
   });
   if (!reservation) notFound();
 
+  const locale = await getLocale();
   const t = await getTranslations("review");
   const property = reservation.unit.unitType.property;
   const backLink = (
@@ -57,7 +58,7 @@ export default async function ReviewPage(props: {
       <div className="mx-auto max-w-xl space-y-5 text-center">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="alert-warning">
-          {t("notYet", { date: formatDatePl(reservation.checkOut) })}
+          {t("notYet", { date: formatDate(reservation.checkOut, locale) })}
         </p>
         {backLink}
       </div>
@@ -73,8 +74,8 @@ export default async function ReviewPage(props: {
         <div>
           <h1 className="text-2xl font-bold leading-tight">{t("heading")}</h1>
           <p className="mt-0.5 text-sm text-slate-500">
-            {property.name} · {formatDatePl(reservation.checkIn)} →{" "}
-            {formatDatePl(reservation.checkOut)}
+            {property.name} · {formatDate(reservation.checkIn, locale)} →{" "}
+            {formatDate(reservation.checkOut, locale)}
           </p>
         </div>
       </div>

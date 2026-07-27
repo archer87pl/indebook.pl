@@ -1,13 +1,31 @@
-const plnFormatter = new Intl.NumberFormat("pl-PL", {
-  style: "currency",
-  currency: "PLN",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
+// Obiekty rozliczają się w złotówkach niezależnie od języka gościa, ale ZAPIS
+// kwoty jest już językowy: „1234,00 zł" po polsku, „1.234,00 zł" po niemiecku,
+// „PLN 1,234.00" po angielsku. Formattery są drogie w tworzeniu, więc trzymamy
+// je w cache per język.
+const moneyFormatters = new Map<string, Intl.NumberFormat>();
 
-/** Kwoty trzymamy w groszach (int). */
+function moneyFormatter(locale: string): Intl.NumberFormat {
+  let formatter = moneyFormatters.get(locale);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: "PLN",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+    moneyFormatters.set(locale, formatter);
+  }
+  return formatter;
+}
+
+/** Kwota w zapisie danego języka. Kwoty trzymamy w groszach (int). */
+export function formatMoney(grosze: number, locale: string): string {
+  return moneyFormatter(locale).format(grosze / 100);
+}
+
+/** Kwota po polsku — panel recepcji, faktury, maile do właściciela. */
 export function formatPln(grosze: number): string {
-  return plnFormatter.format(grosze / 100);
+  return formatMoney(grosze, "pl-PL");
 }
 
 /** Polska odmiana: 1 noc, 2 noce, 5 nocy, 22 noce… */

@@ -81,6 +81,22 @@ test.describe("i18n gościa", () => {
     await expect(page.getByText("Something went wrong. Please try again.")).toBeVisible();
   });
 
+  test("kwoty i daty mają zapis języka gościa", async ({ page }) => {
+    // najpierw polski — potem cookie next-intl zapamiętuje wybór
+    await page.goto(`/o/${PROPERTY_SLUG}`);
+    const pl = await page.locator("body").innerText();
+
+    await page.goto(`/de/o/${PROPERTY_SLUG}`);
+    const de = await page.locator("body").innerText();
+
+    // ta sama waluta, inny zapis: polski ma symbol „zł", niemiecki kod „PLN".
+    // Uwaga: polska notacja wstawia twardą spację (U+00A0), więc nie zakładamy
+    // tu kształtu odstępu — sprawdzamy sam symbol i to, że zapisy się różnią.
+    expect(pl).toContain("zł");
+    expect(de).toContain("PLN");
+    expect(de).not.toBe(pl);
+  });
+
   test("panel recepcji zostaje po polsku, bez prefiksu języka", async ({ page }) => {
     await loginAsOwner(page);
     await expect(page).toHaveURL(/\/admin$/);

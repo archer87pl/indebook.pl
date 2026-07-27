@@ -19,7 +19,7 @@ import {
   WashingMachine,
   Wifi,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -27,7 +27,7 @@ import { Card, CardBody } from "@/components/ui/Card";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 
 // ISR: strona pokoju (opis, udogodnienia, cennik sezonowy) cache'owana 5 min
 export const revalidate = 300;
@@ -59,6 +59,7 @@ export default async function RoomPage(props: {
   params: Promise<{ slug: string; unitTypeId: string }>;
 }) {
   const { slug, unitTypeId } = await props.params;
+  const locale = await getLocale();
   const t = await getTranslations("property");
   const ts = await getTranslations("search");
   const tc = await getTranslations("common");
@@ -183,7 +184,7 @@ export default async function RoomPage(props: {
                         {t("pricing.outsideSeasons")}
                       </td>
                       <td className="tnum px-[18px] py-2.5 text-right font-semibold text-slate-900">
-                        {formatPln(unitType.basePriceGr)}
+                        {formatMoney(unitType.basePriceGr, locale)}
                       </td>
                     </tr>
                     {unitType.seasons.map((s, i) => (
@@ -202,7 +203,7 @@ export default async function RoomPage(props: {
                           {s.startDate} – {s.endDate}
                         </td>
                         <td className="tnum px-[18px] py-2.5 text-right font-semibold text-slate-900">
-                          {formatPln(s.priceGr)}
+                          {formatMoney(s.priceGr, locale)}
                         </td>
                       </tr>
                     ))}
@@ -218,7 +219,7 @@ export default async function RoomPage(props: {
             <CardBody>
               <p className="mb-3.5 flex items-baseline gap-1.5">
                 <span className="tnum text-[22px] font-bold text-slate-900">
-                  {tc("from")} {formatPln(unitType.basePriceGr)}
+                  {tc("from")} {formatMoney(unitType.basePriceGr, locale)}
                 </span>
                 <span className="text-[13px] text-slate-400">{t("perNightShort")}</span>
               </p>

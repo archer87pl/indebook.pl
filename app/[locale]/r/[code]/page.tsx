@@ -29,7 +29,7 @@ import {
 import { canCheckIn } from "@/lib/checkin";
 import { nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { p24Configured } from "@/lib/payments";
 import { canReview } from "@/lib/reviews";
 
@@ -122,7 +122,7 @@ export default async function ReservationPage(props: {
             {confirmed
               ? t("status.confirmedSub", { property: property.name })
               : payable
-                ? t("status.payableSub", { amount: formatPln(r.depositGr) })
+                ? t("status.payableSub", { amount: formatMoney(r.depositGr, locale) })
                 : `${property.name} · ${r.guestName}`}
           </p>
         </div>
@@ -193,7 +193,7 @@ export default async function ReservationPage(props: {
                   {r.discountGr > 0 && (
                     <span className="text-brand-600">
                       {" "}
-                      · {t("ticket.discount", { amount: formatPln(r.discountGr) })}
+                      · {t("ticket.discount", { amount: formatMoney(r.discountGr, locale) })}
                       {r.promoCode && ` (${r.promoCode})`}
                     </span>
                   )}
@@ -202,11 +202,11 @@ export default async function ReservationPage(props: {
               <div>
                 <div className="th">{t("ticket.amount")}</div>
                 <div className="tnum mt-0.5 text-sm font-semibold">
-                  {formatPln(r.totalGr)}
+                  {formatMoney(r.totalGr, locale)}
                   {r.depositGr > 0 && (
                     <span className="font-normal text-slate-500">
                       {" "}
-                      · {t("ticket.deposit", { amount: formatPln(r.depositGr) })}
+                      · {t("ticket.deposit", { amount: formatMoney(r.depositGr, locale) })}
                     </span>
                   )}
                 </div>
@@ -218,8 +218,8 @@ export default async function ReservationPage(props: {
                   <input type="hidden" name="code" value={r.code} />
                   <Button type="submit" size="lg" variant="accent" className="w-full">
                     {p24Enabled
-                      ? t("pay.p24", { amount: formatPln(r.depositGr) })
-                      : t("pay.simulated", { amount: formatPln(r.depositGr) })}
+                      ? t("pay.p24", { amount: formatMoney(r.depositGr, locale) })
+                      : t("pay.simulated", { amount: formatMoney(r.depositGr, locale) })}
                   </Button>
                   <p className="text-center text-xs text-slate-500">
                     {p24Enabled ? t("pay.p24Note") : t("pay.simulatedNote")}

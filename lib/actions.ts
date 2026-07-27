@@ -20,7 +20,7 @@ import { addDaysISO, isValidISO, todayISO } from "./dates";
 import { logEvent } from "./log";
 import { SETTING_SECTIONS } from "./settings";
 import { prisma } from "./db";
-import { formatPln, parsePlnToGr } from "./format";
+import { formatMoney, formatPln, parsePlnToGr } from "./format";
 import { syncIcalFeed } from "./ical";
 import {
   appUrl,
@@ -337,8 +337,10 @@ export async function createReservation(formData: FormData) {
     body: t("pendingDeposit.body", {
       property: unitType.property.name,
       // rabat dopisujemy do kwoty — katalog nie ma osobnego pola na rabat
-      total: `${formatPln(totalGr)}${discountGr > 0 ? ` (-${formatPln(discountGr)})` : ""}`,
-      deposit: formatPln(depositGr),
+      total: `${formatMoney(totalGr, guestLocale)}${
+        discountGr > 0 ? ` (-${formatMoney(discountGr, guestLocale)})` : ""
+      }`,
+      deposit: formatMoney(depositGr, guestLocale),
       url: `/r/${code}`,
     }),
   });
@@ -395,7 +397,7 @@ export async function payDeposit(formData: FormData) {
     to: reservation.email,
     subject: t("confirmedPaid.subject", { code }),
     body: t("confirmedPaid.body", {
-      deposit: formatPln(reservation.depositGr),
+      deposit: formatMoney(reservation.depositGr, reservation.locale),
       checkIn: reservation.checkIn,
       checkInUrl: checkInUrl(code),
     }),
@@ -554,7 +556,7 @@ export async function changeReservationDates(formData: FormData) {
       from,
       to,
       guests,
-      total: formatPln(totalGr),
+      total: formatMoney(totalGr, r.locale),
     }),
   });
   revalidatePath(back);
@@ -1059,7 +1061,7 @@ export async function adminUpdateReservation(formData: FormData) {
         from,
         to,
         guests,
-        total: formatPln(totalGr),
+        total: formatMoney(totalGr, r.locale),
       }),
     });
   }

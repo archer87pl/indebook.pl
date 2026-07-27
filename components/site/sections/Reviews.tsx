@@ -2,7 +2,7 @@ import { Star } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { averageRating } from "@/lib/reviews";
-import { formatDatePl } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 
@@ -55,7 +55,7 @@ export default async function Reviews({ section, ctx }: { section: ReviewsSectio
                 <Stars value={rev.rating} />
               </div>
               <p className="text-xs text-[var(--site-muted)]">
-                {formatDatePl(rev.createdAt.toISOString().slice(0, 10))}
+                {formatDate(rev.createdAt.toISOString().slice(0, 10), ctx.locale)}
               </p>
               {rev.comment && (
                 <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--site-muted)]">

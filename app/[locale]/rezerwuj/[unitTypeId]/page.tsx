@@ -8,10 +8,10 @@ import Button from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { createReservation } from "@/lib/actions";
 import { freeUnits } from "@/lib/availability";
-import { formatDatePl, isValidISO, todayISO } from "@/lib/dates";
+import { formatDate, isValidISO, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { quoteStayDynamic } from "@/lib/dynamic-pricing";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -61,8 +61,8 @@ export default async function BookPage(props: {
         <h1 className="text-xl font-bold">
           {t("soldOut.title", {
             unitType: unitType.name,
-            from: formatDatePl(from),
-            to: formatDatePl(to),
+            from: formatDate(from, locale),
+            to: formatDate(to, locale),
           })}
         </h1>
         <p className="text-sm text-slate-600">
@@ -162,14 +162,14 @@ export default async function BookPage(props: {
                 </span>
               </label>
               <Button type="submit" size="lg" className="w-full">
-                {t("form.submit", { amount: formatPln(quote.depositGr) })}
+                {t("form.submit", { amount: formatMoney(quote.depositGr, locale) })}
               </Button>
               <p className="flex items-center justify-center gap-1.5 text-[10.5px] text-slate-400">
                 <Lock size={11} strokeWidth={2} />
                 {t("form.securePayment")}
               </p>
               <p className="text-xs text-slate-500">
-                {t("form.holdNotice", { amount: formatPln(quote.depositGr) })}
+                {t("form.holdNotice", { amount: formatMoney(quote.depositGr, locale) })}
               </p>
             </CardBody>
           </form>
@@ -225,7 +225,7 @@ export default async function BookPage(props: {
                     nights: tCommon("nights", { count: quote.nights }),
                   })}
                 </span>
-                <span className="tnum">{formatPln(quote.totalGr)}</span>
+                <span className="tnum">{formatMoney(quote.totalGr, locale)}</span>
               </summary>
               <div className="mt-2 space-y-1 border-l-2 border-slate-100 pl-3">
                 {quote.nightly.map((n) => (
@@ -234,14 +234,14 @@ export default async function BookPage(props: {
                     className="flex justify-between text-[11.5px] text-slate-400"
                   >
                     <span className="tnum">{n.date}</span>
-                    <span className="tnum">{formatPln(n.priceGr)}</span>
+                    <span className="tnum">{formatMoney(n.priceGr, locale)}</span>
                   </div>
                 ))}
               </div>
             </details>
             <div className="mb-3 flex justify-between border-t border-slate-100 pt-2.5 text-sm font-bold">
               <span>{t("summary.total")}</span>
-              <span className="tnum">{formatPln(quote.totalGr)}</span>
+              <span className="tnum">{formatMoney(quote.totalGr, locale)}</span>
             </div>
             <div className="rounded-[11px] bg-brand-50 px-3.5 py-3">
               <div className="flex justify-between text-[13px] font-bold text-brand-900">
@@ -250,11 +250,11 @@ export default async function BookPage(props: {
                     percent: unitType.property.depositPercent,
                   })}
                 </span>
-                <span className="tnum">{formatPln(quote.depositGr)}</span>
+                <span className="tnum">{formatMoney(quote.depositGr, locale)}</span>
               </div>
               <div className="mt-0.5 text-[11px] text-slate-600">
                 {t("summary.remaining", {
-                  amount: formatPln(quote.totalGr - quote.depositGr),
+                  amount: formatMoney(quote.totalGr - quote.depositGr, locale),
                 })}
               </div>
             </div>

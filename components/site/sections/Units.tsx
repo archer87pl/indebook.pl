@@ -1,7 +1,7 @@
 import { Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { localePath } from "@/lib/locale-urls";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
@@ -42,7 +42,7 @@ export default async function Units({ section, ctx }: { section: UnitsSection; c
                     <h3 className="text-lg font-bold">{ut.name}</h3>
                     <div className="text-right">
                       <div className="whitespace-nowrap text-lg font-bold text-[var(--site-primary)]">
-                        {formatPln(ut.basePriceGr)}
+                        {formatMoney(ut.basePriceGr, ctx.locale)}
                       </div>
                       <div className="text-xs text-[var(--site-muted)]">{t("units.perNight")}</div>
                     </div>

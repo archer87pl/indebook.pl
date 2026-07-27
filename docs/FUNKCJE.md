@@ -727,11 +727,36 @@ liczbę tam, gdzie język tego wymaga.
 Panel recepcji zostaje po polsku, więc akcje administracyjne dalej zwracają
 zwykły tekst.
 
+### Kwoty i daty w zapisie języka gościa
+
+Waluta zostaje złotówkowa (obiekt rozlicza się w PLN), ale **zapis** jest
+językowy: `1234 zł` po polsku, `1.234 PLN` po niemiecku, `PLN 1,234` po
+angielsku. Tak samo daty — `14 sierpnia 2027` kontra `14. August 2027`, a przy
+zapisie liczbowym `en-US` odwraca dzień z miesiącem, co przy dacie przyjazdu
+nie jest kosmetyką.
+
+Dwie pary funkcji, każda o jasnej roli:
+
+| Powierzchnia gościa (z językiem) | Panel, faktury, maile właściciela |
+|---|---|
+| `formatMoney(gr, locale)` | `formatPln(gr)` |
+| `formatDate(iso, locale)` | `formatDatePl(iso)` |
+| `formatDateShort(iso, locale)` | `formatDateShortPl(iso)` |
+| `formatRangeShort(from, to, locale)` | `formatRangeShortPl(from, to)` |
+
+Polskie warianty to cienkie aliasy tych pierwszych, więc panel recepcji nie
+wymagał żadnych zmian. Maile do gościa formatują kwotę jego językiem — treść
+i tak jest już tłumaczona przez `guestT(reservation.locale)`.
+
+Test `lib/format-locale.test.ts` skanuje `app/[locale]` i `components/site`
+i **nie przepuszcza polskich wariantów** na powierzchniach gościa — inaczej
+łatwo byłoby przywrócić `formatPln` przy kolejnej zmianie i nikt by nie
+zauważył.
+
 ### Czego (jeszcze) nie tłumaczymy
 
-Formatowanie dat i kwot jest na razie `pl-PL` (`lib/format.ts`, `lib/dates.ts`)
-i etykiety udogodnień (`lib/amenities.ts`) są po polsku. To świadomy zakres —
-interfejs i komunikaty najpierw, formaty i słowniki treści w kolejnym kroku.
+Etykiety udogodnień (`lib/amenities.ts`) są po polsku — to słownik treści,
+nie interfejsu, więc idzie razem z tłumaczeniem opisów obiektu.
 
 ---
 

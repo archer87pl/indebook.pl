@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import GuestError from "@/components/GuestError";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PenLine } from "lucide-react";
 import SignaturePad from "@/components/SignaturePad";
@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { submitCheckIn } from "@/lib/actions";
 import { canCheckIn, DOC_TYPES } from "@/lib/checkin";
-import { formatDatePl, todayISO } from "@/lib/dates";
+import { formatDate, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,7 @@ export default async function CheckInPage(props: {
   });
   if (!reservation) notFound();
 
+  const locale = await getLocale();
   const t = await getTranslations("checkin");
   const property = reservation.unit.unitType.property;
   const backLink = (
@@ -79,8 +80,8 @@ export default async function CheckInPage(props: {
             <span className="tnum rounded-md bg-brand-100 px-2 py-0.5 text-[11.5px] text-brand-600">
               {code}
             </span>
-            {property.name} · {formatDatePl(reservation.checkIn)} →{" "}
-            {formatDatePl(reservation.checkOut)}
+            {property.name} · {formatDate(reservation.checkIn, locale)} →{" "}
+            {formatDate(reservation.checkOut, locale)}
           </p>
         </div>
       </div>
