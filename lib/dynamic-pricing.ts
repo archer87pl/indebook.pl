@@ -157,3 +157,19 @@ export async function quoteStayDynamic(
     depositGr: Math.round((totalGr * depositPercent) / 100),
   };
 }
+
+/**
+ * Ceny poszczególnych dób w [from, to) — dla push-u ARI do kanałów.
+ * Świadomie przechodzi przez quoteStayDynamic, żeby kanał dostawał DOKŁADNIE
+ * tę stawkę, którą widzi gość na naszej stronie (łącznie z trybem SmartRate
+ * i degradacją do reguł). Zaliczka jest tu nieistotna, stąd 0.
+ */
+export async function nightlyRates(
+  unitType: UnitType & { seasons: RateSeason[] },
+  from: string,
+  to: string
+): Promise<Map<string, number>> {
+  if (from >= to) return new Map();
+  const quote = await quoteStayDynamic(unitType, from, to, 0);
+  return new Map(quote.nightly.map((n) => [n.date, n.priceGr]));
+}

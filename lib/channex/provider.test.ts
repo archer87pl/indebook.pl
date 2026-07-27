@@ -7,7 +7,7 @@ describe("stubProvider", () => {
   });
   it("pushAri zapisuje wywołanie i nie rzuca", async () => {
     await stubProvider.pushAri("k", "stub-prop", "rt", "rp", [
-      { date: "2026-08-01", availability: 2, minStay: 1 },
+      { date: "2026-08-01", availability: 2, minStay: 1, rateGr: 30000 },
     ]);
     expect(stubProvider.calls).toHaveLength(1);
     expect(stubProvider.calls[0]).toMatchObject({

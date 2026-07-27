@@ -3,7 +3,13 @@
 // channexPropertyId, bo Channex wymaga property_id w payloadzie ARI.
 import { ChannexClient } from "./client";
 
-export type AriDay = { date: string; availability: number; minStay: number };
+export type AriDay = {
+  date: string;
+  availability: number;
+  minStay: number;
+  /** cena doby w groszach — dokładnie ta, którą widzi gość na naszej stronie */
+  rateGr: number;
+};
 
 export type ProvisionInput = {
   name: string;

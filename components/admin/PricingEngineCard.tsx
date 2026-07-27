@@ -29,6 +29,7 @@ type RateRow = {
 export default function PricingEngineCard({
   property,
   markets,
+  enabled,
   unitTypes,
   rates,
 }: {
@@ -40,11 +41,31 @@ export default function PricingEngineCard({
     smartRateError: string;
   };
   markets: Market[];
+  /** czy integracja SmartRate jest w ogóle skonfigurowana (SMARTRATE_URL / stub) */
+  enabled: boolean;
   unitTypes: UnitTypeRow[];
   rates: RateRow[];
 }) {
   const allowed = pricingPlanFeatures(property.plan).smartRate;
   const on = property.pricingMode === "SMARTRATE";
+
+  // Brak konfiguracji integracji = przełącznik znika, jak przy Channexie
+  // i własnych domenach. Pokazanie go bez listy rynków zamykało właściciela
+  // w pętli: „wybierz rynek" przy pustej liście do wyboru.
+  if (allowed && !enabled) {
+    return (
+      <Card>
+        <CardHeader title="Silnik cen" sub="Podstawowy (reguły poniżej)" />
+        <CardBody className="text-sm text-slate-600">
+          <p>
+            Ceny dynamiczne SmartRate nie są skonfigurowane na tym wdrożeniu —
+            wycena działa na regułach poniżej. Konfigurację (adres i klucz silnika)
+            ustawia administrator platformy.
+          </p>
+        </CardBody>
+      </Card>
+    );
+  }
 
   if (!allowed) {
     return (

@@ -206,15 +206,53 @@ export async function syncAllIcalFeeds(): Promise<number> {
   return feeds.length;
 }
 
-/** Odbudowa horyzontu rekomendacji (180 dni) dla obiektów w trybie SMARTRATE. */
-export async function refreshAllRates(): Promise<number> {
+/**
+ * Odbudowa horyzontu rekomendacji (180 dni) dla obiektów w trybie SMARTRATE.
+ *
+ * Pracuje w budżecie czasu i zaczyna od najdawniej odświeżanych typów pokoi,
+ * więc przy dużej liczbie obiektów kolejne przebiegi domykają resztę zamiast
+ * w kółko odświeżać ten sam początek listy. Bez tego cron po prostu wpadał
+ * w timeout funkcji i cicho gubił ogon listy.
+ */
+export function byStalestFirst<T extends { dynamicRates: { fetchedAt: Date }[] }>(
+  types: T[]
+): T[] {
+  // typy bez ani jednej rekomendacji mają pierwszeństwo (brak = epoka zero)
+  return [...types].sort(
+    (a, b) =>
+      (a.dynamicRates[0]?.fetchedAt.getTime() ?? 0) -
+      (b.dynamicRates[0]?.fetchedAt.getTime() ?? 0)
+  );
+}
+
+export async function refreshAllRates(
+  budgetMs = 240_000
+): Promise<{ days: number; unitTypes: number; pending: number }> {
+  const startedAt = Date.now();
   const from = todayISO();
   const to = addDaysISO(from, 180);
-  const types = await prisma.unitType.findMany({
-    where: { property: { pricingMode: "SMARTRATE" } },
-    select: { id: true },
-  });
+
+  // NULLS FIRST: typy bez ani jednej rekomendacji mają pierwszeństwo
+  const types = byStalestFirst(
+    await prisma.unitType.findMany({
+      where: { property: { pricingMode: "SMARTRATE" } },
+      select: {
+        id: true,
+        dynamicRates: {
+          select: { fetchedAt: true },
+          orderBy: { fetchedAt: "desc" },
+          take: 1,
+        },
+      },
+    })
+  );
+
   let days = 0;
-  for (const t of types) days += await refreshRates(t.id, from, to);
-  return days;
+  let processed = 0;
+  for (const t of types) {
+    if (Date.now() - startedAt > budgetMs) break;
+    days += await refreshRates(t.id, from, to);
+    processed++;
+  }
+  return { days, unitTypes: processed, pending: types.length - processed };
 }

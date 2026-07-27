@@ -764,17 +764,34 @@ zasada, co „pełny kalendarz albo nic" przy push-u ARI do Channexa: gość nig
 nie widzi ceny sklejonej z dwóch silników, a cena w wyszukiwarce zgadza się
 z ceną przy rezerwacji.
 
+### Ceny w kanałach
+
+Push ARI do Channexa wysyła **cenę doby razem z dostępnością i `minStay`**
+(`lib/channex/ari.ts`). Stawka bierze się z `nightlyRates`, czyli z tej samej
+funkcji co wycena dla gościa — kanał sprzedaje po cenie, którą widać na naszej
+stronie, także przy włączonym SmartRate. Doba bez policzonej ceny dostaje cenę
+bazową typu pokoju; wysłanie zera byłoby gorsze niż cennik statyczny.
+
 ### Odświeżanie i inwalidacja
 
 - `after()` po odpowiedzi (`afterRates`) — poza zakresem żądania degraduje się
   do fire-and-forget, jak `afterAri`.
 - Przełączenie trybu rozgrzewa **30 dni** (tyle pokazuje panel); pełny horyzont
   **180 dni** dobija cron `GET /api/cron/rates` (fail-closed z `CRON_SECRET`,
-  harmonogram w `vercel.json`).
+  harmonogram w `vercel.json`). Cron pracuje w budżecie czasu i zaczyna od
+  najdawniej odświeżanych typów pokoi, więc przy dużej liczbie obiektów kolejne
+  przebiegi domykają ogon listy zamiast wpadać w timeout funkcji.
+- W self-hoście te same zadania (plus dobijanie outboxa ARI) odpala
+  `instrumentation.ts` — poza Vercelem nie ma crona.
 - Zmiana ceny bazowej, sezonu, widełek, rynku lub trybu kasuje wpisy dotkniętych
   typów pokoi (`invalidateRates`).
 
 ### Awarie
+
+Gdy integracja nie jest w ogóle skonfigurowana (`SMARTRATE_URL` puste i brak
+stuba), panel **nie pokazuje przełącznika silnika** — jak przy Channexie
+i własnych domenach. Wcześniej właściciel mógł wybrać SmartRate przy pustej
+liście rynków i utknąć na „Wybierz rynek" bez możliwości spełnienia warunku.
 
 Ciche dla gościa, głośne dla właściciela: błąd API ląduje w
 `Property.smartRateError` (alert w panelu), a wycena leci regułami. Timeout 5 s,

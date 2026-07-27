@@ -106,3 +106,8 @@ export function ratesProvider(): RatesProvider | null {
   if (!baseUrl) return null;
   return new SmartRateClient(baseUrl, process.env.SMARTRATE_API_KEY ?? "");
 }
+
+/** Czy integracja cen dynamicznych jest w ogóle skonfigurowana (jak channelProvider). */
+export function smartRateConfigured(): boolean {
+  return ratesProvider() !== null;
+}

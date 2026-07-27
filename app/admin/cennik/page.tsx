@@ -16,6 +16,7 @@ import { prisma } from "@/lib/db";
 import { PRICING_RULE_KINDS } from "@/lib/dynamic-pricing";
 import PricingEngineCard from "@/components/admin/PricingEngineCard";
 import { listMarkets } from "@/lib/actions";
+import { smartRateConfigured } from "@/lib/rates/provider";
 import { addDaysISO, todayISO } from "@/lib/dates";
 import { formatPln } from "@/lib/format";
 
@@ -36,7 +37,8 @@ export default async function PricingPage() {
     }),
   ]);
 
-  const markets = await listMarkets();
+  const smartRateEnabled = smartRateConfigured();
+  const markets = smartRateEnabled ? await listMarkets() : [];
   const today = todayISO();
   const rates = await prisma.dynamicRate.findMany({
     where: {
@@ -51,6 +53,7 @@ export default async function PricingPage() {
       <PricingEngineCard
         property={property}
         markets={markets}
+        enabled={smartRateEnabled}
         unitTypes={unitTypes}
         rates={rates}
       />
