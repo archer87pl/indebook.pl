@@ -1,10 +1,31 @@
 // Klient HTTP SmartRate (Rezio.Api). Trzy niezgodności kontraktu żyją
 // wyłącznie tutaj: złotówki ↔ grosze, „to" włącznie ↔ przedział półotwarty,
 // JSON snake_case ↔ camelCase. Reszta RezFlow widzi już własne typy.
-import { assertPublicUrl } from "../net";
 import type { Market, QuoteInput, RateDay, RatesProvider } from "./provider";
 
 const TIMEOUT_MS = 5000;
+
+/**
+ * Adres SmartRate pochodzi z konfiguracji operatora (env), a nie od użytkownika,
+ * więc NIE przepuszczamy go przez `assertPublicUrl` z lib/net.ts. Ten guard
+ * chroni przed SSRF na URL-ach wpisywanych przez właścicieli obiektów (feedy
+ * iCal) — tutaj nic by nie dał (kto ustawia env, ten i tak steruje procesem),
+ * a zablokowałby zalecaną topologię: SmartRate w prywatnej sieci obok RezFlow
+ * (`http://rezio-api:8080` w Dockerze rozwiązuje się na adres 172.x).
+ * Sprawdzamy tylko protokół i poprawność adresu.
+ */
+function parseBaseUrl(raw: string): URL {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("SmartRate: nieprawidłowy SMARTRATE_URL.");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("SmartRate: dozwolone są tylko adresy http/https.");
+  }
+  return url;
+}
 
 function num(value: unknown, field: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
@@ -42,9 +63,7 @@ export class SmartRateClient implements RatesProvider {
   ) {}
 
   private async call(path: string, body?: unknown): Promise<unknown> {
-    // ten sam guard co przy feedach iCal — adres z konfiguracji nie może
-    // wskazywać na sieć prywatną
-    const url = await assertPublicUrl(`${this.baseUrl.replace(/\/$/, "")}${path}`);
+    const url = parseBaseUrl(`${this.baseUrl.replace(/\/$/, "")}${path}`);
     const res = await fetch(url, {
       method: body ? "POST" : "GET",
       headers: {

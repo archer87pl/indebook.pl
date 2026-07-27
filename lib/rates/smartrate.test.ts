@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapQuoteDay } from "./smartrate";
+import { SmartRateClient, mapQuoteDay } from "./smartrate";
 
 // Kształt odpowiedzi Rezio.Api (JSON snake_case, ceny w złotówkach)
 const raw = {
@@ -47,5 +47,31 @@ describe("mapQuoteDay", () => {
   it("odrzuca dobę bez daty lub bez ceny", () => {
     expect(() => mapQuoteDay({ ...raw, date: undefined })).toThrow();
     expect(() => mapQuoteDay({ ...raw, recommended_price: "dużo" })).toThrow();
+  });
+});
+
+describe("SmartRateClient — adres bazowy", () => {
+  it("przyjmuje adres w sieci prywatnej (SmartRate stoi obok RezFlow w Dockerze)", async () => {
+    const calls: string[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return new Response(JSON.stringify({ markets: [] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }) as typeof fetch;
+    try {
+      const client = new SmartRateClient("http://rezio-api:8080", "sekret");
+      await expect(client.markets()).resolves.toEqual([]);
+      expect(calls[0]).toBe("http://rezio-api:8080/v1/markets");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("odrzuca protokoły inne niż http/https", async () => {
+    const client = new SmartRateClient("file:///etc/passwd", "");
+    await expect(client.markets()).rejects.toThrow(/http\/https/);
   });
 });
