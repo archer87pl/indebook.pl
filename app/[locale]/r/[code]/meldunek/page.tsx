@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import GuestError from "@/components/GuestError";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { PenLine } from "lucide-react";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 // pokazujemy tu żadnych danych z karty — pełny wgląd ma tylko właściciel.
 export default async function CheckInPage(props: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; n?: string }>;
 }) {
   const { code } = await props.params;
   const sp = await props.searchParams;
@@ -84,7 +85,7 @@ export default async function CheckInPage(props: {
         </div>
       </div>
 
-      {sp.error && <p className="alert-error">{sp.error}</p>}
+      <GuestError code={sp.error} n={sp.n} />
 
       <p className="text-sm text-slate-600">{t("intro")}</p>
 

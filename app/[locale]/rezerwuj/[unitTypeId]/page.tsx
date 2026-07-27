@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import GuestError from "@/components/GuestError";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localePath } from "@/lib/locale-urls";
 import { notFound, redirect } from "next/navigation";
@@ -27,7 +28,7 @@ function dayShortPl(iso: string) {
 
 export default async function BookPage(props: {
   params: Promise<{ unitTypeId: string }>;
-  searchParams: Promise<{ from?: string; to?: string; guests?: string; error?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; guests?: string; error?: string; n?: string }>;
 }) {
   const { unitTypeId } = await props.params;
   const sp = await props.searchParams;
@@ -96,7 +97,7 @@ export default async function BookPage(props: {
         <span className="font-semibold text-brand-900">{t("steps.details")}</span>
       </div>
 
-      {sp.error && <p className="alert-error">{sp.error}</p>}
+      <GuestError code={sp.error} n={sp.n} />
 
       <div className="grid items-start gap-6 md:grid-cols-[1fr_360px]">
         <Card>

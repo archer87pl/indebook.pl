@@ -37,6 +37,7 @@ import {
   parseAdditionalGuests,
 } from "./checkin";
 import { PRICING_RULE_KINDS, quoteStayDynamic } from "./dynamic-pricing";
+import { guestErrorQuery, type GuestErrorCode } from "./guest-errors";
 import { pricingPlanFeatures } from "./plans";
 import { ratesProvider, type Market } from "./rates/provider";
 import { afterRates, defaultGuards, invalidateRates } from "./rates/refresh";
@@ -237,25 +238,25 @@ export async function createReservation(formData: FormData) {
   const guestLocale = await getLocale();
 
   const back = `/rezerwuj/${unitTypeId}?from=${from}&to=${to}&guests=${guests}`;
-  const fail = (msg: string) => redirect(`${back}&error=${encodeURIComponent(msg)}`);
+  // kod błędu, nie gotowe zdanie — stronę ogląda gość w swoim języku
+  const fail = (code: GuestErrorCode, n?: number) =>
+    redirect(`${back}&${guestErrorQuery(code, n)}`);
 
   if (!Number.isInteger(unitTypeId) || unitTypeId <= 0) redirect("/");
-  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("Nieprawidłowy zakres dat.");
-  if (from < todayISO()) fail("Data przyjazdu nie może być w przeszłości.");
-  if (!Number.isInteger(guests) || guests < 1) fail("Podaj liczbę gości.");
-  if (guestName.length < 3) fail("Podaj imię i nazwisko.");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Podaj poprawny adres e-mail.");
-  if (rodo !== "on") fail("Wymagana jest zgoda na przetwarzanie danych.");
+  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("invalidRange");
+  if (from < todayISO()) fail("pastArrival");
+  if (!Number.isInteger(guests) || guests < 1) fail("guestsRequired");
+  if (guestName.length < 3) fail("nameRequired");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("emailInvalid");
+  if (rodo !== "on") fail("rodoRequired");
 
   const unitType = await prisma.unitType.findUnique({
     where: { id: unitTypeId },
     include: { seasons: true, property: true },
   });
   if (!unitType) redirect("/");
-  if (unitType.property.suspended)
-    fail("Ten obiekt jest obecnie niedostępny — rezerwacja nie jest możliwa.");
-  if (guests > unitType.maxGuests)
-    fail(`Ten typ pokoju mieści maksymalnie ${unitType.maxGuests} os.`);
+  if (unitType.property.suspended) fail("propertySuspended");
+  if (guests > unitType.maxGuests) fail("maxGuests", unitType.maxGuests);
 
   const quote = await quoteStayDynamic(
     unitType,
@@ -264,14 +265,14 @@ export async function createReservation(formData: FormData) {
     unitType.property.depositPercent
   );
   if (quote.nights < quote.minStay)
-    fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
+    fail("minStay", quote.minStay);
 
   // kod promocyjny (opcjonalny)
   let discountGr = 0;
   let promoId: number | null = null;
   if (promoInput) {
     const promo = await applicablePromo(unitType.propertyId, promoInput);
-    if (!promo) fail("Kod promocyjny jest nieprawidłowy lub wygasł.");
+    if (!promo) fail("promoInvalid");
     discountGr = Math.round((quote.totalGr * promo!.percentOff) / 100);
     promoId = promo!.id;
   }
@@ -316,7 +317,7 @@ export async function createReservation(formData: FormData) {
     });
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
-      fail("Ten termin został właśnie zajęty. Wybierz inne daty.");
+      fail("datesJustTaken");
     throw e;
   }
 
@@ -465,7 +466,8 @@ export async function changeReservationDates(formData: FormData) {
   const to = str(formData, "to");
   const guestsInput = Number(str(formData, "guests"));
   const back = `/r/${code}`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -481,19 +483,17 @@ export async function changeReservationDates(formData: FormData) {
   const active =
     r.status === "CONFIRMED" ||
     (r.status === "PENDING" && r.expiresAt && r.expiresAt > new Date());
-  if (!active) fail("Tej rezerwacji nie można już zmienić.");
-  if (r.checkIn <= todayISO())
-    fail("Pobyt już się rozpoczął — zmianę terminu uzgodnij z obiektem.");
-  if (!isValidISO(from) || !isValidISO(to) || to <= from)
-    fail("Nieprawidłowy zakres dat.");
-  if (from < todayISO()) fail("Data przyjazdu nie może być w przeszłości.");
+  if (!active) fail("notChangeable");
+  if (r.checkIn <= todayISO()) fail("stayStarted");
+  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("invalidRange");
+  if (from < todayISO()) fail("pastArrival");
 
   const unitType = r.unit.unitType;
   const guests = guestsInput || r.guests;
   if (guests < 1 || guests > unitType.maxGuests)
-    fail(`Ten typ pokoju mieści od 1 do ${unitType.maxGuests} os.`);
+    fail("guestsRange", unitType.maxGuests);
   if (from === r.checkIn && to === r.checkOut && guests === r.guests)
-    fail("Nic się nie zmieniło — wybrano ten sam termin i liczbę gości.");
+    fail("nothingChanged");
 
   const quote = await quoteStayDynamic(
     unitType,
@@ -503,7 +503,7 @@ export async function changeReservationDates(formData: FormData) {
     r.id // własna rezerwacja nie podbija sobie obłożenia
   );
   if (quote.nights < quote.minStay)
-    fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
+    fail("minStay", quote.minStay);
 
   // zachowaj dotychczasowy rabat proporcjonalnie (np. z kodu promocyjnego)
   const discountRatio =
@@ -536,7 +536,7 @@ export async function changeReservationDates(formData: FormData) {
     });
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
-      fail("Brak wolnych pokoi w nowym terminie. Wybierz inne daty.");
+      fail("noRoomsForNewDates");
     throw e;
   }
 
@@ -565,7 +565,8 @@ export async function changeReservationDates(formData: FormData) {
 export async function submitCheckIn(formData: FormData) {
   const code = str(formData, "code");
   const back = `/r/${code}/meldunek`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -580,9 +581,8 @@ export async function submitCheckIn(formData: FormData) {
   });
   if (!reservation) redirect("/");
   const r = reservation!;
-  if (r.checkInCard)
-    redirect(`/r/${code}?error=${encodeURIComponent("Meldunek został już wypełniony.")}`);
-  if (!canCheckIn(r)) fail("Meldunek online nie jest dostępny dla tej rezerwacji.");
+  if (r.checkInCard) redirect(`/r/${code}?${guestErrorQuery("checkInDone")}`);
+  if (!canCheckIn(r)) fail("checkInUnavailable");
 
   const fullName = str(formData, "fullName");
   const address = str(formData, "address");
@@ -595,24 +595,20 @@ export async function submitCheckIn(formData: FormData) {
   const terms = str(formData, "terms");
   const rodo = str(formData, "rodo");
 
-  if (fullName.length < 3) fail("Podaj imię i nazwisko.");
-  if (address.length < 5) fail("Podaj adres zamieszkania.");
-  if (citizenship.length < 3) fail("Podaj obywatelstwo.");
-  if (docType && !DOC_TYPES.some((d) => d.key === docType))
-    fail("Wybierz rodzaj dokumentu z listy.");
-  if (docNumber && !docType) fail("Wybierz rodzaj dokumentu.");
-  if (docNumber && !/^[A-Z0-9 \-]{4,20}$/.test(docNumber))
-    fail("Nieprawidłowy numer dokumentu.");
-  if (carPlate && !/^[A-Z0-9 \-]{2,12}$/.test(carPlate))
-    fail("Nieprawidłowy numer rejestracyjny.");
-  if (arrivalTime && !/^\d{2}:\d{2}$/.test(arrivalTime))
-    fail("Godzinę przyjazdu podaj w formacie HH:MM.");
+  if (fullName.length < 3) fail("nameRequired");
+  if (address.length < 5) fail("addressRequired");
+  if (citizenship.length < 3) fail("citizenshipRequired");
+  if (docType && !DOC_TYPES.some((d) => d.key === docType)) fail("docTypeInvalid");
+  if (docNumber && !docType) fail("docTypeRequired");
+  if (docNumber && !/^[A-Z0-9 \-]{4,20}$/.test(docNumber)) fail("docNumberInvalid");
+  if (carPlate && !/^[A-Z0-9 \-]{2,12}$/.test(carPlate)) fail("plateInvalid");
+  if (arrivalTime && !/^\d{2}:\d{2}$/.test(arrivalTime)) fail("arrivalTimeInvalid");
   const additional = parseAdditionalGuests(formData, r.guests - 1);
-  if (additional.error) fail(additional.error);
-  if (terms !== "on") fail("Wymagana jest akceptacja regulaminu obiektu.");
-  if (rodo !== "on") fail("Wymagana jest zgoda na przetwarzanie danych.");
+  if (additional.error) fail(additional.error, additional.guestNo);
+  if (terms !== "on") fail("termsRequired");
+  if (rodo !== "on") fail("rodoRequired");
   if (!isValidSignature(signature))
-    fail("Podpis jest wymagany — złóż podpis w polu formularza.");
+    fail("signatureRequired");
 
   await prisma.$transaction([
     prisma.checkInCard.create({
@@ -665,7 +661,8 @@ export async function submitCheckIn(formData: FormData) {
 export async function submitReview(formData: FormData) {
   const code = str(formData, "code");
   const back = `/r/${code}/opinia`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -680,20 +677,17 @@ export async function submitReview(formData: FormData) {
   });
   if (!reservation) redirect("/");
   const r = reservation!;
-  if (r.review)
-    redirect(`/r/${code}?error=${encodeURIComponent("Opinia została już wystawiona. Dziękujemy!")}`);
+  if (r.review) redirect(`/r/${code}?${guestErrorQuery("reviewDone")}`);
   if (!canReview({ status: r.status, checkOut: r.checkOut, hasReview: false }))
-    fail("Opinię można wystawić dopiero po zakończonym pobycie.");
+    fail("reviewTooEarly");
 
   const rating = Number(str(formData, "rating"));
   const comment = str(formData, "comment");
   const consent = str(formData, "consent");
 
-  if (!isValidRating(rating)) fail("Wybierz ocenę od 1 do 5 gwiazdek.");
-  if (comment.length > REVIEW_MAX)
-    fail(`Opinia może mieć maksymalnie ${REVIEW_MAX} znaków.`);
-  if (consent !== "on")
-    fail("Wymagana jest zgoda na publikację opinii pod imieniem i inicjałem.");
+  if (!isValidRating(rating)) fail("ratingRequired");
+  if (comment.length > REVIEW_MAX) fail("reviewTooLong", REVIEW_MAX);
+  if (consent !== "on") fail("reviewConsentRequired");
 
   const property = r.unit.unitType.property;
   await prisma.review.create({

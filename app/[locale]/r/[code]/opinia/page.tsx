@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import GuestError from "@/components/GuestError";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReviewPage(props: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; n?: string }>;
 }) {
   const { code } = await props.params;
   const sp = await props.searchParams;
@@ -78,7 +79,7 @@ export default async function ReviewPage(props: {
         </div>
       </div>
 
-      {sp.error && <p className="alert-error">{sp.error}</p>}
+      <GuestError code={sp.error} n={sp.n} />
 
       <Card>
         <form action={submitReview}>

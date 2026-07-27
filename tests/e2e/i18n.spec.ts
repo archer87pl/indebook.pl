@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { PROPERTY_SLUG, loginAsOwner } from "./helpers";
+import { PROPERTY_SLUG, futureISO, loginAsOwner } from "./helpers";
 
 // Wielojęzyczność interfejsu gościa: prefiks w URL (PL bez, EN/DE z),
 // przełącznik, auto-detekcja z Accept-Language, hreflang, oraz regresja —
@@ -40,6 +40,45 @@ test.describe("i18n gościa", () => {
     for (const lang of ["pl", "en", "de", "x-default"]) {
       await expect(page.locator(`link[rel="alternate"][hreflang="${lang}"]`)).toHaveCount(1);
     }
+  });
+
+  test("błąd akcji wraca w języku gościa, nie po polsku", async ({ page }) => {
+    // zakres dat z przeszłości — akcja odbija rezerwację; komunikat musi być
+    // w języku strony, bo wcześniej server action wstawiał polskie zdanie do URL-a
+    // strona rezerwacji odrzuca daty z przeszłości zanim cokolwiek wyrenderuje,
+    // więc zakres musi być poprawny — sprawdzamy sam render komunikatu
+    const range = `from=${futureISO(0)}&to=${futureISO(2)}&guests=2`;
+    const unitTypeId = 1;
+
+    // polski PRZED wizytami na /en i /de — next-intl zapamiętuje wybór języka
+    // w cookie, więc po nich wejście bez prefiksu przekierowałoby na EN
+    await page.goto(`/rezerwuj/${unitTypeId}?${range}&error=pastArrival`);
+    await expect(
+      page.getByText("Data przyjazdu nie może być w przeszłości.")
+    ).toBeVisible();
+
+    await page.goto(`/de/rezerwuj/${unitTypeId}?${range}&error=pastArrival`);
+    await expect(
+      page.getByText("Das Anreisedatum darf nicht in der Vergangenheit liegen.")
+    ).toBeVisible();
+
+    await page.goto(`/en/rezerwuj/${unitTypeId}?${range}&error=pastArrival`);
+    await expect(page.getByText("The arrival date cannot be in the past.")).toBeVisible();
+  });
+
+  test("komunikat z liczbą wstawia ją w zdanie", async ({ page }) => {
+    await page.goto(
+      `/en/rezerwuj/1?from=${futureISO(0)}&to=${futureISO(2)}&guests=2&error=maxGuests&n=4`
+    );
+    await expect(page.getByText("This room type sleeps up to 4 guests.")).toBeVisible();
+  });
+
+  test("nieznany kod błędu degraduje do komunikatu ogólnego", async ({ page }) => {
+    // parametr pochodzi z URL-a, więc nie wolno renderować go dosłownie
+    await page.goto(
+      `/en/rezerwuj/1?from=${futureISO(0)}&to=${futureISO(2)}&guests=2&error=<script>`
+    );
+    await expect(page.getByText("Something went wrong. Please try again.")).toBeVisible();
   });
 
   test("panel recepcji zostaje po polsku, bez prefiksu języka", async ({ page }) => {

@@ -711,12 +711,27 @@ nawigacja, etykiety kart apartamentów, widget kalendarza, formularz kontaktowy
 i stopka; tytuły sekcji oraz opisy z kreatora zostają w oryginale. CTA do
 rezerwacji prowadzi do wersji językowej aplikacji (`/en/o/...`).
 
+### Błędy formularzy w języku gościa
+
+Akcje serwerowe zwracają **kod błędu, nie gotowe zdanie** (`lib/guest-errors.ts`),
+a komponent `components/GuestError.tsx` tłumaczy go z przestrzeni `common.errors`.
+Wcześniej server action wstawiał polski tekst do URL-a i niemiecki gość dostawał
+go dosłownie na przetłumaczonej stronie — dokładnie w momencie płacenia.
+
+Kod z URL-a jest **walidowany względem listy znanych kodów**; nieznana wartość
+degraduje do komunikatu ogólnego, więc nie renderujemy surowej zawartości
+parametru. Komunikaty z liczbą (maks. gości, min. nocy, limit znaków, numer
+gościa) dostają ją parametrem `n` i wstawiają przez ICU — z odmianą przez
+liczbę tam, gdzie język tego wymaga.
+
+Panel recepcji zostaje po polsku, więc akcje administracyjne dalej zwracają
+zwykły tekst.
+
 ### Czego (jeszcze) nie tłumaczymy
 
-Formatowanie dat i kwot jest na razie `pl-PL` (`lib/format.ts`,
-`lib/dates.ts`), etykiety udogodnień (`lib/amenities.ts`) i komunikaty błędów
-server actions są po polsku. To świadomy zakres pierwszej iteracji —
-interfejs najpierw, treści i formaty w kolejnej.
+Formatowanie dat i kwot jest na razie `pl-PL` (`lib/format.ts`, `lib/dates.ts`)
+i etykiety udogodnień (`lib/amenities.ts`) są po polsku. To świadomy zakres —
+interfejs i komunikaty najpierw, formaty i słowniki treści w kolejnym kroku.
 
 ---
 

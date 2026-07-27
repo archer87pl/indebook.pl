@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import GuestError from "@/components/GuestError";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localePath } from "@/lib/locale-urls";
 import { notFound } from "next/navigation";
@@ -48,6 +49,7 @@ export default async function ReservationPage(props: {
   searchParams: Promise<{
     changed?: string;
     error?: string;
+    n?: string;
     paid?: string;
     checkedin?: string;
     reviewed?: string;
@@ -129,7 +131,7 @@ export default async function ReservationPage(props: {
       {sp.changed && <p className="alert-success">{t("alerts.datesChanged")}</p>}
       {sp.checkedin && <p className="alert-success">{t("alerts.checkedIn")}</p>}
       {sp.reviewed && <p className="alert-success">{t("alerts.reviewThanks")}</p>}
-      {sp.error && <p className="alert-error">{sp.error}</p>}
+      <GuestError code={sp.error} n={sp.n} />
       {sp.paid && payable && (
         <p className="alert-success">{t("alerts.paymentPending")}</p>
       )}
