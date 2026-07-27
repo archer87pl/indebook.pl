@@ -11,7 +11,7 @@ public sealed record QuoteDay(
     double OccupancyRate, string OccupancySource, int DemandScore,
     QuoteComponents Components, IReadOnlyList<string> DemandDrivers);
 
-public sealed class QuoteService(IMarketRegistry registry, IMarketDataStore marketData)
+public sealed class QuoteService(IMarketRegistry registry, IMarketDataStore marketData, IEventStore events)
 {
     public async Task<IReadOnlyList<QuoteDay>?> QuoteAsync(
         string marketId, decimal basePrice, decimal minPrice, decimal maxPrice,
@@ -31,7 +31,19 @@ public sealed class QuoteService(IMarketRegistry registry, IMarketDataStore mark
             var occupancy = data.OccupancyRate ?? 0.70;
 
             var signals = CalendarSignals.ForRange(d, d).Single();
-            var demand = DemandScoreCalculator.Score(market.Type, market.Voivodeship, signals);
+            // Wydarzenia dokładają się do sygnałów kalendarzowych; brak danych
+            // (nieskonfigurowane źródło albo przeterminowane wpisy) po prostu
+            // zostawia popyt liczony z samego kalendarza.
+            var dayEvents = await events.GetAsync(marketId, d, ct);
+            var eventSignals = dayEvents
+                .Select(e => new EventSignal(
+                    e.Name,
+                    Enum.TryParse<EventScale>(e.Scale, ignoreCase: true, out var scale)
+                        ? scale
+                        : EventScale.Small))
+                .ToList();
+            var demand = DemandScoreCalculator.Score(
+                market.Type, market.Voivodeship, signals, eventSignals);
 
             var rec = PricingEngine.Recommend(settings, new MarketDaySnapshot(d, occupancy, demand.Score, demand.Drivers), today);
             var c = rec.Components;

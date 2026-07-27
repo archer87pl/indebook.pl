@@ -29,3 +29,7 @@ public sealed record QuoteResponse(string MarketId, string MarketName, string Ma
 
 public sealed record MarketDto(string Id, string Name, string Type, string Voivodeship, double Lat, double Lng);
 public sealed record MarketsResponse(IReadOnlyList<MarketDto> Markets);
+
+public sealed record EventIngestLine(string Name, string Scale);
+public sealed record EventIngestDay(DateOnly Date, IReadOnlyList<EventIngestLine> Events);
+public sealed record EventsIngestRequest(string MarketId, IReadOnlyList<EventIngestDay> Days);

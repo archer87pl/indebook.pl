@@ -23,6 +23,8 @@ services:
     environment:
       LOKI_URL: http://loki:3100
       MONOLITH_URL: http://rezio-api:8080
+      # bez klucza endpoint /v1/event-jobs zwraca 503 i wydarzenia są wyłączone
+      TICKETMASTER_API_KEY: "${TICKETMASTER_API_KEY:-}"
     depends_on:
       loki:
         condition: service_started

@@ -37,11 +37,14 @@ if (StoreSelection.UsesPostgres(databaseUrl))
         o.UseNpgsql(databaseUrl, npg => npg.EnableRetryOnFailure()));
     builder.Services.AddHealthChecks().AddDbContextCheck<PricingDbContext>("postgres");
     builder.Services.AddScoped<IMarketDataStore, EfMarketDataStore>();
+    builder.Services.AddScoped<IEventStore, EfEventStore>();
 }
 else
 {
     builder.Services.AddSingleton<IMarketDataStore>(sp =>
         new InMemoryMarketDataStore(sp.GetRequiredService<TimeProvider>()));
+    builder.Services.AddSingleton<IEventStore>(sp =>
+        new InMemoryEventStore(sp.GetRequiredService<TimeProvider>()));
 }
 
 builder.Services.AddScoped<IListingStore, InMemoryListingStore>();
@@ -136,6 +139,17 @@ app.MapPost("/v1/internal/market-stats",
     foreach (var line in request.Stats)
         await store.SetStatsAsync(request.MarketId, line.Date, line.OccupancyRate, ct);
     return Results.Accepted(value: new { ingested_days = request.Stats.Count });
+});
+
+app.MapPost("/v1/internal/events",
+    async (EventsIngestRequest request, IEventStore store, CancellationToken ct) =>
+{
+    foreach (var day in request.Days)
+    {
+        var events = day.Events.Select(e => new MarketEvent(e.Name, e.Scale)).ToList();
+        await store.SetEventsAsync(request.MarketId, day.Date, events, ct);
+    }
+    return Results.Accepted(value: new { ingested_days = request.Days.Count });
 });
 
 app.MapPost("/v1/quote",
