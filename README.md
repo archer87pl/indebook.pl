@@ -89,6 +89,20 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 **Pozostałe integracje**
 - płatności Przelewy24 per obiekt (pola `Property.p24*` z panelu obiektu, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola), SMS-y SMSAPI (env `SMSAPI_TOKEN`, fallback: konsola) — potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem (z linkiem do meldunku, cron, wysyłka tylko 8–21).
 
+## CI
+
+`.github/workflows/ci.yml` odpala się na PR-ach i push-ach do `main` w dwóch jobach:
+
+- **check** — `tsc`, `eslint`, testy jednostkowe i `npm run build`; bez bazy, bo
+  testy jednostkowe jej nie potrzebują (te, które potrzebują, same się pomijają
+  bez `TEST_DATABASE_URL`).
+- **e2e** — Playwright na realnej aplikacji z Postgresem w usłudze i danymi
+  z `npm run db:seed`; ceny dynamiczne na stubie (`SMARTRATE_STUB=1`), żeby nic
+  nie wychodziło do sieci. Przy porażce wrzuca `test-results/` jako artefakt.
+
+Wersja npm jest przypięta do tej z `package.json#packageManager` — starszy npm
+inaczej rozwiązuje peery optional deps i `npm ci` się wywala.
+
 ## Konwencje
 
 - Daty pobytu: stringi `YYYY-MM-DD`, przedziały półotwarte `[checkIn, checkOut)`, porównania leksykograficzne.
