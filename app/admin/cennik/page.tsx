@@ -14,6 +14,9 @@ import {
 import { requireOwner } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PRICING_RULE_KINDS } from "@/lib/dynamic-pricing";
+import PricingEngineCard from "@/components/admin/PricingEngineCard";
+import { listMarkets } from "@/lib/actions";
+import { addDaysISO, todayISO } from "@/lib/dates";
 import { formatPln } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +36,24 @@ export default async function PricingPage() {
     }),
   ]);
 
+  const markets = await listMarkets();
+  const today = todayISO();
+  const rates = await prisma.dynamicRate.findMany({
+    where: {
+      unitTypeId: { in: unitTypes.map((u) => u.id) },
+      date: { gte: today, lt: addDaysISO(today, 30) },
+    },
+    orderBy: { date: "asc" },
+  });
+
   return (
     <div className="space-y-4">
+      <PricingEngineCard
+        property={property}
+        markets={markets}
+        unitTypes={unitTypes}
+        rates={rates}
+      />
       {unitTypes.map((ut) => (
         <Card key={ut.id}>
           <CardHeader
@@ -135,7 +154,7 @@ export default async function PricingPage() {
       <Card>
         <CardHeader
           title="Ceny dynamiczne"
-          sub="Automatyczne korekty cen za noc, nakładane na cennik (bazę/sezony). Dodatnia korekta = podwyżka, ujemna = rabat. Korekty z kilku reguł sumują się."
+          sub="Automatyczne korekty cen za noc, nakładane na cennik (bazę/sezony). Dodatnia korekta = podwyżka, ujemna = rabat. Korekty z kilku reguł sumują się. Reguły działają, gdy silnik SmartRate jest wyłączony lub nie odpowiada."
         />
         <CardBody className="space-y-3">
           {PRICING_RULE_KINDS.map((kind) => {
