@@ -25,6 +25,8 @@ services:
       MONOLITH_URL: http://rezio-api:8080
       # bez klucza endpoint /v1/event-jobs zwraca 503 i wydarzenia są wyłączone
       TICKETMASTER_API_KEY: "${TICKETMASTER_API_KEY:-}"
+      # cykliczne odświeżanie rynków i wydarzeń (REFRESH_ENABLED=0 wyłącza)
+      REFRESH_INTERVAL_HOURS: "${REFRESH_INTERVAL_HOURS:-24}"
     depends_on:
       loki:
         condition: service_started

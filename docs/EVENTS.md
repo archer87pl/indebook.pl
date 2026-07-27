@@ -29,6 +29,27 @@ POST /v1/event-jobs {market_id, from, to}          → scraper-api (:8082)
 POST /v1/quote → QuoteService czyta wydarzenia doby → DemandScoreCalculator
 ```
 
+## Harmonogram
+
+`MarketRefreshService` (hosted service w scraperze) przechodzi cyklicznie po
+wszystkich rynkach i odpala oba zadania: statystyki rynku i wydarzenia.
+Wcześniej `/v1/scrape-jobs` i `/v1/event-jobs` trzeba było wołać ręcznie, więc
+silnik jechał na syntetycznym obłożeniu 0,70 i zerze wydarzeń.
+
+| Zmienna | Domyślnie | Znaczenie |
+|---|---|---|
+| `MONOLITH_URL` | — | **warunek włączenia**; bez niego harmonogram nie startuje |
+| `REFRESH_ENABLED` | włączony | `0` wyłącza mimo konfiguracji |
+| `REFRESH_INTERVAL_HOURS` | 24 | odstęp między cyklami |
+| `REFRESH_STATS_DAYS` | 30 | horyzont statystyk rynku |
+| `REFRESH_EVENTS_DAYS` | 180 | horyzont wydarzeń |
+
+Warunkiem jest `MONOLITH_URL`, a nie osobna flaga, celowo: testy hostujące
+aplikację w pamięci (`WebApplicationFactory`) nie ustawiają tej zmiennej, więc
+nie zaczynają nagle chodzić po sieci. Między rynkami jest 2 s przerwy — limit
+Discovery API to 5 zapytań na sekundę, a padnięcie jednego rynku nie zatrzymuje
+pozostałych.
+
 ## Skala wydarzenia — świadome ograniczenie
 
 Discovery API **nie podaje pojemności obiektu ani frekwencji**. Zamiast zmyślać

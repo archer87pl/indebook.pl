@@ -51,6 +51,12 @@ if (!string.IsNullOrWhiteSpace(ticketmasterKey))
     });
 }
 
+// Zapłon pipeline'u: cykliczne odświeżanie statystyk rynku i wydarzeń.
+// Uruchamia się tylko przy skonfigurowanym MONOLITH_URL, więc testy hostujące
+// aplikację w pamięci nie zaczynają chodzić po sieci.
+builder.Services.AddHttpClient();
+builder.Services.AddHostedService<MarketRefreshService>();
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
