@@ -1,19 +1,67 @@
+# Self-host RezFlow: aplikacja + Postgres. Ceny dynamiczne chodzą tu na stubie
+# (SMARTRATE_STUB=1) — żeby podnieść też prawdziwy silnik SmartRate, użyj
+# docker-compose.full.yml (patrz README, sekcja „Wdrożenie na Docker").
 services:
-  rezio:
+  rezflow:
     build: .
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     environment:
-      # baza SQLite na wolumenie (produkcyjnie: Postgres — patrz README)
-      DATABASE_URL: "file:/app/data/prod.db"
+      # aplikacja i migracje idą do tego samego Postgresa (bez poolera)
+      DATABASE_URL: "postgresql://rezflow:${POSTGRES_PASSWORD:-rezflow}@rezflow-db:5432/rezflow"
+      DIRECT_URL: "postgresql://rezflow:${POSTGRES_PASSWORD:-rezflow}@rezflow-db:5432/rezflow"
       APP_URL: "${APP_URL:-http://localhost:3000}"
+      # hosty traktowane jako aplikacja (reszta = domena własna obiektu)
+      APP_HOSTS: "${APP_HOSTS:-localhost}"
+      # subdomeny stron WWW obiektów: nazwa.<SITES_BASE_DOMAIN>
+      SITES_BASE_DOMAIN: "${SITES_BASE_DOMAIN:-localhost}"
+      # zadania okresowe w self-host odpala instrumentation.ts; sekret chroni
+      # endpointy /api/cron/* (fail-closed — bez niego zwracają 401)
+      CRON_SECRET: "${CRON_SECRET:-}"
+      # powiadomienia — bez kluczy lecą do konsoli kontenera
       RESEND_API_KEY: "${RESEND_API_KEY:-}"
-      EMAIL_FROM: "${EMAIL_FROM:-Rezio <onboarding@resend.dev>}"
+      EMAIL_FROM: "${EMAIL_FROM:-RezFlow <onboarding@resend.dev>}"
+      SMSAPI_TOKEN: "${SMSAPI_TOKEN:-}"
+      # zdjęcia obiektów (Vercel Blob) — bez tokenu upload jest wyłączony
+      BLOB_READ_WRITE_TOKEN: "${BLOB_READ_WRITE_TOKEN:-}"
+      # channel manager: bez klucza tryb Channex ukryty w panelu
+      CHANNEX_API_KEY: "${CHANNEX_API_KEY:-}"
+      CHANNEX_BASE_URL: "${CHANNEX_BASE_URL:-}"
+      CHANNEX_WEBHOOK_SECRET: "${CHANNEX_WEBHOOK_SECRET:-}"
+      CHANNEX_STUB: "${CHANNEX_STUB:-}"
+      # ceny dynamiczne: domyślnie stub, bo w tym compose nie ma SmartRate
+      SMARTRATE_URL: "${SMARTRATE_URL:-}"
+      SMARTRATE_API_KEY: "${SMARTRATE_API_KEY:-}"
+      SMARTRATE_STUB: "${SMARTRATE_STUB:-1}"
+      SMARTRATE_TTL_HOURS: "${SMARTRATE_TTL_HOURS:-12}"
     volumes:
-      - rezio-data:/app/data
-      - rezio-uploads:/app/public/uploads
+      - rezflow-uploads:/app/public/uploads
+    depends_on:
+      rezflow-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # nazwa inna niż „postgres", bo docker-compose.full.yml scala ten plik
+  # z compose'em SmartRate, który ma własną usługę o tej nazwie
+  rezflow-db:
+    image: postgres:16
+    ports:
+      # wystawione, żeby dało się odpalić `npm run db:seed` z hosta.
+      # 5433, bo 5432 zajmuje Postgres SmartRate w docker-compose.full.yml
+      - "${DB_PORT:-5433}:5432"
+    environment:
+      POSTGRES_USER: rezflow
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-rezflow}"
+      POSTGRES_DB: rezflow
+    volumes:
+      - rezflow-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rezflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
-  rezio-data:
-  rezio-uploads:
+  rezflow-pg:
+  rezflow-uploads:

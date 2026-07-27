@@ -117,13 +117,43 @@ Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **
 
 ## Wdrożenie na Docker (self-host)
 
+Dwa warianty. **Sama aplikacja** (RezFlow + własny Postgres; ceny dynamiczne chodzą wtedy na deterministycznym stubie):
+
 ```bash
-# uploady wymagają BLOB_READ_WRITE_TOKEN (zdjęcia trafiają do Vercel Blob)
 APP_URL=https://twojadomena.pl docker compose up -d --build
 ```
 
+**Cały system** — aplikacja razem z silnikiem cen SmartRate z sąsiedniego repo `Rezio.SmartRate`:
+
+```bash
+docker compose -f docker-compose.full.yml up -d --build
+```
+
+Podnosi 8 usług w jednym projekcie Compose (wspólna sieć, więc widzą się po nazwach):
+
+| Usługa | Adres | Rola |
+|---|---|---|
+| `rezflow` | http://localhost:3000 | aplikacja |
+| `rezflow-db` | localhost:5433 | Postgres aplikacji |
+| `rezio-api` | http://localhost:8080 | silnik cen SmartRate + jego panel |
+| `scraper-api` | http://localhost:8082 | scraper rynków |
+| `postgres` | localhost:5432 | Postgres SmartRate |
+| `grafana` | http://localhost:3001 | logi (datasource Loki) |
+| `loki` | http://localhost:3101 | zbieranie logów |
+| `healthchecks-ui` | http://localhost:8090 | zdrowie usług .NET |
+
+Dane startowe (konta demo i dwa obiekty) wgrasz z hosta przez wystawiony port bazy:
+
+```bash
+DATABASE_URL=postgresql://rezflow:rezflow@localhost:5433/rezflow DIRECT_URL=postgresql://rezflow:rezflow@localhost:5433/rezflow npm run db:seed
+```
+
 - Obraz buduje standalone Next (`output: "standalone"` poza Vercelem), przy starcie robi `prisma db push`.
-- Wymaga zewnętrznego Postgresa (`DATABASE_URL`/`DIRECT_URL`) — SQLite nie jest już wspierany.
+- Zadania okresowe poza Vercelem odpala `instrumentation.ts` (długożyjący proces) — nie `vercel.json`.
+- Konfiguracja przez zmienne środowiskowe (patrz `.env.example`); wszystkie mają sensowne domyślne, więc `up` działa bez żadnego pliku `.env`. Uploady zdjęć wymagają `BLOB_READ_WRITE_TOKEN`.
+- Porty SmartRate są w `docker-compose.full.yml` przemapowane (Grafana 3000→3001, Loki 3100→3101), bo domyślne zderzają się z aplikacją i z testami e2e.
+- `SMARTRATE_API_KEY` ustawione po obu stronach włącza autoryzację silnika cen. Puste = endpointy SmartRate otwarte, co jest dopuszczalne tylko dlatego, że nie wychodzą poza sieć Compose.
+- Repo SmartRate w innej lokalizacji wskażesz zmienną `SMARTRATE_REPO`.
 - Za reverse proxy (nginx/traefik) wystaw port 3000 + HTTPS.
 - SEO: `app/sitemap.ts` i `app/robots.ts` generują sitemap.xml/robots.txt; landing ma JSON-LD (FAQPage, SoftwareApplication z ofertami planów, Organization).
 
