@@ -2189,8 +2189,11 @@ export async function setPricingMode(formData: FormData) {
     }
   }
   if (mode === "SMARTRATE") {
+    // rozgrzewamy tylko okno, które panel pokazuje od razu (30 dni) — pełny
+    // horyzont 180 dni dobija cron. Inaczej jedno kliknięcie zlecałoby setki
+    // sekwencyjnych zapisów ciągnących się długo po odpowiedzi.
     const from = todayISO();
-    for (const t of types) await afterRates(t.id, from, addDaysISO(from, 180));
+    for (const t of types) await afterRates(t.id, from, addDaysISO(from, 30));
   }
 
   revalidatePath("/admin/cennik");

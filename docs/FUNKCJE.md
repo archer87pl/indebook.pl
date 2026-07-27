@@ -30,6 +30,7 @@ i komplet automatyzacji (płatności, meldunek, SMS-y, opinie, faktury).
 11. [Mapa tras](#11-mapa-tras)
 12. [Strona WWW obiektu (kreator)](#12-strona-www-obiektu-kreator)
 13. [Wielojęzyczność interfejsu gościa](#13-wielojęzyczność-interfejsu-gościa-pl--en--de)
+14. [Ceny dynamiczne (SmartRate)](#14-ceny-dynamiczne-smartrate)
 
 ---
 
@@ -716,3 +717,78 @@ Formatowanie dat i kwot jest na razie `pl-PL` (`lib/format.ts`,
 `lib/dates.ts`), etykiety udogodnień (`lib/amenities.ts`) i komunikaty błędów
 server actions są po polsku. To świadomy zakres pierwszej iteracji —
 interfejs najpierw, treści i formaty w kolejnej.
+
+---
+
+## 14. Ceny dynamiczne (SmartRate)
+
+Obiekt ma **dwa silniki wyceny** i przełącza się między nimi w `/admin/cennik`.
+`quoteStayDynamic` (`lib/dynamic-pricing.ts`) pozostaje jedynym wejściem do
+wyceny — wszystkie ścieżki (wyniki wyszukiwania, strona rezerwacji, rezerwacja
+gościa, zmiana terminu, rezerwacja ręczna) widzą tę samą cenę.
+
+### Dwa silniki
+
+- **`BASIC`** — dotychczasowe reguły `PricingRule` (weekend, last minute,
+  obłożenie) nakładane na cennik statyczny (baza + sezony).
+- **`SMARTRATE`** — rekomendacje z zewnętrznego API (projekt `Rezio.SmartRate`).
+  Dostępny wyłącznie w planie **Pro** (`pricingPlanFeatures` w `lib/plans.ts`)
+  i po wskazaniu rynku. Reguły zostają widoczne jako awaryjne.
+
+### Skąd bierze się cena
+
+`POST /v1/quote` liczy każdą dobę osobno: sezonowość × dzień tygodnia ×
+wyprzedzenie × obłożenie rynku × popyt, a wynik przycina do widełek. Panel
+pokazuje rozbicie na te mnożniki, wskaźnik popytu, drivery (np. „długi
+weekend") i znacznik obcięcia — cena nie jest czarną skrzynką.
+
+### Widełki bezpieczeństwa
+
+`UnitType.minPriceGr` / `maxPriceGr`, edytowalne per typ pokoju. Przy pierwszym
+włączeniu trybu wypełniają się z ceny bazowej: **−30% / +80%**
+(`defaultGuards` w `lib/rates/refresh.ts`).
+
+### Cache i świeżość
+
+Rekomendacje trafiają do tabeli `DynamicRate` (jeden wiersz = jedna doba dla
+typu pokoju). **Ścieżka gościa nie robi HTTP** — czyta wyłącznie z cache'u.
+Wpisy starsze niż `SMARTRATE_TTL_HOURS` (domyślnie 12) nadal obsługują gościa,
+ale zlecają odświeżenie. `refreshRates` odpuszcza, jeśli którykolwiek wpis
+w zakresie ma mniej niż 60 sekund (coalesce) — inaczej popularny obiekt
+zasypałby API przy każdym wyszukiwaniu.
+
+### Wszystko albo nic
+
+Brak choćby jednej nocy w cache degraduje **całą** wycenę do reguł. Ta sama
+zasada, co „pełny kalendarz albo nic" przy push-u ARI do Channexa: gość nigdy
+nie widzi ceny sklejonej z dwóch silników, a cena w wyszukiwarce zgadza się
+z ceną przy rezerwacji.
+
+### Odświeżanie i inwalidacja
+
+- `after()` po odpowiedzi (`afterRates`) — poza zakresem żądania degraduje się
+  do fire-and-forget, jak `afterAri`.
+- Przełączenie trybu rozgrzewa **30 dni** (tyle pokazuje panel); pełny horyzont
+  **180 dni** dobija cron `GET /api/cron/rates` (fail-closed z `CRON_SECRET`,
+  harmonogram w `vercel.json`).
+- Zmiana ceny bazowej, sezonu, widełek, rynku lub trybu kasuje wpisy dotkniętych
+  typów pokoi (`invalidateRates`).
+
+### Awarie
+
+Ciche dla gościa, głośne dla właściciela: błąd API ląduje w
+`Property.smartRateError` (alert w panelu), a wycena leci regułami. Timeout 5 s,
+adres bazowy przechodzi przez `assertPublicUrl` (ten sam guard co feedy iCal).
+
+### Konfiguracja
+
+| Zmienna | Znaczenie |
+|---|---|
+| `SMARTRATE_URL` | adres `Rezio.Api`; brak = tryb ukryty w panelu |
+| `SMARTRATE_API_KEY` | nagłówek `X-Api-Key` (patrz README `Rezio.SmartRate`) |
+| `SMARTRATE_STUB=1` | deterministyczny stub (dev, vitest, Playwright) — bez sieci |
+| `SMARTRATE_TTL_HOURS` | próg świeżości cache'u, domyślnie 12 |
+
+Pliki: `lib/rates/provider.ts` (abstrakcja + stub), `lib/rates/smartrate.ts`
+(klient), `lib/rates/cache.ts` (odczyt), `lib/rates/refresh.ts` (zapis),
+`components/admin/PricingEngineCard.tsx` (panel).

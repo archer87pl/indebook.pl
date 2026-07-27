@@ -26,5 +26,7 @@ export default defineConfig({
     url: "http://localhost:3100",
     reuseExistingServer: true,
     timeout: 60_000,
+    // deterministyczny silnik cen — testy nie potrzebują dockera z .NET
+    env: { ...process.env, SMARTRATE_STUB: "1" },
   },
 });

@@ -51,6 +51,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **opinie po pobycie** `/r/[kod]/opinia`: ocena 1–5 gwiazdek + komentarz (prośba e-mail/SMS dzień po wymeldowaniu, cron); publikacja na stronie obiektu pod imieniem i inicjałem,
 - wyszukiwanie rezerwacji `/moja-rezerwacja` (kod + e-mail), zgoda RODO.
 - **wielojęzyczny interfejs (PL / EN / DE)**: prefiks w URL (`/en/o/...`, polski bez prefiksu), auto-detekcja z `Accept-Language`, przełącznik w nagłówku, hreflang; maile i SMS-y lecą w języku, w którym gość rezerwował. Tłumaczymy interfejs — treści właściciela zostają w oryginale. Panel recepcji po polsku.
+- **ceny dynamiczne (Pro)**: przełącznik silnika wyceny — podstawowe reguły RezFlow albo zewnętrzne API SmartRate (rekomendacja per doba z rozbiciem na sezon, dzień tygodnia, wyprzedzenie, obłożenie rynku i popyt); ceny czytane z cache w bazie, odświeżane w tle, awaria API cicho degraduje do reguł.
 
 **Blog / poradnik (`/blog`)**
 - artykuły jako pliki Markdown w `content/blog/*.md` (frontmatter: tytuł, data, zajawka, tag, okładka, `draft`), generowane statycznie; treść przez `marked`, JSON-LD `BlogPosting`, sekcja najnowszych na landingu i wpisy w `sitemap.xml`. Instrukcja dla autorów: `content/blog/README.md`.
@@ -94,6 +95,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - Kwoty w groszach (int, sufiks `Gr`); formatowanie i odmiana nocy w `lib/format.ts`.
 - Dostępność i przydział jednostki w transakcji (`lib/availability.ts`); PENDING po 30 min zwalnia termin.
 - Teksty interfejsu gościa: `messages/<pl|en|de>/<namespace>.json` (polski źródłem prawdy, test parzystości kluczy w `i18n/messages.test.ts`). W trasach gościa linkuj przez `Link` z `@/i18n/navigation`, a `href` dla `components/ui/Button` buduj `localePath()` z `lib/locale-urls.ts`.
+- Ceny dynamiczne: `quoteStayDynamic` jest jedynym wejściem do wyceny; SmartRate wchodzi przez cache `DynamicRate` (nigdy HTTP w ścieżce gościa), a niepełne pokrycie degraduje CAŁĄ wycenę do reguł.
 
 ## Wdrożenie na Vercel (zalecane)
 
