@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
-import { PROPERTY_SLUG, RUN, drawSignature, futureISO } from "./helpers";
+import { PROPERTY_SLUG, RUN, drawSignature, futureISO, loginAsOwner, pastISO } from "./helpers";
 
 // Część testów zakłada dane w bazie (kod promocyjny, zakończony pobyt), stąd .env
 loadEnvConfig(process.cwd());
@@ -176,4 +176,79 @@ test("kod promocyjny obniża kwotę do zapłaty", async ({ page }) => {
   } finally {
     await prisma.promoCode.deleteMany({ where: { propertyId: property.id, code } });
   }
+});
+
+test("opinia po pobycie trafia na stronę obiektu", async ({ page }) => {
+  // Opinia wymaga ZAKOŃCZONEGO pobytu, więc rezerwację z przeszłości tworzymy
+  // w bazie — przez UI nie da się zarezerwować wstecz.
+  const { prisma }: Db = await import("../../lib/db");
+  const property = await prisma.property.findUniqueOrThrow({ where: { slug: PROPERTY_SLUG } });
+  const unit = await prisma.unit.findFirstOrThrow({
+    where: { unitType: { propertyId: property.id } },
+    orderBy: { id: "asc" },
+  });
+  const code = `HO-E2E-REV-${RUN}`.toUpperCase().slice(0, 20);
+  const comment = `Swietny pobyt ${RUN}`;
+
+  await prisma.reservation.create({
+    data: {
+      code,
+      unitId: unit.id,
+      guestName: `E2E Recenzent ${RUN}`,
+      email: `rev-${RUN}@example.com`,
+      guests: 2,
+      checkIn: pastISO(10),
+      checkOut: pastISO(8),
+      totalGr: 50000,
+      depositGr: 15000,
+      status: "CONFIRMED",
+    },
+  });
+
+  try {
+    await page.goto(`/r/${code}/opinia`);
+    await expect(page.getByRole("heading", { name: "Jak minął pobyt?" })).toBeVisible();
+
+    await page.getByRole("button", { name: "5 z 5" }).click();
+    await page.locator('textarea[name="comment"]').fill(comment);
+    await page.locator('input[name="consent"]').check();
+    await page.getByRole("button", { name: "Wyślij opinię" }).click();
+
+    // po wyslaniu wracamy do panelu goscia z potwierdzeniem
+    await expect(page.getByText("Dziękujemy za opinię o pobycie!")).toBeVisible();
+
+    const review = await prisma.review.findFirstOrThrow({ where: { comment } });
+    expect(review.rating).toBe(5);
+
+    // opinia jest publiczna — musi pojawic sie na stronie obiektu
+    await expect
+      .poll(
+        async () => {
+          await page.goto(`/o/${PROPERTY_SLUG}`);
+          return page.getByText(comment).first().isVisible().catch(() => false);
+        },
+        { timeout: 30_000 }
+      )
+      .toBe(true);
+
+    await prisma.review.delete({ where: { id: review.id } });
+  } finally {
+    await prisma.review.deleteMany({ where: { comment } });
+    await prisma.reservation.deleteMany({ where: { code } });
+  }
+});
+
+test("wiadomość gościa dociera do panelu recepcji", async ({ page }) => {
+  const { prisma }: Db = await import("../../lib/db");
+  const message = `Pytanie E2E ${RUN}`;
+  const code = await bookStay(page, futureISO(600), futureISO(602));
+
+  await page.locator('textarea[name="body"]').fill(message);
+  await page.getByRole("button", { name: "Wyślij wiadomość" }).click();
+  await expect(page.getByText(message)).toBeVisible();
+
+  const reservation = await prisma.reservation.findUniqueOrThrow({ where: { code } });
+  await loginAsOwner(page);
+  await page.goto(`/admin/rezerwacje/${reservation.id}`);
+  await expect(page.getByText(message)).toBeVisible();
 });

@@ -20,6 +20,13 @@ export function futureISO(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** Data ISO w przeszłości — dla scenariuszy wymagających zakończonego pobytu. */
+export function pastISO(daysAgo: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Logowanie do panelu recepcji kontem demo. */
 export async function loginAsOwner(page: Page) {
   await page.goto("/login");

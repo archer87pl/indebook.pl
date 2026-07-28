@@ -29,6 +29,12 @@ export default defineConfig({
     // Deterministyczny silnik cen — testy nie potrzebują dockera z .NET.
     // Podajemy WYŁĄCZNIE tę zmienną: Playwright dokłada ją do środowiska
     // procesu. Rozlanie tu `...process.env` psuje start serwera na Windows.
-    env: { SMARTRATE_STUB: "1" },
+    env: {
+      SMARTRATE_STUB: "1",
+      // Zdjecia na dysk, nie do Vercel Blob: testy nie moga zapisywac
+      // do zewnetrznego magazynu ani zalezec od waznosci tokenu.
+      BLOB_READ_WRITE_TOKEN: "",
+      UPLOADS_DIR: "",
+    },
   },
 });
