@@ -1,24 +1,16 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SmartRateClient, mapQuoteDay } from "./smartrate";
 
-// Kształt odpowiedzi Rezio.Api (JSON snake_case, ceny w złotówkach)
-const raw = {
-  date: "2026-07-10",
-  recommended_price: 234.5,
-  clamped_by: "max_price",
-  occupancy_rate: 0.82,
-  occupancy_source: "scraped",
-  demand_score: 71,
-  components: {
-    base_price: 200,
-    season: 1.35,
-    day_of_week: 1.15,
-    lead_time: 0.9,
-    market_occupancy: 1.15,
-    demand: 1.1,
-  },
-  demand_drivers: ["długi weekend"],
-};
+// Kształt odpowiedzi bierzemy z KONTRAKTU, nie z kopii wklejonej do testu —
+// ten sam plik weryfikuje po swojej stronie test w C#. Dzięki temu zmiana
+// kształtu w silniku od razu pokazuje, co poprawić w kliencie.
+const contract = JSON.parse(
+  readFileSync(join(__dirname, "..", "..", "contracts", "smartrate-quote.json"), "utf8")
+) as { days: Record<string, unknown>[] };
+
+const raw = contract.days[0];
 
 describe("mapQuoteDay", () => {
   it("przelicza złotówki na grosze", () => {

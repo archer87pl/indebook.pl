@@ -4,6 +4,25 @@ Multi-tenant system rezerwacji noclegów bez prowizji: obiekty (pensjonaty, will
 
 > 📘 **Szczegółowa dokumentacja funkcji** — jak działa każdy moduł, trasy, pliki i dostępność per plan: [docs/FUNKCJE.md](docs/FUNKCJE.md). Żywy przewodnik design systemu: `/styleguide`.
 
+## Układ repozytorium
+
+Monorepo: aplikacja w korzeniu, silnik cen jako osobny serwis.
+
+```
+/                      RezFlow — Next.js, panel recepcji i ścieżka gościa
+services/smartrate/    SmartRate — silnik cen dynamicznych (.NET) + scraper
+contracts/             granica HTTP między nimi (patrz niżej)
+```
+
+**Systemy rozmawiają po HTTP, mimo wspólnego repozytorium.** SmartRate stoi
+w kontenerze i ma swój cykl wydawniczy — RezFlow woła go przez
+`lib/rates/smartrate.ts`, nigdy bezpośrednio.
+
+Granicę pilnuje `contracts/smartrate-quote.json`: to jedno źródło prawdy dla
+kształtu odpowiedzi `POST /v1/quote`, weryfikowane testami **po obu stronach**
+(`lib/rates/smartrate.test.ts` i `QuoteContractTests.cs`). Zmiana pola w C#
+zapala się od razu, zamiast psuć mapowanie w TypeScripcie na produkcji.
+
 ## Stack
 
 - Next.js 16 (App Router, Server Actions, Turbopack) + React 19 + TypeScript

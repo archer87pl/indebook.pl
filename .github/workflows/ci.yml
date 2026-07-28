@@ -1,8 +1,20 @@
 name: ci
+# Aplikacja RezFlow (korzeń repo). Zmiany wyłącznie w silniku cen nie odpalają
+# tego workflow — ma swój własny (smartrate.yml). Katalog contracts/ celowo
+# NIE jest wykluczony: to granica HTTP między systemami, więc jego zmiana musi
+# przejść przez testy obu stron.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "services/smartrate/**"
+      - "docs/**"
+      - "**.md"
   pull_request:
+    paths-ignore:
+      - "services/smartrate/**"
+      - "docs/**"
+      - "**.md"
 
 jobs:
   # Szybka bramka: typy, lint, testy jednostkowe i build. Bez bazy — testy

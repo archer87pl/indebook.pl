@@ -1,0 +1,31 @@
+name: smartrate
+# Silnik cen SmartRate (.NET) w services/smartrate. Zmiany wyłącznie
+# w aplikacji nie odpalają tego workflow — ma swój własny (ci.yml).
+# Katalog contracts/ wyzwala OBA: to granica HTTP między systemami, a testy
+# kontraktu po stronie C# czytają dokładnie ten plik.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/smartrate/**"
+      - "contracts/**"
+      - ".github/workflows/smartrate.yml"
+  pull_request:
+    paths:
+      - "services/smartrate/**"
+      - "contracts/**"
+      - ".github/workflows/smartrate.yml"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/smartrate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build --configuration Release
+      - run: dotnet test --configuration Release --no-build --verbosity normal

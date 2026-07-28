@@ -1,0 +1,40 @@
+{
+  "$comment": [
+    "KONTRAKT: odpowiedź POST /v1/quote silnika SmartRate.",
+    "",
+    "To jest jedno źródło prawdy dla granicy między RezFlow a SmartRate.",
+    "Oba systemy mieszkają w jednym repozytorium, ale rozmawiają po HTTP,",
+    "więc granica nie może rozpłynąć się w bezpośrednim wywołaniu.",
+    "",
+    "Pilnują tego dwa testy po obu stronach:",
+    "  services/smartrate/services/monolith/tests/Rezio.Api.Tests/QuoteContractTests.cs",
+    "  lib/rates/smartrate.test.ts",
+    "",
+    "Zmiana kształtu odpowiedzi wymaga zmiany tego pliku — i wtedy oba testy",
+    "pokazują, co jeszcze trzeba poprawić. Bez tego zmiana w C# psułaby",
+    "mapowanie w TypeScripcie dopiero na produkcji."
+  ],
+  "market_id": "mkt_gdansk",
+  "market_name": "Gdańsk",
+  "market_type": "Seaside",
+  "currency": "PLN",
+  "days": [
+    {
+      "date": "2027-07-10",
+      "recommended_price": 234.5,
+      "clamped_by": "max_price",
+      "occupancy_rate": 0.82,
+      "occupancy_source": "scraped",
+      "demand_score": 71,
+      "components": {
+        "base_price": 200,
+        "season": 1.35,
+        "day_of_week": 1.15,
+        "lead_time": 0.9,
+        "market_occupancy": 1.15,
+        "demand": 1.1
+      },
+      "demand_drivers": ["długi weekend"]
+    }
+  ]
+}

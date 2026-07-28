@@ -5,13 +5,16 @@
 #
 #   docker compose -f docker-compose.full.yml up -d --build
 #
-# Wymaga repo Rezio.SmartRate obok RezFlow; inną lokalizację wskaż zmienną
-# SMARTRATE_REPO. Bazy nie kolidują: RezFlow ma „rezflow-db", SmartRate
-# „postgres". Porty SmartRate przemapowane, bo domyślne zderzają się
-# z aplikacją (Grafana 3000) i z testami e2e (Loki 3100 = Playwright).
+# SmartRate mieszka w tym samym repo (services/smartrate), więc ścieżka jest
+# stała — wcześniej wskazywała na sąsiedni katalog i działała tylko wtedy, gdy
+# ktoś sklonował oba repozytoria obok siebie pod właściwymi nazwami.
+#
+# Bazy nie kolidują: RezFlow ma „rezflow-db", SmartRate „postgres". Porty
+# SmartRate przemapowane, bo domyślne zderzają się z aplikacją (Grafana 3000)
+# i z testami e2e (Loki 3100 = Playwright).
 include:
   - path: docker-compose.yml
-  - path: ${SMARTRATE_REPO:-../Rezio.SmartRate}/docker-compose.yml
+  - path: services/smartrate/docker-compose.yml
 
 services:
   rezflow:

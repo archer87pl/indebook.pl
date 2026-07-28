@@ -9,7 +9,7 @@ import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(__dirname, "..");
-const SMARTRATE_REPO = join(ROOT, "..", "Rezio.SmartRate");
+const SMARTRATE_DIR = join(ROOT, "services", "smartrate");
 
 type Service = {
   image?: string;
@@ -144,7 +144,7 @@ describe("docker-compose.full.yml — spięcie obu systemów", () => {
   it("wciąga oba pliki Compose do jednego projektu", () => {
     const paths = (full.include ?? []).map((i) => i.path);
     expect(paths).toContain("docker-compose.yml");
-    expect(paths.some((p) => p.includes("Rezio.SmartRate"))).toBe(true);
+    expect(paths).toContain("services/smartrate/docker-compose.yml");
   });
 
   it("kieruje aplikację na SmartRate po nazwie usługi i wyłącza stub", () => {
@@ -158,20 +158,15 @@ describe("docker-compose.full.yml — spięcie obu systemów", () => {
   });
 });
 
-// Poniższe wymagają repo SmartRate obok RezFlow — bez niego pomijamy,
-// bo `docker-compose.full.yml` i tak nie miałby czego scalić.
-const smartRatePath = join(SMARTRATE_REPO, "docker-compose.yml");
-let smartRate: Compose | null = null;
-try {
-  smartRate = compose(smartRatePath);
-} catch {
-  smartRate = null;
-}
+// SmartRate jest w tym samym repo, więc te asercje wykonują się ZAWSZE.
+// Wcześniej pomijały się, gdy sąsiedniego repo nie było — czyli dokładnie
+// tam, gdzie najbardziej by się przydały: na CI.
+const smartRate = compose(join(SMARTRATE_DIR, "docker-compose.yml"));
 
-describe.skipIf(!smartRate)("scalenie z repo SmartRate", () => {
+describe("scalenie z compose SmartRate", () => {
   it("nazwy usług nie kolidują", () => {
     const mine = Object.keys(appServices);
-    const theirs = Object.keys(smartRate!.services ?? {});
+    const theirs = Object.keys(smartRate.services ?? {});
     expect(mine.filter((n) => theirs.includes(n))).toEqual([]);
   });
 
@@ -182,7 +177,7 @@ describe.skipIf(!smartRate)("scalenie z repo SmartRate", () => {
     for (const [name, svc] of Object.entries(appServices)) {
       merged[name] = effectivePorts(svc, overrides[name]);
     }
-    for (const [name, svc] of Object.entries(smartRate!.services ?? {})) {
+    for (const [name, svc] of Object.entries(smartRate.services ?? {})) {
       merged[name] = effectivePorts(svc, overrides[name]);
     }
 
@@ -202,7 +197,7 @@ describe.skipIf(!smartRate)("scalenie z repo SmartRate", () => {
     const overrides = full.services ?? {};
     const all = [
       ...Object.entries(appServices),
-      ...Object.entries(smartRate!.services ?? {}),
+      ...Object.entries(smartRate.services ?? {}),
     ];
     const users = all
       .filter(([name, svc]) => effectivePorts(svc, overrides[name]).includes("3100"))
