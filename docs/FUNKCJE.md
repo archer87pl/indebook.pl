@@ -711,6 +711,26 @@ nawigacja, etykiety kart apartamentów, widget kalendarza, formularz kontaktowy
 i stopka; tytuły sekcji oraz opisy z kreatora zostają w oryginale. CTA do
 rezerwacji prowadzi do wersji językowej aplikacji (`/en/o/...`).
 
+### Czym są pilnowane tłumaczenia
+
+| Test | Co łapie |
+|---|---|
+| `i18n/messages.test.ts` | parzystość kluczy między językami i puste wartości |
+| `i18n/usage.test.ts` | klucz użyty w kodzie, którego nie ma w słowniku; klucz w słowniku, którego nikt nie używa; rozjazd wstawek ICU |
+| `lib/format-locale.test.ts` | polskie formattery na powierzchniach gościa |
+| `lib/amenities.test.ts` | polskie etykiety udogodnień na powierzchniach gościa |
+
+Parzystość porównuje języki **między sobą**, więc klucz nieobecny w żadnym z nich
+przechodziłby niezauważony, a gość zobaczyłby dosłowną ścieżkę klucza zamiast
+zdania. Dlatego `usage.test.ts` wiąże słowniki z kodem: skanuje przypisania
+`getTranslations("ns")`, wywołania `t("klucz")`, `t.rich(...)` i klucze budowane
+dynamicznie (`t(\`errors.${code}\`)` → cała rodzina `errors.*`), a opakowania
+zwracające gotowy tłumacz (`guestT` → `email`) wymienia wprost.
+
+Rozjazd wstawek liczony jest **z poziomu zerowego** ICU — naiwne wyrażenie
+regularne łapałoby treść gałęzi liczby mnogiej (`one {Pozostały gość}`) i każdy
+język wyglądałby na niezgodny.
+
 ### Błędy formularzy w języku gościa
 
 Akcje serwerowe zwracają **kod błędu, nie gotowe zdanie** (`lib/guest-errors.ts`),

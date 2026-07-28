@@ -109,6 +109,7 @@ test.describe("i18n gościa", () => {
     const unitType = await prisma.unitType.findFirstOrThrow({
       where: { property: { slug: PROPERTY_SLUG } },
       select: { id: true, amenities: true },
+      orderBy: { id: "asc" }, // deterministycznie — bez tego kolejnosc zalezy od bazy
     });
     const original = unitType.amenities;
     await prisma.unitType.update({
@@ -119,11 +120,18 @@ test.describe("i18n gościa", () => {
     try {
       const path = `/o/${PROPERTY_SLUG}/pokoj/${unitType.id}`;
 
-      await page.goto(path);
-      await expect(page.getByText("Klimatyzacja").first()).toBeVisible();
+      // Strona pokoju ma `revalidate = 300`, wiec swiezo zapisane udogodnienia
+      // moga jeszcze nie byc widoczne — ponawiamy nawigacje zamiast pojedynczego
+      // strzalu. Test przechodzil samodzielnie, a wywracal sie w pelnym pakiecie.
+      const seesLabel = async (url: string, label: string) => {
+        await page.goto(url);
+        return page.getByText(label).first().isVisible().catch(() => false);
+      };
 
-      await page.goto(`/de${path}`);
-      await expect(page.getByText("Klimaanlage").first()).toBeVisible();
+      await expect.poll(() => seesLabel(path, "Klimatyzacja"), { timeout: 30_000 }).toBe(true);
+      await expect
+        .poll(() => seesLabel(`/de${path}`, "Klimaanlage"), { timeout: 30_000 })
+        .toBe(true);
       await expect(page.getByText("Klimatyzacja")).toHaveCount(0);
     } finally {
       await prisma.unitType.update({

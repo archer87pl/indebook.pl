@@ -9,16 +9,6 @@
     "reviews": "Reviews",
     "contact": "Contact"
   },
-  "sections": {
-    "about": "About the property",
-    "units": "Our apartments",
-    "gallery": "Gallery",
-    "amenities": "Amenities",
-    "calendar": "Availability and rates",
-    "attractions": "Nearby attractions",
-    "reviews": "What our guests say",
-    "contact": "Contact"
-  },
   "units": {
     "upTo": "up to {count} guests",
     "minStay": "min. {count} nights",
@@ -31,7 +21,6 @@
     "nextMonth": "Next month",
     "hintStart": "Click your arrival and departure dates",
     "hintEnd": "Choose your departure date",
-    "stay": "Stay {from} → {to}",
     "bookThese": "Book these dates",
     "loadError": "Could not load availability. Please try again.",
     "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun",

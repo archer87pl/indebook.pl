@@ -1,7 +1,4 @@
 {
-  "book": "Book now",
-  "back": "Back",
-  "loading": "Loading…",
   "nights": "{count, plural, one {# night} other {# nights}}",
   "guests": "{count, plural, one {# guest} other {# guests}}",
   "perNight": "per night",

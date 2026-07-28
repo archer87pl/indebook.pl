@@ -9,16 +9,6 @@
     "reviews": "Opinie",
     "contact": "Kontakt"
   },
-  "sections": {
-    "about": "O obiekcie",
-    "units": "Nasze apartamenty",
-    "gallery": "Galeria",
-    "amenities": "Udogodnienia",
-    "calendar": "Dostępność i ceny",
-    "attractions": "Atrakcje w okolicy",
-    "reviews": "Opinie naszych gości",
-    "contact": "Kontakt"
-  },
   "units": {
     "upTo": "do {count} os.",
     "minStay": "min. {count} nocy",
@@ -31,7 +21,6 @@
     "nextMonth": "Następny miesiąc",
     "hintStart": "Kliknij dzień przyjazdu i wyjazdu",
     "hintEnd": "Wybierz dzień wyjazdu",
-    "stay": "Pobyt {from} → {to}",
     "bookThese": "Zarezerwuj ten termin",
     "loadError": "Nie udało się pobrać dostępności. Spróbuj ponownie.",
     "weekdays": "Pn,Wt,Śr,Cz,Pt,So,Nd",
