@@ -18,6 +18,18 @@ public static class WinterBreakCalendar
                     [Voivodeship.Podkarpackie, Voivodeship.Lubelskie, Voivodeship.Wielkopolskie,
                      Voivodeship.Lubuskie, Voivodeship.Slaskie]),
             ],
+            [2027] =
+            [
+                (new DateOnly(2027, 1, 18), new DateOnly(2027, 1, 31),
+                    [Voivodeship.Podkarpackie, Voivodeship.Podlaskie, Voivodeship.Dolnoslaskie,
+                     Voivodeship.Lodzkie, Voivodeship.Slaskie, Voivodeship.Opolskie]),
+                (new DateOnly(2027, 2, 1), new DateOnly(2027, 2, 14),
+                    [Voivodeship.Mazowieckie, Voivodeship.Pomorskie, Voivodeship.Swietokrzyskie,
+                     Voivodeship.Lubelskie]),
+                (new DateOnly(2027, 2, 15), new DateOnly(2027, 2, 28),
+                    [Voivodeship.Lubuskie, Voivodeship.KujawskoPomorskie, Voivodeship.WarminskoMazurskie,
+                     Voivodeship.Wielkopolskie, Voivodeship.Zachodniopomorskie, Voivodeship.Malopolskie]),
+            ],
         };
 
     public static bool Covers(Voivodeship voivodeship, DateOnly date) =>
