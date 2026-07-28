@@ -1,0 +1,75 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Rezio.Scraper.Api.Tests;
+
+public class ScraperEndpointTests(WebApplicationFactory<Program> factory)
+    : IClassFixture<WebApplicationFactory<Program>>
+{
+    // Replace the real outbound HttpClient (which would otherwise dial the monolith at
+    // MONOLITH_URL) with a stub so these endpoint tests stay self-contained/offline.
+    private readonly HttpClient _client = factory.WithWebHostBuilder(builder =>
+        builder.ConfigureServices(services =>
+            services.AddHttpClient<ScrapeAndPublish>(c => c.BaseAddress = new Uri("http://monolith.test"))
+                .ConfigurePrimaryHttpMessageHandler(() => new RecordingHandler())))
+        .CreateClient();
+
+    [Fact]
+    public async Task Scrape_job_then_stats_roundtrip()
+    {
+        var job = await _client.PostAsJsonAsync("/v1/scrape-jobs",
+            new { market_id = "mkt_zakopane", from = "2026-08-01", to = "2026-08-07" });
+        Assert.Equal(HttpStatusCode.OK, job.StatusCode);
+        var jobJson = JsonNode.Parse(await job.Content.ReadAsStringAsync())!;
+        Assert.Equal(30, (int)jobJson["listings_scraped"]!);
+        Assert.Equal(7, (int)jobJson["days_aggregated"]!);
+
+        var resp = await _client.GetAsync("/v1/markets/mkt_zakopane/stats?from=2026-08-01&to=2026-08-07");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        Assert.Equal("mkt_zakopane", (string)json["market_id"]!);
+        var stats = json["stats"]!.AsArray();
+        Assert.Equal(7, stats.Count);
+        Assert.Equal(30, (int)stats[0]!["active_listings"]!);
+        Assert.True((decimal)stats[0]!["median_price"]! > 0);
+    }
+
+    [Fact]
+    public async Task Scrape_job_accepts_any_market()
+    {
+        var resp = await _client.PostAsJsonAsync("/v1/scrape-jobs",
+            new { market_id = "mkt_anything", from = "2026-08-01", to = "2026-08-07" });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        Assert.Equal(30, (int)json["listings_scraped"]!);
+    }
+
+    [Fact]
+    public async Task Stats_inverted_range_returns_400()
+    {
+        var resp = await _client.GetAsync("/v1/markets/mkt_zakopane/stats?from=2026-08-07&to=2026-08-01");
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Stats_for_any_market_returns_empty_list()
+    {
+        var resp = await _client.GetAsync("/v1/markets/mkt_anything/stats?from=2026-08-01&to=2026-08-07");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        var stats = json["stats"]!.AsArray();
+        Assert.Empty(stats);
+    }
+
+    [Fact]
+    public async Task Health_returns_healthy_status_json()
+    {
+        var resp = await _client.GetAsync("/health");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var json = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!;
+        Assert.Equal("Healthy", (string)json["status"]!);
+    }
+}
