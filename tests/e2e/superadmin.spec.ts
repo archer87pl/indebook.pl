@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+import { PROPERTY_SLUG, RUN, futureISO, loginAsOwner, pastISO } from "./helpers";
+
+// Akcje platformy zmieniaja stan obiektu, wiec sprawdzamy je w bazie
+loadEnvConfig(process.cwd());
+
+type Db = typeof import("../../lib/db");
 
 const ADMIN = { email: "admin@rezflow.pl", password: "admin1234" };
 
@@ -57,4 +64,176 @@ test("superadmin przegląda platformę i loguje się jako właściciel", async (
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByText("Plan dnia · dziś")).toBeVisible();
   await expect(page.getByText("Willa RezFlow").first()).toBeVisible();
+});
+
+test.describe("akcje platformy", () => {
+  test.describe.configure({ mode: "serial" });
+
+  async function loginAsAdmin(page: import("@playwright/test").Page) {
+    await page.goto("/login");
+    await page.getByLabel("E-mail").fill(ADMIN.email);
+    await page.getByLabel(/^Hasło/).fill(ADMIN.password);
+    await page.getByRole("button", { name: "Zaloguj się" }).click();
+    await expect(page).toHaveURL(/\/superadmin$/);
+  }
+
+  test("zwykły właściciel nie wchodzi do panelu platformy", async ({ page }) => {
+    // Granica uprawnień: konto obiektu nie może zobaczyć danych całej platformy.
+    await loginAsOwner(page);
+
+    for (const path of ["/superadmin", "/superadmin/rezerwacje", "/superadmin/ustawienia"]) {
+      await page.goto(path);
+      await expect(page).not.toHaveURL(new RegExp(`${path}$`));
+      await expect(page.getByText("MRR (wg planów)")).toHaveCount(0);
+    }
+  });
+
+  test("zawieszenie obiektu odcina rezerwacje, przywrócenie je oddaje", async ({ page }) => {
+    const { prisma }: Db = await import("../../lib/db");
+    const property = await prisma.property.findUniqueOrThrow({ where: { slug: PROPERTY_SLUG } });
+
+    try {
+      await loginAsAdmin(page);
+      await page.goto(`/superadmin/obiekt/${property.id}`);
+      await page.getByRole("button", { name: "Zawieś obiekt" }).click();
+
+      await expect
+        .poll(
+          async () =>
+            (await prisma.property.findUniqueOrThrow({ where: { id: property.id } })).suspended,
+          { timeout: 15_000 }
+        )
+        .toBe(true);
+
+      // gość widzi komunikat zamiast oferty
+      await page.goto(`/o/${PROPERTY_SLUG}/wyniki?from=${futureISO(800)}&to=${futureISO(802)}&guests=2`);
+      await expect(page.getByRole("link", { name: "Rezerwuję" })).toHaveCount(0);
+
+      await page.goto(`/superadmin/obiekt/${property.id}`);
+      await page.getByRole("button", { name: "Przywróć obiekt" }).click();
+      await expect
+        .poll(
+          async () =>
+            (await prisma.property.findUniqueOrThrow({ where: { id: property.id } })).suspended,
+          { timeout: 15_000 }
+        )
+        .toBe(false);
+    } finally {
+      await prisma.property.update({
+        where: { id: property.id },
+        data: { suspended: false },
+      });
+    }
+  });
+
+  test("ukrycie opinii zdejmuje ją ze strony obiektu", async ({ page }) => {
+    const { prisma }: Db = await import("../../lib/db");
+    const property = await prisma.property.findUniqueOrThrow({ where: { slug: PROPERTY_SLUG } });
+    const comment = `Opinia do moderacji ${RUN}`;
+
+    // opinia jest przypieta do rezerwacji (relacja 1:1), wiec najpierw ona
+    const unit = await prisma.unit.findFirstOrThrow({
+      where: { unitType: { propertyId: property.id } },
+      orderBy: { id: "asc" },
+    });
+    const code = `HO-E2E-MOD-${RUN}`.toUpperCase().slice(0, 20);
+    const reservation = await prisma.reservation.create({
+      data: {
+        code,
+        unitId: unit.id,
+        guestName: `E2E Recenzent ${RUN}`,
+        email: `mod-${RUN}@example.com`,
+        guests: 2,
+        checkIn: pastISO(20),
+        checkOut: pastISO(18),
+        totalGr: 30000,
+        depositGr: 9000,
+        status: "CONFIRMED",
+      },
+    });
+    const review = await prisma.review.create({
+      data: {
+        reservationId: reservation.id,
+        propertyId: property.id,
+        authorName: `E2E R. ${RUN}`,
+        rating: 5,
+        comment,
+      },
+    });
+
+    try {
+      // najpierw jest publiczna
+      await expect
+        .poll(
+          async () => {
+            await page.goto(`/o/${PROPERTY_SLUG}`);
+            return page.getByText(comment).first().isVisible().catch(() => false);
+          },
+          { timeout: 30_000 }
+        )
+        .toBe(true);
+
+      await loginAsAdmin(page);
+      await page.goto("/superadmin/opinie");
+      const row = page.locator("div", { hasText: comment }).last();
+      await row.getByRole("button", { name: "Ukryj" }).click();
+
+      await expect
+        .poll(
+          async () => (await prisma.review.findUniqueOrThrow({ where: { id: review.id } })).hidden,
+          { timeout: 15_000 }
+        )
+        .toBe(true);
+
+      // i znika gościom
+      await expect
+        .poll(
+          async () => {
+            await page.goto(`/o/${PROPERTY_SLUG}`);
+            return page.getByText(comment).first().isVisible().catch(() => false);
+          },
+          { timeout: 30_000 }
+        )
+        .toBe(false);
+    } finally {
+      await prisma.review.deleteMany({ where: { id: review.id } });
+      await prisma.reservation.deleteMany({ where: { code } });
+    }
+  });
+
+  test("zmiana planu obiektu odblokowuje funkcje w panelu właściciela", async ({ page }) => {
+    const { prisma }: Db = await import("../../lib/db");
+    const property = await prisma.property.findUniqueOrThrow({ where: { slug: PROPERTY_SLUG } });
+    const original = property.plan;
+
+    try {
+      await prisma.property.update({ where: { id: property.id }, data: { plan: "FREE" } });
+
+      await loginAsOwner(page);
+      await page.goto("/admin/cennik");
+      // plan FREE nie ma cen dynamicznych — zamiast przełącznika jest zachęta
+      await expect(page.getByRole("link", { name: /Zobacz plany od Pro/ })).toBeVisible();
+
+      await loginAsAdmin(page);
+      await page.goto("/superadmin?q=willa");
+      const card = page.locator("form", { has: page.locator('select[name="plan"]') }).first();
+      await card.locator('select[name="plan"]').selectOption("PRO");
+      await card.getByRole("button", { name: "Zmień" }).click();
+
+      await expect
+        .poll(
+          async () =>
+            (await prisma.property.findUniqueOrThrow({ where: { id: property.id } })).plan,
+          { timeout: 15_000 }
+        )
+        .toBe("PRO");
+
+      await loginAsOwner(page);
+      await page.goto("/admin/cennik");
+      await expect(page.getByRole("link", { name: /Zobacz plany od Pro/ })).toHaveCount(0);
+      await expect(page.getByText("Silnik cen")).toBeVisible();
+    } finally {
+      await prisma.property.update({ where: { id: property.id }, data: { plan: original } });
+    }
+  });
 });
