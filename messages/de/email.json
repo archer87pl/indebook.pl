@@ -1,0 +1,42 @@
+{
+  "pendingDeposit": {
+    "subject": "Buchung {code} — Anzahlung ausstehend",
+    "body": "Vielen Dank für Ihre Buchung in {property}. Gesamtpreis: {total}. Anzahlung: {deposit}. Buchung: {url}"
+  },
+  "confirmedPaid": {
+    "subject": "Buchung {code} bestätigt",
+    "body": "Anzahlung {deposit} ist eingegangen. Wir sehen uns am {checkIn}!\n\nBitte füllen Sie jetzt den Online-Check-in aus — danach erhalten Sie die Anreisehinweise:\n{checkInUrl}"
+  },
+  "confirmedByOwner": {
+    "subject": "Buchung {code} bestätigt",
+    "body": "Die Unterkunft hat Ihre Buchung bestätigt ({checkIn} → {checkOut}).\n\nBitte füllen Sie jetzt den Online-Check-in aus — danach erhalten Sie die Anreisehinweise:\n{checkInUrl}"
+  },
+  "cancelled": {
+    "subject": "Buchung {code} storniert",
+    "body": "Ihre Buchung wurde storniert."
+  },
+  "datesChanged": {
+    "subject": "Buchung {code} — Termin geändert",
+    "body": "Neuer Zeitraum: {from} → {to} ({guests} Gäste). Gesamtpreis: {total}."
+  },
+  "checkInInvite": {
+    "subject": "Online-Check-in — Buchung {code}",
+    "body": "{property} lädt Sie ein, den Online-Check-in vor der Anreise ({checkIn}) auszufüllen.\nEs dauert 2 Minuten und beschleunigt den Check-in vor Ort:\n{checkInUrl}"
+  },
+  "manualCreated": {
+    "subject": "Buchung {code} in {property}",
+    "body": "Ihre Buchung ({from} → {to}) wurde gespeichert.\n\nFüllen Sie den Online-Check-in aus — danach erhalten Sie die Anreisehinweise:\n{checkInUrl}\n\nBuchungsdetails: {url}"
+  },
+  "arrivalReminder": {
+    "subject": "Bis morgen — {property}",
+    "body": "Wir erinnern an Ihre morgige Anreise in {property} (Check-in ab {checkInFrom})."
+  },
+  "reviewRequest": {
+    "subject": "Wie war Ihr Aufenthalt in {property}?",
+    "body": "Vielen Dank für Ihren Aufenthalt in {property}!\n\nTeilen Sie bitte eine kurze Bewertung — das dauert nur einen Moment und hilft anderen Gästen:\n{reviewUrl}"
+  },
+  "sms": {
+    "arrivalReminder": "Erinnerung: morgen Anreise in {property} (ab {checkInFrom}).",
+    "reviewRequest": "Danke für Ihren Aufenthalt in {property}! Bewerten Sie ihn: {reviewUrl}"
+  }
+}

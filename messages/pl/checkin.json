@@ -1,0 +1,43 @@
+{
+  "title": "Meldunek online",
+  "back": "Wróć do rezerwacji",
+  "completed": "Karta meldunkowa dla rezerwacji {code} została już wypełniona. Dziękujemy!",
+  "unavailable": {
+    "past": "Ten pobyt już się zakończył — meldunek online nie jest już dostępny.",
+    "cancelled": "Ta rezerwacja została anulowana.",
+    "notConfirmed": "Meldunek online będzie dostępny po potwierdzeniu rezerwacji (wpłacie zaliczki)."
+  },
+  "intro": "Wypełnienie karty meldunkowej zajmie 2 minuty i przyspieszy zameldowanie na miejscu. Po wypełnieniu otrzymasz instrukcje przyjazdu.",
+  "mainGuest": "Dane gościa głównego",
+  "fullName": "Imię i nazwisko *",
+  "address": "Adres zamieszkania *",
+  "addressPlaceholder": "ulica, nr, kod pocztowy, miejscowość",
+  "citizenship": "Obywatelstwo *",
+  "citizenshipDefault": "polskie",
+  "arrivalTime": "Planowana godzina przyjazdu",
+  "docType": "Rodzaj dokumentu (opcjonalnie)",
+  "docTypeNone": "— nie podaję —",
+  "docTypes": {
+    "DOWOD": "Dowód osobisty",
+    "PASZPORT": "Paszport",
+    "INNY": "Inny dokument"
+  },
+  "docNumber": "Numer dokumentu (opcjonalnie)",
+  "docNote": "Nie przesyłaj zdjęć ani skanów dokumentów — nie są potrzebne i ich nie przechowujemy.",
+  "carPlate": "Nr rejestracyjny samochodu (opcjonalnie)",
+  "carPlatePlaceholder": "np. KR 12345",
+  "otherGuests": "{count, plural, one {Pozostały gość (#)} few {Pozostali goście (#)} other {Pozostali goście (#)}}",
+  "otherGuestsSub": "Opcjonalnie — imię i nazwisko oraz data urodzenia (do celów statystycznych i opłaty miejscowej).",
+  "guestName": "Gość {number} — imię i nazwisko",
+  "guestBirth": "Data urodzenia",
+  "signature": "Podpis *",
+  "signatureSub": "Podpisz się palcem lub myszką.",
+  "signaturePad": {
+    "hint": "Podpisz się w polu powyżej — palcem, myszką lub rysikiem.",
+    "done": "Podpis złożony",
+    "clear": "Wyczyść"
+  },
+  "terms": "Akceptuję <link>regulamin obiektu {property}</link> *",
+  "rodo": "Wyrażam zgodę na przetwarzanie danych z karty meldunkowej przez {property} w celu realizacji pobytu. Dane są usuwane automatycznie 12 miesięcy po wymeldowaniu. *",
+  "submit": "Potwierdź i podpisz kartę meldunkową"
+}

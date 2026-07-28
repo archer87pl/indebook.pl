@@ -13,6 +13,9 @@ import {
   quoteStay,
   type Quote,
 } from "./pricing";
+import { pricingPlanFeatures } from "./plans";
+import { cachedRates } from "./rates/cache";
+import { afterRates } from "./rates/refresh";
 
 export const PRICING_RULE_KINDS = [
   {
@@ -73,6 +76,25 @@ export async function unitTypeOccupancy(
   return map;
 }
 
+/** Podmiana cen nocy na rekomendacje z cache'u; reszta wyceny bez zmian. */
+export function applyCachedRates(
+  base: Quote,
+  priceByDate: Map<string, number>,
+  depositPercent: number
+): Quote {
+  const nightly = base.nightly.map(({ date, priceGr }) => ({
+    date,
+    priceGr: priceByDate.get(date) ?? priceGr,
+  }));
+  const totalGr = nightly.reduce((sum, n) => sum + n.priceGr, 0);
+  return {
+    ...base,
+    nightly,
+    totalGr,
+    depositGr: Math.round((totalGr * depositPercent) / 100),
+  };
+}
+
 /**
  * Wycena pobytu z regułami cen dynamicznych obiektu.
  * Bez aktywnych reguł zwraca wycenę statyczną (zero dodatkowych zapytań
@@ -87,6 +109,30 @@ export async function quoteStayDynamic(
   excludeReservationId?: number
 ): Promise<Quote> {
   const base = quoteStay(unitType, from, to, depositPercent);
+
+  // Tryb SMARTRATE: ceny z cache'u. Zasada „wszystko albo nic" — brak choćby
+  // jednej nocy degraduje CAŁĄ wycenę do reguł, żeby gość nigdy nie zobaczył
+  // ceny sklejonej z dwóch silników (ta sama reguła co przy push-u ARI).
+  const property = await prisma.property.findUnique({
+    where: { id: unitType.propertyId },
+    select: { plan: true, pricingMode: true, smartRateMarketId: true },
+  });
+  if (
+    property?.pricingMode === "SMARTRATE" &&
+    pricingPlanFeatures(property.plan).smartRate &&
+    property.smartRateMarketId
+  ) {
+    const cached = await cachedRates(unitType.id, from, to);
+    if (cached.complete && !cached.stale) {
+      return applyCachedRates(base, cached.priceByDate, depositPercent);
+    }
+    await afterRates(unitType.id, from, to);
+    if (cached.complete) {
+      // nieświeże, ale kompletne — obsługujemy gościa, świeże dociągnie after()
+      return applyCachedRates(base, cached.priceByDate, depositPercent);
+    }
+  }
+
   const rules = await prisma.pricingRule.findMany({
     where: { propertyId: unitType.propertyId, active: true, percent: { not: 0 } },
   });
@@ -110,4 +156,20 @@ export async function quoteStayDynamic(
     totalGr,
     depositGr: Math.round((totalGr * depositPercent) / 100),
   };
+}
+
+/**
+ * Ceny poszczególnych dób w [from, to) — dla push-u ARI do kanałów.
+ * Świadomie przechodzi przez quoteStayDynamic, żeby kanał dostawał DOKŁADNIE
+ * tę stawkę, którą widzi gość na naszej stronie (łącznie z trybem SmartRate
+ * i degradacją do reguł). Zaliczka jest tu nieistotna, stąd 0.
+ */
+export async function nightlyRates(
+  unitType: UnitType & { seasons: RateSeason[] },
+  from: string,
+  to: string
+): Promise<Map<string, number>> {
+  if (from >= to) return new Map();
+  const quote = await quoteStayDynamic(unitType, from, to, 0);
+  return new Map(quote.nightly.map((n) => [n.date, n.priceGr]));
 }

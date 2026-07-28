@@ -1,0 +1,42 @@
+{
+  "pendingDeposit": {
+    "subject": "Rezerwacja {code} — oczekuje na wpłatę zaliczki",
+    "body": "Dziękujemy za rezerwację w {property}. Kwota pobytu: {total}. Zaliczka: {deposit}. Rezerwacja: {url}"
+  },
+  "confirmedPaid": {
+    "subject": "Rezerwacja {code} potwierdzona",
+    "body": "Zaliczka {deposit} zaksięgowana. Do zobaczenia {checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n{checkInUrl}"
+  },
+  "confirmedByOwner": {
+    "subject": "Rezerwacja {code} potwierdzona",
+    "body": "Obiekt potwierdził Twoją rezerwację ({checkIn} → {checkOut}).\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n{checkInUrl}"
+  },
+  "cancelled": {
+    "subject": "Rezerwacja {code} anulowana",
+    "body": "Twoja rezerwacja została anulowana."
+  },
+  "datesChanged": {
+    "subject": "Rezerwacja {code} — termin zmieniony",
+    "body": "Nowy termin pobytu: {from} → {to} ({guests} os.). Kwota pobytu: {total}."
+  },
+  "checkInInvite": {
+    "subject": "Meldunek online — rezerwacja {code}",
+    "body": "{property} zaprasza do wypełnienia meldunku online przed przyjazdem ({checkIn}).\nZajmie to 2 minuty i przyspieszy zameldowanie na miejscu:\n{checkInUrl}"
+  },
+  "manualCreated": {
+    "subject": "Rezerwacja {code} w {property}",
+    "body": "Twoja rezerwacja ({from} → {to}) została zapisana.\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n{checkInUrl}\n\nSzczegóły rezerwacji: {url}"
+  },
+  "arrivalReminder": {
+    "subject": "Do zobaczenia jutro — {property}",
+    "body": "Przypominamy o jutrzejszym przyjeździe do {property} (zameldowanie od {checkInFrom})."
+  },
+  "reviewRequest": {
+    "subject": "Jak minął pobyt w {property}?",
+    "body": "Dziękujemy za pobyt w {property}!\n\nPodziel się krótką opinią — zajmie to chwilę i pomoże innym gościom:\n{reviewUrl}"
+  },
+  "sms": {
+    "arrivalReminder": "Przypomnienie: jutro przyjazd do {property} (od {checkInFrom}).",
+    "reviewRequest": "Dziekujemy za pobyt w {property}! Ocen pobyt: {reviewUrl}"
+  }
+}

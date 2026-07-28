@@ -25,6 +25,8 @@ export function restrictionValues(propertyId: string, ratePlanId: string, days: 
     rate_plan_id: ratePlanId,
     date: d.date,
     min_stay_arrival: d.minStay,
+    // Channex oczekuje kwoty w walucie obiektu, nie w groszach
+    rate: (d.rateGr / 100).toFixed(2),
   }));
 }
 

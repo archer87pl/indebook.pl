@@ -1,3 +1,4 @@
+import { localePath } from "@/lib/locale-urls";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 
@@ -25,7 +26,7 @@ export default function Hero({ section, ctx }: { section: HeroSection; ctx: Site
           <p className="mt-4 text-lg text-white/90 drop-shadow">{section.data.tagline}</p>
         )}
         <a
-          href={`${ctx.appUrl}/o/${ctx.property.slug}`}
+          href={`${ctx.appUrl}${localePath(`/o/${ctx.property.slug}`, ctx.locale)}`}
           className="mt-8 inline-block rounded-full bg-[var(--site-primary)] px-8 py-3.5 text-base font-semibold text-[var(--site-primary-text)] shadow-lg transition-transform hover:scale-[1.03]"
         >
           {section.data.ctaLabel || "Zarezerwuj pobyt"}

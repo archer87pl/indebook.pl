@@ -3,6 +3,7 @@ import { logEvent } from "../log";
 import { prisma } from "../db";
 import { roomTypeAvailability } from "./availability";
 import { buildAriDays } from "./ari";
+import { nightlyRates } from "../dynamic-pricing";
 import { channelProvider, type ChannelProvider } from "./provider";
 
 export async function enqueueAri(
@@ -83,7 +84,14 @@ export async function processOutbox(
       });
       if (!room?.channexRoomTypeId || !unitType) throw new Error("Brak mapowania Room Type");
       const avail = await roomTypeAvailability(range.unitTypeId, range.dateFrom, range.dateTo);
-      const days = buildAriDays(avail, unitType.minStay, unitType.seasons);
+      const rates = await nightlyRates(unitType, range.dateFrom, range.dateTo);
+      const days = buildAriDays(
+        avail,
+        unitType.minStay,
+        unitType.seasons,
+        rates,
+        unitType.basePriceGr
+      );
       await provider.pushAri(cp.apiKey, cp.channexId, room.channexRoomTypeId, room.channexRatePlanId, days);
       await prisma.ariOutbox.updateMany({ where: { id: { in: ids } }, data: { status: "SENT" } });
       sent += ids.length;

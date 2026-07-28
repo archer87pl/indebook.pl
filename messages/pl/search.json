@@ -1,0 +1,17 @@
+{
+  "checkIn": "Przyjazd",
+  "checkOut": "Wyjazd",
+  "guestsLabel": "Goście",
+  "checkAvailability": "Sprawdź dostępność",
+  "searchDates": "Szukaj terminu",
+  "invalidRange": "Nieprawidłowy zakres dat — wybierz termin od dziś, wyjazd po przyjeździe.",
+  "photoPlaceholder": "zdjęcie",
+  "available": "wolne: {count}",
+  "totalFor": "łącznie za {count, plural, one {# noc} few {# noce} other {# nocy}}",
+  "minStayBadge": "min. pobyt: {count, plural, one {# noc} few {# noce} other {# nocy}}",
+  "noResults": {
+    "title": "Brak dostępnych pokoi w tym terminie",
+    "description": "Spróbuj innych dat — dostępność zmienia się na bieżąco."
+  },
+  "bookCta": "Rezerwuję"
+}

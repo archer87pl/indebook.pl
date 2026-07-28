@@ -4,6 +4,8 @@
 import { isValidISO, todayISO } from "./dates";
 import { appUrl } from "./payments";
 
+import type { GuestErrorCode } from "./guest-errors";
+
 export const DOC_TYPES = [
   { key: "DOWOD", label: "Dowód osobisty" },
   { key: "PASZPORT", label: "Paszport" },
@@ -27,7 +29,7 @@ export type AdditionalGuest = { name: string; birthDate: string };
 export function parseAdditionalGuests(
   formData: FormData,
   maxCount: number
-): { guests: AdditionalGuest[]; error: string } {
+): { guests: AdditionalGuest[]; error: GuestErrorCode | ""; guestNo: number } {
   const guests: AdditionalGuest[] = [];
   for (let i = 1; i <= maxCount; i++) {
     const nameRaw = formData.get(`guestName_${i}`);
@@ -36,12 +38,12 @@ export function parseAdditionalGuests(
     const birthDate = typeof birthRaw === "string" ? birthRaw.trim() : "";
     if (!name && !birthDate) continue;
     if (name.length < 3)
-      return { guests: [], error: `Gość ${i + 1}: podaj imię i nazwisko.` };
+      return { guests: [], error: "additionalGuestName", guestNo: i + 1 };
     if (birthDate && (!isValidISO(birthDate) || birthDate > todayISO()))
-      return { guests: [], error: `Gość ${i + 1}: nieprawidłowa data urodzenia.` };
+      return { guests: [], error: "additionalGuestBirthDate", guestNo: i + 1 };
     guests.push({ name, birthDate });
   }
-  return { guests, error: "" };
+  return { guests, error: "", guestNo: 0 };
 }
 
 const SIGNATURE_PREFIX = "data:image/png;base64,";

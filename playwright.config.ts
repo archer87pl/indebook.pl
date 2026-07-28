@@ -26,5 +26,9 @@ export default defineConfig({
     url: "http://localhost:3100",
     reuseExistingServer: true,
     timeout: 60_000,
+    // Deterministyczny silnik cen — testy nie potrzebują dockera z .NET.
+    // Podajemy WYŁĄCZNIE tę zmienną: Playwright dokłada ją do środowiska
+    // procesu. Rozlanie tu `...process.env` psuje start serwera na Windows.
+    env: { SMARTRATE_STUB: "1" },
   },
 });

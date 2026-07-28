@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Send } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -151,9 +152,9 @@ export default async function SuperadminSettingsPage(props: {
         i mają pierwszeństwo nad zmiennymi środowiskowymi o tych samych nazwach.
         Sekrety nie są nigdzie wyświetlane w całości — puste pole przy zapisie
         oznacza „bez zmian”. Zmiany konfiguracji są odnotowywane w{" "}
-        <a href="/superadmin/logi" className="font-semibold text-brand-600 hover:underline">
+        <Link href="/superadmin/logi" className="font-semibold text-brand-600 hover:underline">
           dzienniku zdarzeń
-        </a>
+        </Link>
         .
       </p>
     </div>

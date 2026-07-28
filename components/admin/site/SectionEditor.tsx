@@ -2,6 +2,7 @@
 // per sekcja + sterowanie widocznością/kolejnością. Celowo bez drag&drop
 // i edycji inline — strzałki i zwykłe formularze (server actions).
 
+import Link from "next/link";
 import { ArrowDown, ArrowUp, Code2, Eye, EyeOff, Trash2 } from "lucide-react";
 import SubmitButton from "@/components/ui/SubmitButton";
 import type { Photo } from "@prisma/client";
@@ -250,22 +251,22 @@ export default function SectionEditor({
                             Odepnij sekcję
                           </SubmitButton>
                         </form>
-                        <a
+                        <Link
                           href="/admin/strona#sekcje"
                           className="rounded-[9px] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600"
                         >
                           Anuluj
-                        </a>
+                        </Link>
                       </div>
                     </div>
                   ) : (
-                    <a
+                    <Link
                       href={`/admin/strona?detach=${section.id}#sekcje`}
                       className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-700"
                     >
                       <Code2 size={13} />
                       Konwertuj na własny kod (dla zaawansowanych)
-                    </a>
+                    </Link>
                   )}
                 </div>
               )}

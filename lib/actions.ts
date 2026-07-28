@@ -15,11 +15,12 @@ import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from "./password";
 import { rateLimitOrRedirect } from "./rate-limit";
 import { assertPublicUrl } from "./net";
 import { afterAri, syncUnitRange } from "./channex/enqueue-helpers";
+import { getLocale } from "next-intl/server";
 import { addDaysISO, isValidISO, todayISO } from "./dates";
 import { logEvent } from "./log";
 import { SETTING_SECTIONS } from "./settings";
 import { prisma } from "./db";
-import { formatPln, parsePlnToGr } from "./format";
+import { formatMoney, formatPln, parsePlnToGr } from "./format";
 import { syncIcalFeed } from "./ical";
 import {
   appUrl,
@@ -36,6 +37,10 @@ import {
   parseAdditionalGuests,
 } from "./checkin";
 import { PRICING_RULE_KINDS, quoteStayDynamic } from "./dynamic-pricing";
+import { guestErrorQuery, type GuestErrorCode } from "./guest-errors";
+import { pricingPlanFeatures } from "./plans";
+import { ratesProvider, type Market } from "./rates/provider";
+import { afterRates, defaultGuards, invalidateRates } from "./rates/refresh";
 import {
   INVOICE_KINDS,
   invoiceNumber,
@@ -50,6 +55,7 @@ import {
   REVIEW_MAX,
 } from "./reviews";
 import { planDef } from "./plans";
+import { guestT } from "./guest-mail";
 import { sendMail } from "./mailer";
 import { sendSms } from "./sms";
 import { slugify, uniquePropertySlug } from "./slug";
@@ -228,27 +234,29 @@ export async function createReservation(formData: FormData) {
   const promoInput = str(formData, "promo").toUpperCase();
   const notes = str(formData, "notes");
   const rodo = str(formData, "rodo");
+  // język, w którym gość wypełniał formularz (trasa jest pod [locale])
+  const guestLocale = await getLocale();
 
   const back = `/rezerwuj/${unitTypeId}?from=${from}&to=${to}&guests=${guests}`;
-  const fail = (msg: string) => redirect(`${back}&error=${encodeURIComponent(msg)}`);
+  // kod błędu, nie gotowe zdanie — stronę ogląda gość w swoim języku
+  const fail = (code: GuestErrorCode, n?: number) =>
+    redirect(`${back}&${guestErrorQuery(code, n)}`);
 
   if (!Number.isInteger(unitTypeId) || unitTypeId <= 0) redirect("/");
-  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("Nieprawidłowy zakres dat.");
-  if (from < todayISO()) fail("Data przyjazdu nie może być w przeszłości.");
-  if (!Number.isInteger(guests) || guests < 1) fail("Podaj liczbę gości.");
-  if (guestName.length < 3) fail("Podaj imię i nazwisko.");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Podaj poprawny adres e-mail.");
-  if (rodo !== "on") fail("Wymagana jest zgoda na przetwarzanie danych.");
+  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("invalidRange");
+  if (from < todayISO()) fail("pastArrival");
+  if (!Number.isInteger(guests) || guests < 1) fail("guestsRequired");
+  if (guestName.length < 3) fail("nameRequired");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("emailInvalid");
+  if (rodo !== "on") fail("rodoRequired");
 
   const unitType = await prisma.unitType.findUnique({
     where: { id: unitTypeId },
     include: { seasons: true, property: true },
   });
   if (!unitType) redirect("/");
-  if (unitType.property.suspended)
-    fail("Ten obiekt jest obecnie niedostępny — rezerwacja nie jest możliwa.");
-  if (guests > unitType.maxGuests)
-    fail(`Ten typ pokoju mieści maksymalnie ${unitType.maxGuests} os.`);
+  if (unitType.property.suspended) fail("propertySuspended");
+  if (guests > unitType.maxGuests) fail("maxGuests", unitType.maxGuests);
 
   const quote = await quoteStayDynamic(
     unitType,
@@ -257,14 +265,14 @@ export async function createReservation(formData: FormData) {
     unitType.property.depositPercent
   );
   if (quote.nights < quote.minStay)
-    fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
+    fail("minStay", quote.minStay);
 
   // kod promocyjny (opcjonalny)
   let discountGr = 0;
   let promoId: number | null = null;
   if (promoInput) {
     const promo = await applicablePromo(unitType.propertyId, promoInput);
-    if (!promo) fail("Kod promocyjny jest nieprawidłowy lub wygasł.");
+    if (!promo) fail("promoInvalid");
     discountGr = Math.round((quote.totalGr * promo!.percentOff) / 100);
     promoId = promo!.id;
   }
@@ -300,6 +308,8 @@ export async function createReservation(formData: FormData) {
           depositGr,
           status: "PENDING",
           source: "ONLINE",
+          // język, w którym gość rezerwował — w nim wysyłamy do niego wiadomości
+          locale: guestLocale,
           expiresAt: new Date(Date.now() + PENDING_TTL_MS),
         },
       });
@@ -307,7 +317,7 @@ export async function createReservation(formData: FormData) {
     });
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
-      fail("Ten termin został właśnie zajęty. Wybierz inne daty.");
+      fail("datesJustTaken");
     throw e;
   }
 
@@ -320,10 +330,19 @@ export async function createReservation(formData: FormData) {
   if (unitType.property.syncMode === "CHANNEX") {
     await afterAri(unitType.property.id, unitType.id, from, to);
   }
+  const t = await guestT(guestLocale);
   mailAfter({
     to: email,
-    subject: `Rezerwacja ${code} — oczekuje na wpłatę zaliczki`,
-    body: `Dziękujemy za rezerwację w ${unitType.property.name}. Kwota pobytu: ${formatPln(totalGr)}${discountGr > 0 ? ` (rabat ${formatPln(discountGr)})` : ""}. Zaliczka: ${formatPln(depositGr)}. Rezerwacja: /r/${code}`,
+    subject: t("pendingDeposit.subject", { code }),
+    body: t("pendingDeposit.body", {
+      property: unitType.property.name,
+      // rabat dopisujemy do kwoty — katalog nie ma osobnego pola na rabat
+      total: `${formatMoney(totalGr, guestLocale)}${
+        discountGr > 0 ? ` (-${formatMoney(discountGr, guestLocale)})` : ""
+      }`,
+      deposit: formatMoney(depositGr, guestLocale),
+      url: `/r/${code}`,
+    }),
   });
   revalidatePath("/admin");
   redirect(`/r/${code}`);
@@ -373,10 +392,15 @@ export async function payDeposit(formData: FormData) {
     propertyId: reservation.unit.unitType.property.id,
     meta: reservation.guestName,
   });
+  const t = await guestT(reservation.locale);
   mailAfter({
     to: reservation.email,
-    subject: `Rezerwacja ${code} potwierdzona`,
-    body: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana. Do zobaczenia ${reservation.checkIn}!\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}`,
+    subject: t("confirmedPaid.subject", { code }),
+    body: t("confirmedPaid.body", {
+      deposit: formatMoney(reservation.depositGr, reservation.locale),
+      checkIn: reservation.checkIn,
+      checkInUrl: checkInUrl(code),
+    }),
   });
   if (reservation.phone) {
     smsAfter({
@@ -408,10 +432,11 @@ export async function cancelByGuest(formData: FormData) {
       meta: reservation.guestName,
     });
     await syncUnitRange(reservation.unitId, reservation.checkIn, reservation.checkOut);
+    const t = await guestT(reservation.locale);
     mailAfter({
       to: reservation.email,
-      subject: `Rezerwacja ${code} anulowana`,
-      body: "Twoja rezerwacja została anulowana.",
+      subject: t("cancelled.subject", { code }),
+      body: t("cancelled.body"),
     });
   }
   revalidatePath(`/r/${code}`);
@@ -443,7 +468,8 @@ export async function changeReservationDates(formData: FormData) {
   const to = str(formData, "to");
   const guestsInput = Number(str(formData, "guests"));
   const back = `/r/${code}`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -459,19 +485,17 @@ export async function changeReservationDates(formData: FormData) {
   const active =
     r.status === "CONFIRMED" ||
     (r.status === "PENDING" && r.expiresAt && r.expiresAt > new Date());
-  if (!active) fail("Tej rezerwacji nie można już zmienić.");
-  if (r.checkIn <= todayISO())
-    fail("Pobyt już się rozpoczął — zmianę terminu uzgodnij z obiektem.");
-  if (!isValidISO(from) || !isValidISO(to) || to <= from)
-    fail("Nieprawidłowy zakres dat.");
-  if (from < todayISO()) fail("Data przyjazdu nie może być w przeszłości.");
+  if (!active) fail("notChangeable");
+  if (r.checkIn <= todayISO()) fail("stayStarted");
+  if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("invalidRange");
+  if (from < todayISO()) fail("pastArrival");
 
   const unitType = r.unit.unitType;
   const guests = guestsInput || r.guests;
   if (guests < 1 || guests > unitType.maxGuests)
-    fail(`Ten typ pokoju mieści od 1 do ${unitType.maxGuests} os.`);
+    fail("guestsRange", unitType.maxGuests);
   if (from === r.checkIn && to === r.checkOut && guests === r.guests)
-    fail("Nic się nie zmieniło — wybrano ten sam termin i liczbę gości.");
+    fail("nothingChanged");
 
   const quote = await quoteStayDynamic(
     unitType,
@@ -481,7 +505,7 @@ export async function changeReservationDates(formData: FormData) {
     r.id // własna rezerwacja nie podbija sobie obłożenia
   );
   if (quote.nights < quote.minStay)
-    fail(`Minimalna długość pobytu w tym terminie to ${quote.minStay} noce.`);
+    fail("minStay", quote.minStay);
 
   // zachowaj dotychczasowy rabat proporcjonalnie (np. z kodu promocyjnego)
   const discountRatio =
@@ -514,7 +538,7 @@ export async function changeReservationDates(formData: FormData) {
     });
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
-      fail("Brak wolnych pokoi w nowym terminie. Wybierz inne daty.");
+      fail("noRoomsForNewDates");
     throw e;
   }
 
@@ -524,10 +548,16 @@ export async function changeReservationDates(formData: FormData) {
     from < r.checkIn ? from : r.checkIn,
     to > r.checkOut ? to : r.checkOut
   );
+  const t = await guestT(r.locale);
   mailAfter({
     to: r.email,
-    subject: `Rezerwacja ${code} — termin zmieniony`,
-    body: `Nowy termin pobytu: ${from} → ${to} (${guests} os.). Kwota pobytu: ${formatPln(totalGr)}.`,
+    subject: t("datesChanged.subject", { code }),
+    body: t("datesChanged.body", {
+      from,
+      to,
+      guests,
+      total: formatMoney(totalGr, r.locale),
+    }),
   });
   revalidatePath(back);
   redirect(`${back}?changed=1`);
@@ -537,7 +567,8 @@ export async function changeReservationDates(formData: FormData) {
 export async function submitCheckIn(formData: FormData) {
   const code = str(formData, "code");
   const back = `/r/${code}/meldunek`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -552,9 +583,8 @@ export async function submitCheckIn(formData: FormData) {
   });
   if (!reservation) redirect("/");
   const r = reservation!;
-  if (r.checkInCard)
-    redirect(`/r/${code}?error=${encodeURIComponent("Meldunek został już wypełniony.")}`);
-  if (!canCheckIn(r)) fail("Meldunek online nie jest dostępny dla tej rezerwacji.");
+  if (r.checkInCard) redirect(`/r/${code}?${guestErrorQuery("checkInDone")}`);
+  if (!canCheckIn(r)) fail("checkInUnavailable");
 
   const fullName = str(formData, "fullName");
   const address = str(formData, "address");
@@ -567,24 +597,20 @@ export async function submitCheckIn(formData: FormData) {
   const terms = str(formData, "terms");
   const rodo = str(formData, "rodo");
 
-  if (fullName.length < 3) fail("Podaj imię i nazwisko.");
-  if (address.length < 5) fail("Podaj adres zamieszkania.");
-  if (citizenship.length < 3) fail("Podaj obywatelstwo.");
-  if (docType && !DOC_TYPES.some((d) => d.key === docType))
-    fail("Wybierz rodzaj dokumentu z listy.");
-  if (docNumber && !docType) fail("Wybierz rodzaj dokumentu.");
-  if (docNumber && !/^[A-Z0-9 \-]{4,20}$/.test(docNumber))
-    fail("Nieprawidłowy numer dokumentu.");
-  if (carPlate && !/^[A-Z0-9 \-]{2,12}$/.test(carPlate))
-    fail("Nieprawidłowy numer rejestracyjny.");
-  if (arrivalTime && !/^\d{2}:\d{2}$/.test(arrivalTime))
-    fail("Godzinę przyjazdu podaj w formacie HH:MM.");
+  if (fullName.length < 3) fail("nameRequired");
+  if (address.length < 5) fail("addressRequired");
+  if (citizenship.length < 3) fail("citizenshipRequired");
+  if (docType && !DOC_TYPES.some((d) => d.key === docType)) fail("docTypeInvalid");
+  if (docNumber && !docType) fail("docTypeRequired");
+  if (docNumber && !/^[A-Z0-9 \-]{4,20}$/.test(docNumber)) fail("docNumberInvalid");
+  if (carPlate && !/^[A-Z0-9 \-]{2,12}$/.test(carPlate)) fail("plateInvalid");
+  if (arrivalTime && !/^\d{2}:\d{2}$/.test(arrivalTime)) fail("arrivalTimeInvalid");
   const additional = parseAdditionalGuests(formData, r.guests - 1);
-  if (additional.error) fail(additional.error);
-  if (terms !== "on") fail("Wymagana jest akceptacja regulaminu obiektu.");
-  if (rodo !== "on") fail("Wymagana jest zgoda na przetwarzanie danych.");
+  if (additional.error) fail(additional.error, additional.guestNo);
+  if (terms !== "on") fail("termsRequired");
+  if (rodo !== "on") fail("rodoRequired");
   if (!isValidSignature(signature))
-    fail("Podpis jest wymagany — złóż podpis w polu formularza.");
+    fail("signatureRequired");
 
   await prisma.$transaction([
     prisma.checkInCard.create({
@@ -637,7 +663,8 @@ export async function submitCheckIn(formData: FormData) {
 export async function submitReview(formData: FormData) {
   const code = str(formData, "code");
   const back = `/r/${code}/opinia`;
-  const fail = (msg: string) => redirect(`${back}?error=${encodeURIComponent(msg)}`);
+  const fail = (errorCode: GuestErrorCode, n?: number) =>
+    redirect(`${back}?${guestErrorQuery(errorCode, n)}`);
 
   const reservation = await prisma.reservation.findUnique({
     where: { code },
@@ -652,20 +679,17 @@ export async function submitReview(formData: FormData) {
   });
   if (!reservation) redirect("/");
   const r = reservation!;
-  if (r.review)
-    redirect(`/r/${code}?error=${encodeURIComponent("Opinia została już wystawiona. Dziękujemy!")}`);
+  if (r.review) redirect(`/r/${code}?${guestErrorQuery("reviewDone")}`);
   if (!canReview({ status: r.status, checkOut: r.checkOut, hasReview: false }))
-    fail("Opinię można wystawić dopiero po zakończonym pobycie.");
+    fail("reviewTooEarly");
 
   const rating = Number(str(formData, "rating"));
   const comment = str(formData, "comment");
   const consent = str(formData, "consent");
 
-  if (!isValidRating(rating)) fail("Wybierz ocenę od 1 do 5 gwiazdek.");
-  if (comment.length > REVIEW_MAX)
-    fail(`Opinia może mieć maksymalnie ${REVIEW_MAX} znaków.`);
-  if (consent !== "on")
-    fail("Wymagana jest zgoda na publikację opinii pod imieniem i inicjałem.");
+  if (!isValidRating(rating)) fail("ratingRequired");
+  if (comment.length > REVIEW_MAX) fail("reviewTooLong", REVIEW_MAX);
+  if (consent !== "on") fail("reviewConsentRequired");
 
   const property = r.unit.unitType.property;
   await prisma.review.create({
@@ -838,10 +862,15 @@ export async function adminSetStatus(formData: FormData) {
   });
   if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
     if (reservation.email && !reservation.email.endsWith("@rezflow.local")) {
+      const t = await guestT(reservation.locale);
       mailAfter({
         to: reservation.email,
-        subject: `Rezerwacja ${reservation.code} potwierdzona`,
-        body: `Obiekt potwierdził Twoją rezerwację (${reservation.checkIn} → ${reservation.checkOut}).\n\nWypełnij teraz meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(reservation.code)}`,
+        subject: t("confirmedByOwner.subject", { code: reservation.code }),
+        body: t("confirmedByOwner.body", {
+          checkIn: reservation.checkIn,
+          checkOut: reservation.checkOut,
+          checkInUrl: checkInUrl(reservation.code),
+        }),
       });
     }
     if (reservation.phone) {
@@ -871,10 +900,15 @@ export async function adminSendCheckInInvite(formData: FormData) {
   if (!r.email || r.email.endsWith("@rezflow.local"))
     fail("Uzupełnij e-mail gościa, aby wysłać link do meldunku.");
 
+  const t = await guestT(r.locale);
   mailAfter({
     to: r.email,
-    subject: `Meldunek online — rezerwacja ${r.code}`,
-    body: `${property.name} zaprasza do wypełnienia meldunku online przed przyjazdem (${r.checkIn}).\nZajmie to 2 minuty i przyspieszy zameldowanie na miejscu:\n${checkInUrl(r.code)}`,
+    subject: t("checkInInvite.subject", { code: r.code }),
+    body: t("checkInInvite.body", {
+      property: property.name,
+      checkIn: r.checkIn,
+      checkInUrl: checkInUrl(r.code),
+    }),
   });
   redirect(`${back}?invited=1`);
 }
@@ -905,8 +939,10 @@ export async function adminCreateReservation(formData: FormData) {
   if (!Number.isFinite(totalGr)) fail("Nieprawidłowa cena.");
 
   let code = "";
+  // rezerwacja ręczna nie zna języka gościa — bierzemy domyślny z rekordu
+  let guestLocale = "";
   try {
-    code = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx) => {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
       const reservation = await tx.reservation.create({
@@ -926,8 +962,10 @@ export async function adminCreateReservation(formData: FormData) {
           source: "MANUAL",
         },
       });
-      return reservation.code;
+      return reservation;
     });
+    code = created.code;
+    guestLocale = created.locale;
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
       fail("Brak wolnych jednostek w tym terminie.");
@@ -935,10 +973,16 @@ export async function adminCreateReservation(formData: FormData) {
   }
   // rezerwacje telefoniczne/ręczne: od razu zaproś gościa do meldunku online
   if (!email.endsWith("@rezflow.local")) {
+    const t = await guestT(guestLocale);
     mailAfter({
       to: email,
-      subject: `Rezerwacja ${code} w ${property.name}`,
-      body: `Twoja rezerwacja (${from} → ${to}) została zapisana.\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(code)}\n\nSzczegóły rezerwacji: ${appUrl()}/r/${code}`,
+      subject: t("manualCreated.subject", { code, property: property.name }),
+      body: t("manualCreated.body", {
+        from,
+        to,
+        checkInUrl: checkInUrl(code),
+        url: `${appUrl()}/r/${code}`,
+      }),
     });
   }
   if (phone) {
@@ -1009,10 +1053,16 @@ export async function adminUpdateReservation(formData: FormData) {
   }
 
   if (datesChanged && email && !email.endsWith("@rezflow.local")) {
+    const t = await guestT(r.locale);
     mailAfter({
       to: email,
-      subject: `Rezerwacja ${r.code} — zmiana terminu`,
-      body: `Obiekt zmienił termin Twojej rezerwacji na: ${from} → ${to}. W razie pytań odpowiedz na tę wiadomość.`,
+      subject: t("datesChanged.subject", { code: r.code }),
+      body: t("datesChanged.body", {
+        from,
+        to,
+        guests,
+        total: formatMoney(totalGr, r.locale),
+      }),
     });
   }
   revalidatePath("/admin/rezerwacje");
@@ -1124,6 +1174,7 @@ export async function adminUpdatePricing(formData: FormData) {
       where: { id },
       data: { basePriceGr, minStay: Math.max(1, minStay) },
     });
+    await invalidateRates(id);
   }
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
@@ -1149,6 +1200,7 @@ export async function adminAddSeason(formData: FormData) {
   await prisma.rateSeason.create({
     data: { unitTypeId, name, startDate, endDate, priceGr, minStay: Math.max(1, minStay) },
   });
+  await invalidateRates(unitTypeId);
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
 }
@@ -1189,6 +1241,7 @@ export async function adminDeleteSeason(formData: FormData) {
   });
   if (season && season.unitType.propertyId === property.id) {
     await prisma.rateSeason.delete({ where: { id } });
+    await invalidateRates(season.unitTypeId);
   }
   revalidatePath("/admin/cennik");
   redirect("/admin/cennik");
@@ -2084,4 +2137,82 @@ export async function deleteUnit(formData: FormData) {
   ]);
   revalidatePath("/admin/pokoje");
   redirect("/admin/pokoje");
+}
+
+/** Lista rynków SmartRate dla panelu; pusta, gdy integracja nieskonfigurowana. */
+export async function listMarkets(): Promise<Market[]> {
+  const provider = ratesProvider();
+  if (!provider) return [];
+  try {
+    return await provider.markets();
+  } catch {
+    return [];
+  }
+}
+
+/** Przełączenie silnika wyceny i wybór rynku SmartRate. */
+export async function setPricingMode(formData: FormData) {
+  const { property } = await requireOwner();
+  const mode = str(formData, "pricingMode") === "SMARTRATE" ? "SMARTRATE" : "BASIC";
+  const marketId = str(formData, "smartRateMarketId").slice(0, 60);
+  const fail = (msg: string) =>
+    redirect(`/admin/cennik?error=${encodeURIComponent(msg)}`);
+
+  if (mode === "SMARTRATE") {
+    if (!pricingPlanFeatures(property.plan).smartRate)
+      fail("Ceny dynamiczne SmartRate są dostępne w planie Pro.");
+    if (!marketId) fail("Wybierz rynek, na którym leży obiekt.");
+  }
+
+  await prisma.property.update({
+    where: { id: property.id },
+    data: { pricingMode: mode, smartRateMarketId: marketId, smartRateError: "" },
+  });
+
+  // zmiana trybu lub rynku unieważnia wszystkie rekomendacje obiektu
+  const types = await prisma.unitType.findMany({
+    where: { propertyId: property.id },
+    select: { id: true, basePriceGr: true, minPriceGr: true },
+  });
+  for (const t of types) {
+    await invalidateRates(t.id);
+    // pierwsze włączenie: uzupełnij widełki wyliczone z ceny bazowej
+    if (mode === "SMARTRATE" && t.minPriceGr === null) {
+      await prisma.unitType.update({
+        where: { id: t.id },
+        data: defaultGuards(t.basePriceGr),
+      });
+    }
+  }
+  if (mode === "SMARTRATE") {
+    // rozgrzewamy tylko okno, które panel pokazuje od razu (30 dni) — pełny
+    // horyzont 180 dni dobija cron. Inaczej jedno kliknięcie zlecałoby setki
+    // sekwencyjnych zapisów ciągnących się długo po odpowiedzi.
+    const from = todayISO();
+    for (const t of types) await afterRates(t.id, from, addDaysISO(from, 30));
+  }
+
+  revalidatePath("/admin/cennik");
+  redirect("/admin/cennik?saved=1");
+}
+
+/** Widełki bezpieczeństwa dla typu pokoju (dolna i górna granica ceny nocy). */
+export async function saveRateGuards(formData: FormData) {
+  const { property } = await requireOwner();
+  const id = Number(str(formData, "unitTypeId"));
+  const minPriceGr = parsePlnToGr(str(formData, "minPriceZl"));
+  const maxPriceGr = parsePlnToGr(str(formData, "maxPriceZl"));
+  const fail = (msg: string) =>
+    redirect(`/admin/cennik?error=${encodeURIComponent(msg)}`);
+
+  if (!(await ownedUnitType(id, property.id))) redirect("/admin/cennik");
+  if (!Number.isFinite(minPriceGr) || !Number.isFinite(maxPriceGr) || minPriceGr < 1)
+    fail("Widełki muszą być liczbami większymi od zera.");
+  if (minPriceGr > maxPriceGr)
+    fail("Cena minimalna nie może być wyższa od maksymalnej.");
+
+  await prisma.unitType.update({ where: { id }, data: { minPriceGr, maxPriceGr } });
+  await invalidateRates(id);
+  revalidatePath("/admin/cennik");
+  redirect("/admin/cennik?saved=1");
 }

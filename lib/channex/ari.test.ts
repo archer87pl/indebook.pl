@@ -11,14 +11,31 @@ describe("minStayForDay", () => {
 });
 
 describe("buildAriDays", () => {
-  it("łączy dostępność z minStay", () => {
-    const avail = [
-      { date: "2026-08-01", free: 2 },
-      { date: "2026-09-01", free: 1 },
-    ];
-    expect(buildAriDays(avail, 1, seasons)).toEqual([
-      { date: "2026-08-01", availability: 2, minStay: 3 },
-      { date: "2026-09-01", availability: 1, minStay: 1 },
+  const avail = [
+    { date: "2026-08-01", free: 2 },
+    { date: "2026-09-01", free: 1 },
+  ];
+  const rates = new Map([
+    ["2026-08-01", 42000],
+    ["2026-09-01", 31000],
+  ]);
+
+  it("łączy dostępność, minStay i cenę doby", () => {
+    expect(buildAriDays(avail, 1, seasons, rates, 25000)).toEqual([
+      { date: "2026-08-01", availability: 2, minStay: 3, rateGr: 42000 },
+      { date: "2026-09-01", availability: 1, minStay: 1, rateGr: 31000 },
     ]);
+  });
+
+  it("dla doby bez ceny bierze cenę bazową, a nie zero", () => {
+    // wystawienie pokoju za 0 zł w kanale byłoby gorsze niż cennik bazowy
+    const days = buildAriDays(avail, 1, seasons, new Map(), 25000);
+    expect(days.map((d) => d.rateGr)).toEqual([25000, 25000]);
+  });
+
+  it("uzupełnia tylko brakujące doby, znanych cen nie nadpisuje", () => {
+    const partial = new Map([["2026-08-01", 42000]]);
+    const days = buildAriDays(avail, 1, seasons, partial, 25000);
+    expect(days.map((d) => d.rateGr)).toEqual([42000, 25000]);
   });
 });

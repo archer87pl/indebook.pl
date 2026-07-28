@@ -1,0 +1,45 @@
+{
+  "suspended": {
+    "title": "This property is currently unavailable",
+    "description": "Online booking for {name} is temporarily switched off.",
+    "browseOther": "Browse other properties"
+  },
+  "gallery": {
+    "mainPhoto": "main photo",
+    "roomPhoto": "room photo",
+    "morePhotos": "+{count, plural, one {# photo} other {# photos}}"
+  },
+  "ratingAriaLabel": "Rated {value} out of 5",
+  "zeroCommission": "0% commission",
+  "roomsTitle": "Our rooms",
+  "noRoomsYet": "This property has not added its offer yet.",
+  "upToGuests": "up to {count, plural, one {# guest} other {# guests}}",
+  "units": "{count, plural, one {# unit} other {# units}}",
+  "minStay": "min. {count, plural, one {# night} other {# nights}}",
+  "viewRoom": "View room",
+  "perNightShort": "/ night",
+  "reviewsTitle": "Guest reviews",
+  "ownerReply": "Reply from the property",
+  "faqTitle": "Frequently asked questions",
+  "depositNote": "{percent}% deposit online · the rest on arrival",
+  "directBooking": "Book directly with your host — best price, no commission.",
+  "checkInOut": "check-in from {checkIn} · check-out until {checkOut}",
+  "termsAndPrivacy": "Terms and privacy policy",
+  "amenitiesTitle": "Amenities",
+  "bookThisRoom": "Book this room",
+  "availabilityNote": "We will check availability in the next step. A {percent}% deposit confirms your booking.",
+  "pricing": {
+    "title": "Rates",
+    "season": "Season",
+    "period": "Dates",
+    "pricePerNight": "Price / night",
+    "standard": "Standard rate",
+    "outsideSeasons": "outside seasons"
+  },
+  "terms": {
+    "title": "Property terms",
+    "privacyTitle": "Privacy policy",
+    "emptyTitle": "No terms published",
+    "emptyDescription": "This property has not published its terms yet. If you have questions about the house rules, please contact the property directly."
+  }
+}

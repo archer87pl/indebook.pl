@@ -1,0 +1,36 @@
+{
+  "steps": {
+    "room": "Zimmer",
+    "details": "Daten und Anzahlung"
+  },
+  "soldOut": {
+    "title": "Keine freien Zimmer „{unitType}“ im Zeitraum {from} → {to}",
+    "hint": "Probieren Sie andere Daten oder eines der übrigen Zimmer in {property}.",
+    "cta": "Zurück und anderen Zeitraum wählen"
+  },
+  "form": {
+    "title": "Ihre Daten",
+    "name": "Vor- und Nachname *",
+    "email": "E-Mail *",
+    "phone": "Telefon",
+    "taxId": "USt-IdNr. (für die Rechnung, optional)",
+    "promo": "Aktionscode",
+    "promoPlaceholder": "z. B. SOMMER10",
+    "notes": "Anmerkungen für den Gastgeber (optional)",
+    "notesPlaceholder": "z. B. Ankunft gegen 15:00 Uhr, bitte ein Kinderbett",
+    "consent": "Ich willige in die Verarbeitung meiner personenbezogenen Daten zur Abwicklung der Buchung ein (DSGVO) und akzeptiere die <terms>Hausordnung</terms>. *",
+    "submit": "{amount} zahlen und buchen",
+    "securePayment": "Verschlüsselte Zahlung · Przelewy24 (BLIK, Karte, Überweisung)",
+    "holdNotice": "Die Buchung ist 30 Minuten lang vorgemerkt — die Anzahlung von {amount} bestätigt sie."
+  },
+  "summary": {
+    "checkIn": "Anreise",
+    "checkOut": "Abreise",
+    "guests": "Gäste",
+    "stay": "Aufenthalt ({nights})",
+    "total": "Gesamt",
+    "depositNow": "Anzahlung jetzt ({percent}%)",
+    "remaining": "Restbetrag {amount} bei Anreise",
+    "backToProperty": "← Zurück zur Unterkunftsseite"
+  }
+}

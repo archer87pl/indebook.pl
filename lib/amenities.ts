@@ -1,3 +1,7 @@
+// Klucz jest kontraktem (siedzi w bazie, w UnitType.amenities), ikona jest
+// neutralna językowo, a `label` to POLSKA etykieta dla panelu recepcji.
+// Powierzchnie gościa tłumaczą po kluczu: common.amenities.<key> — inaczej
+// Niemiec widziałby „Klimatyzacja" obok niemieckiego interfejsu.
 export type AmenityDef = { key: string; label: string; icon: string };
 
 export const AMENITIES: AmenityDef[] = [

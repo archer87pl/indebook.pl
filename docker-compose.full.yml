@@ -1,0 +1,39 @@
+# Cały system: RezFlow (aplikacja + Postgres) razem z silnikiem cen SmartRate
+# z sąsiedniego repo Rezio.SmartRate. Obie definicje trafiają do JEDNEGO
+# projektu Compose, więc dzielą sieć i widzą się po nazwach usług — dlatego
+# SMARTRATE_URL=http://rezio-api:8080 działa bez wystawiania portów na zewnątrz.
+#
+#   docker compose -f docker-compose.full.yml up -d --build
+#
+# Wymaga repo Rezio.SmartRate obok RezFlow; inną lokalizację wskaż zmienną
+# SMARTRATE_REPO. Bazy nie kolidują: RezFlow ma „rezflow-db", SmartRate
+# „postgres". Porty SmartRate przemapowane, bo domyślne zderzają się
+# z aplikacją (Grafana 3000) i z testami e2e (Loki 3100 = Playwright).
+include:
+  - path: docker-compose.yml
+  - path: ${SMARTRATE_REPO:-../Rezio.SmartRate}/docker-compose.yml
+
+services:
+  rezflow:
+    environment:
+      # prawdziwy silnik zamiast stuba — nazwa usługi z include'owanego compose
+      SMARTRATE_URL: "http://rezio-api:8080"
+      SMARTRATE_API_KEY: "${SMARTRATE_API_KEY:-}"
+      SMARTRATE_STUB: ""
+    depends_on:
+      rezflow-db:
+        condition: service_healthy
+      rezio-api:
+        condition: service_started
+
+  rezio-api:
+    # ten sam sekret po obu stronach. Pusty = endpointy SmartRate otwarte —
+    # dopuszczalne tylko dlatego, że nie wystawiamy ich poza sieć Compose.
+    environment:
+      SMARTRATE_API_KEY: "${SMARTRATE_API_KEY:-}"
+
+  grafana:
+    ports: !override ["3001:3000"]
+
+  loki:
+    ports: !override ["3101:3100"]

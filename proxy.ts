@@ -7,8 +7,16 @@
 // takie foldery z routingu.
 
 import { NextResponse, type NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware";
 import { prisma } from "@/lib/db";
 import { classifyHost } from "@/lib/site-host";
+import { isGuestPath } from "@/lib/guest-paths";
+import { routing } from "@/i18n/routing";
+
+// Routing języków (next-intl) — uruchamiany TYLKO dla tras gościa na hoście
+// aplikacji. Panel recepcji, superadmin, landing i API zostają po polsku,
+// a strony WWW obiektów mają własny mechanizm (cookie SITE_LOCALE).
+const intlMiddleware = createMiddleware(routing);
 
 // Cache wyników lookupu domen własnych (per instancja, 60 s) — proxy działa
 // na każdym żądaniu, a wynik zmienia się tylko przy (od)pinaniu domeny.
@@ -46,7 +54,11 @@ async function isTenantDomain(domain: string): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const kind = classifyHost(request.headers.get("host"));
-  if (kind.kind === "app") return NextResponse.next();
+  if (kind.kind === "app") {
+    return isGuestPath(request.nextUrl.pathname)
+      ? intlMiddleware(request)
+      : NextResponse.next();
+  }
   if (kind.kind === "custom" && !(await isTenantDomain(kind.key))) {
     return NextResponse.next();
   }

@@ -1,0 +1,63 @@
+{
+  "book": "Zarezerwuj",
+  "nav": {
+    "about": "O obiekcie",
+    "units": "Apartamenty",
+    "gallery": "Galeria",
+    "calendar": "Cennik",
+    "attractions": "Okolica",
+    "reviews": "Opinie",
+    "contact": "Kontakt"
+  },
+  "sections": {
+    "about": "O obiekcie",
+    "units": "Nasze apartamenty",
+    "gallery": "Galeria",
+    "amenities": "Udogodnienia",
+    "calendar": "Dostępność i ceny",
+    "attractions": "Atrakcje w okolicy",
+    "reviews": "Opinie naszych gości",
+    "contact": "Kontakt"
+  },
+  "units": {
+    "upTo": "do {count} os.",
+    "minStay": "min. {count} nocy",
+    "perNight": "za noc",
+    "seeAndBook": "Zobacz i zarezerwuj"
+  },
+  "calendar": {
+    "pickRoom": "Wybierz apartament",
+    "prevMonth": "Poprzedni miesiąc",
+    "nextMonth": "Następny miesiąc",
+    "hintStart": "Kliknij dzień przyjazdu i wyjazdu",
+    "hintEnd": "Wybierz dzień wyjazdu",
+    "stay": "Pobyt {from} → {to}",
+    "bookThese": "Zarezerwuj ten termin",
+    "loadError": "Nie udało się pobrać dostępności. Spróbuj ponownie.",
+    "weekdays": "Pn,Wt,Śr,Cz,Pt,So,Nd",
+    "months": "styczeń,luty,marzec,kwiecień,maj,czerwiec,lipiec,sierpień,wrzesień,październik,listopad,grudzień"
+  },
+  "contact": {
+    "checkInOut": "zameldowanie od {from} · wymeldowanie do {to}",
+    "name": "Imię i nazwisko",
+    "email": "Adres e-mail",
+    "phone": "Telefon (opcjonalnie)",
+    "message": "Twoja wiadomość — np. pytanie o termin, liczbę osób, udogodnienia…",
+    "send": "Wyślij zapytanie",
+    "sentTitle": "Dziękujemy za wiadomość!",
+    "sentBody": "Odpowiemy najszybciej, jak to możliwe — zwykle w ciągu kilku godzin.",
+    "error": "Nie udało się wysłać wiadomości.",
+    "mapTitle": "Mapa: {address}"
+  },
+  "footer": {
+    "checkInFrom": "zameldowanie od {time}",
+    "checkOutTo": "wymeldowanie do {time}",
+    "terms": "Regulamin i polityka prywatności",
+    "bookings": "Rezerwacje:",
+    "bookingsLink": "online, bez prowizji",
+    "madeWith": "Strona stworzona w"
+  },
+  "reviews": {
+    "summary": "{avg} / 5 · {count} opinii"
+  }
+}

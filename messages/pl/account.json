@@ -1,0 +1,9 @@
+{
+  "title": "Moja rezerwacja",
+  "intro": "Podaj kod rezerwacji (z e-maila) i adres, na który została złożona.",
+  "notFound": "Nie znaleźliśmy rezerwacji o tym kodzie i adresie e-mail.",
+  "code": "Kod rezerwacji",
+  "codePlaceholder": "HO-XXXXXX",
+  "email": "E-mail",
+  "submit": "Pokaż rezerwację"
+}

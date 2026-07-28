@@ -9,6 +9,8 @@ const ICAL_INTERVAL_MS = 60 * 60 * 1000; // sync iCal co godzinę
 const PURGE_INTERVAL_MS = 24 * 60 * 60 * 1000; // retencja kart meldunkowych raz dziennie
 const REMINDER_INTERVAL_MS = 60 * 60 * 1000; // przypomnienia o przyjeździe co godzinę (idempotentne, 8–21)
 const REVIEW_INTERVAL_MS = 60 * 60 * 1000; // prośby o opinię co godzinę (idempotentne, 8–21)
+const RATES_INTERVAL_MS = 24 * 60 * 60 * 1000; // horyzont cen dynamicznych raz dziennie
+const OUTBOX_INTERVAL_MS = 10 * 60 * 1000; // dobijanie zaległego ARI co 10 min
 
 const flag = globalThis as unknown as { __rezflowJobs?: boolean };
 
@@ -23,6 +25,8 @@ export async function register() {
     purgeExpiredCheckIns,
     purgeExpiredSessions,
     sendArrivalReminders,
+    processAllChannexOutbox,
+    refreshAllRates,
     sendReviewRequests,
     syncAllIcalFeeds,
   } = await import("./lib/jobs");
@@ -59,4 +63,21 @@ export async function register() {
       console.error("[JOBS] błąd próśb o opinię:", e),
     );
   }, REVIEW_INTERVAL_MS).unref();
+
+  // odpowiednik zamiatania outboxa w /api/cron/sync-ical — poza Vercelem
+  // ARI wypychałoby się wyłącznie przy akcjach, a nieudane pushe nigdy by
+  // się nie dobiły
+  setInterval(() => {
+    processAllChannexOutbox().catch((e) =>
+      console.error("[JOBS] błąd dobijania outboxa ARI:", e),
+    );
+  }, OUTBOX_INTERVAL_MS).unref();
+
+  // odpowiednik /api/cron/rates — poza Vercelem nikt inny nie odbuduje
+  // horyzontu rekomendacji SmartRate (after() rozgrzewa tylko 30 dni)
+  setInterval(() => {
+    refreshAllRates().catch((e) =>
+      console.error("[JOBS] błąd odświeżania cen dynamicznych:", e),
+    );
+  }, RATES_INTERVAL_MS).unref();
 }

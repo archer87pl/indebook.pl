@@ -1,0 +1,17 @@
+{
+  "checkIn": "Check-in",
+  "checkOut": "Check-out",
+  "guestsLabel": "Guests",
+  "checkAvailability": "Check availability",
+  "searchDates": "Search dates",
+  "invalidRange": "Invalid date range — pick a check-in from today onwards and a check-out after it.",
+  "photoPlaceholder": "photo",
+  "available": "available: {count}",
+  "totalFor": "total for {count, plural, one {# night} other {# nights}}",
+  "minStayBadge": "min. stay: {count, plural, one {# night} other {# nights}}",
+  "noResults": {
+    "title": "No rooms available for these dates",
+    "description": "Try different dates — availability changes all the time."
+  },
+  "bookCta": "Book"
+}

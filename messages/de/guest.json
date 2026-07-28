@@ -1,0 +1,85 @@
+{
+  "status": {
+    "confirmed": "Buchung bestätigt!",
+    "cancelled": "Buchung storniert",
+    "expired": "Buchung abgelaufen",
+    "pending": "Buchung abschließen",
+    "confirmedSub": "Wir sehen uns in {property}. Anzahlung bezahlt.",
+    "payableSub": "Zahlen Sie die Anzahlung von {amount}, um den Aufenthalt zu bestätigen."
+  },
+  "alerts": {
+    "datesChanged": "Ihr Reisezeitraum wurde geändert. Die Bestätigung haben wir Ihnen per E-Mail geschickt.",
+    "checkedIn": "Meldeschein ausgefüllt. Vielen Dank — bis bald!",
+    "reviewThanks": "Vielen Dank für Ihre Bewertung des Aufenthalts!",
+    "paymentPending": "Zahlung eingegangen — wir warten auf die Bestätigung des Zahlungsanbieters. Bitte laden Sie die Seite gleich neu.",
+    "expired": "Die Frist für die Anzahlung ist abgelaufen — die Buchung ist verfallen. Bitte prüfen Sie die Verfügbarkeit erneut.",
+    "checkedInOnline": "Online eingecheckt — Meldeschein ausgefüllt."
+  },
+  "ticket": {
+    "code": "Buchungsnummer",
+    "badgePaid": "Bezahlt",
+    "badgePending": "Anzahlung ausstehend",
+    "badgeExpired": "Abgelaufen",
+    "badgeCancelled": "Storniert",
+    "property": "Unterkunft",
+    "guests": "Gäste",
+    "checkIn": "Anreise",
+    "checkOut": "Abreise",
+    "fromTime": "ab {time}",
+    "toTime": "bis {time}",
+    "stay": "Aufenthalt",
+    "discount": "Rabatt {amount}",
+    "amount": "Betrag",
+    "deposit": "Anzahlung {amount}"
+  },
+  "pay": {
+    "p24": "Anzahlung von {amount} zahlen — Przelewy24",
+    "simulated": "Anzahlung von {amount} zahlen (simulierte Zahlung)",
+    "p24Note": "Sichere Zahlung mit Przelewy24: BLIK, Karte, Sofortüberweisung.",
+    "simulatedNote": "Entwicklermodus: Das Zahlungs-Gateway wird simuliert."
+  },
+  "checkin": {
+    "title": "Nächster Schritt: Online-Check-in",
+    "descWithArrivalInfo": "Füllen Sie den Meldeschein aus, dann werden die Anreisehinweise (Codes, WLAN, Anfahrt) sofort freigeschaltet.",
+    "desc": "Füllen Sie den Meldeschein aus — das beschleunigt den Check-in vor Ort.",
+    "cta": "Jetzt einchecken"
+  },
+  "arrival": {
+    "title": "Informationen zur Anreise"
+  },
+  "review": {
+    "title": "Wie war Ihr Aufenthalt?",
+    "sub": "Schreiben Sie eine kurze Bewertung — das dauert nur einen Moment und hilft anderen Gästen."
+  },
+  "change": {
+    "title": "Reisezeitraum ändern",
+    "newCheckIn": "Neue Anreise",
+    "newCheckOut": "Neue Abreise",
+    "guests": "Gäste (max. {max})",
+    "submit": "Neu berechnen und Zeitraum ändern",
+    "note": "Der Preis wird nach den Raten für den neuen Zeitraum neu berechnet.",
+    "noteDeposit": "Die geleistete Anzahlung wird auf den Aufenthalt angerechnet."
+  },
+  "chat": {
+    "title": "Nachrichten an die Unterkunft",
+    "sub": "{property} wird per E-Mail benachrichtigt, die Antwort sehen Sie hier.",
+    "placeholder": "z. B. Wir kommen gegen 18:00 Uhr an, können wir das Gepäck früher abgeben?",
+    "send": "Nachricht senden",
+    "empty": "Noch keine Nachrichten — schreiben Sie die erste.",
+    "you": "Sie",
+    "owner": "Unterkunft",
+    "guest": "Gast"
+  },
+  "cancel": {
+    "cta": "Buchung stornieren"
+  },
+  "contact": {
+    "title": "Kontakt zum Gastgeber",
+    "replyVia": "antwortet im Chat oder per E-Mail",
+    "replyTo": "die Antwort geht an {email}",
+    "yourPhone": "Ihre Nummer: {phone}",
+    "mapPlaceholder": "Anfahrtskarte",
+    "hours": "Check-in ab {checkIn} · Check-out bis {checkOut}",
+    "propertyPage": "Zur Unterkunftsseite →"
+  }
+}

@@ -29,6 +29,8 @@ i komplet automatyzacji (płatności, meldunek, SMS-y, opinie, faktury).
 10. [Testy](#10-testy)
 11. [Mapa tras](#11-mapa-tras)
 12. [Strona WWW obiektu (kreator)](#12-strona-www-obiektu-kreator)
+13. [Wielojęzyczność interfejsu gościa](#13-wielojęzyczność-interfejsu-gościa-pl--en--de)
+14. [Ceny dynamiczne (SmartRate)](#14-ceny-dynamiczne-smartrate)
 
 ---
 
@@ -655,3 +657,209 @@ stronę-wizytówkę obiektu bez wiedzy technicznej i opublikować ją na subdome
 - **Rezerwacja (hybryda)**: widget kalendarza i ceny na stronie klienta,
   finalizacja na istniejącym flow `appUrl/rezerwuj/[unitTypeId]`; zapytania
   z formularza kontaktowego idą e-mailem do właściciela (honeypot antyspam).
+
+---
+
+## 13. Wielojęzyczność interfejsu gościa (PL / EN / DE)
+
+Tłumaczymy **interfejs**, nie treści właściciela. Opisy obiektu i pokoi,
+tytuły sekcji strony WWW czy nazwy planów pozostają w oryginale — właściciel
+wpisuje je raz i decyduje, w jakim języku. Panel recepcji i superadmin
+zostają po polsku (język pracy zespołu).
+
+### Mechanizm
+
+- **next-intl** (`i18n/routing.ts`, `i18n/request.ts`, `i18n/navigation.ts`).
+  Języki: `pl` (domyślny), `en`, `de`. `localePrefix: "as-needed"` — polski
+  bez prefiksu (`/o/willa`), pozostałe z prefiksem (`/en/o/willa`).
+- **Auto-detekcja** z nagłówka `Accept-Language` przy pierwszej wizycie;
+  wybór użytkownika ma pierwszeństwo (przełącznik `PL / EN / DE` w nagłówku).
+- **Kompozycja w `proxy.ts`**: middleware next-intl uruchamia się wyłącznie
+  dla tras gościa na hoście aplikacji (`lib/guest-paths.ts`: `/o`, `/rezerwuj`,
+  `/r`, `/moja-rezerwacja`). Panel, landing, API i strony WWW obiektów idą
+  dotychczasową ścieżką — routing hostów działa bez zmian.
+- **Słowniki**: `messages/<locale>/<namespace>.json`, przestrzenie:
+  `nav, common, property, search, booking, guest, checkin, review, account,
+  site, email`. Polski jest źródłem prawdy; test `i18n/messages.test.ts`
+  pilnuje parzystości kluczy i pustych wartości w EN/DE.
+- **Ścieżki**: w trasach gościa używaj `Link` z `@/i18n/navigation` (sam
+  dokłada prefiks). Dla `href` przekazywanego do komponentów współdzielonych
+  z panelem (np. `components/ui/Button`) użyj `localePath(path, locale)`
+  z `lib/locale-urls.ts` — `Button` celowo korzysta ze zwykłego `next/link`,
+  bo działa też poza kontekstem językowym (login, panel).
+- **SEO**: `generateMetadata` na stronie obiektu ustawia `canonical`
+  i `alternates.languages` (`pl`, `en`, `de`, `x-default`); `app/sitemap.ts`
+  emituje trasy gościa we wszystkich językach z `alternates`.
+- **`<html lang>`**: root layout renderuje `getLocale()`, a
+  `components/HtmlLangSync.tsx` utrzymuje atrybut przy nawigacji klienckiej
+  (root layout się wtedy nie przerysowuje).
+
+### Powiadomienia w języku gościa
+
+`Reservation.locale` zapisuje język, w którym gość rezerwował
+(`createReservation` bierze go z `getLocale()`). Maile i SMS-y do gościa lecą
+w tym języku (`lib/guest-mail.ts` → przestrzeń `email`); powiadomienia dla
+właściciela zostają po polsku. Nieznany język degraduje do PL.
+
+### Strony WWW obiektów
+
+Strony obiektów są poza routingiem next-intl (proxy przepisuje host na
+`/sites/<klucz>`), więc język trzyma **cookie `SITE_LOCALE`** — bez prefiksu
+w URL. Przełącznik (`components/site/SiteLangSwitcher.tsx`) zapisuje wybór
+przez `POST /api/sites/locale` i przeładowuje stronę. Tłumaczy się chrome:
+nawigacja, etykiety kart apartamentów, widget kalendarza, formularz kontaktowy
+i stopka; tytuły sekcji oraz opisy z kreatora zostają w oryginale. CTA do
+rezerwacji prowadzi do wersji językowej aplikacji (`/en/o/...`).
+
+### Błędy formularzy w języku gościa
+
+Akcje serwerowe zwracają **kod błędu, nie gotowe zdanie** (`lib/guest-errors.ts`),
+a komponent `components/GuestError.tsx` tłumaczy go z przestrzeni `common.errors`.
+Wcześniej server action wstawiał polski tekst do URL-a i niemiecki gość dostawał
+go dosłownie na przetłumaczonej stronie — dokładnie w momencie płacenia.
+
+Kod z URL-a jest **walidowany względem listy znanych kodów**; nieznana wartość
+degraduje do komunikatu ogólnego, więc nie renderujemy surowej zawartości
+parametru. Komunikaty z liczbą (maks. gości, min. nocy, limit znaków, numer
+gościa) dostają ją parametrem `n` i wstawiają przez ICU — z odmianą przez
+liczbę tam, gdzie język tego wymaga.
+
+Panel recepcji zostaje po polsku, więc akcje administracyjne dalej zwracają
+zwykły tekst.
+
+### Kwoty i daty w zapisie języka gościa
+
+Waluta zostaje złotówkowa (obiekt rozlicza się w PLN), ale **zapis** jest
+językowy: `1234 zł` po polsku, `1.234 PLN` po niemiecku, `PLN 1,234` po
+angielsku. Tak samo daty — `14 sierpnia 2027` kontra `14. August 2027`, a przy
+zapisie liczbowym `en-US` odwraca dzień z miesiącem, co przy dacie przyjazdu
+nie jest kosmetyką.
+
+Dwie pary funkcji, każda o jasnej roli:
+
+| Powierzchnia gościa (z językiem) | Panel, faktury, maile właściciela |
+|---|---|
+| `formatMoney(gr, locale)` | `formatPln(gr)` |
+| `formatDate(iso, locale)` | `formatDatePl(iso)` |
+| `formatDateShort(iso, locale)` | `formatDateShortPl(iso)` |
+| `formatRangeShort(from, to, locale)` | `formatRangeShortPl(from, to)` |
+
+Polskie warianty to cienkie aliasy tych pierwszych, więc panel recepcji nie
+wymagał żadnych zmian. Maile do gościa formatują kwotę jego językiem — treść
+i tak jest już tłumaczona przez `guestT(reservation.locale)`.
+
+Test `lib/format-locale.test.ts` skanuje `app/[locale]` i `components/site`
+i **nie przepuszcza polskich wariantów** na powierzchniach gościa — inaczej
+łatwo byłoby przywrócić `formatPln` przy kolejnej zmianie i nikt by nie
+zauważył.
+
+### Udogodnienia
+
+W bazie (`UnitType.amenities`) siedzą **klucze**, nie etykiety — `wifi`, `ac`,
+`private-bathroom`. `AMENITIES` w `lib/amenities.ts` trzyma klucz, neutralną
+językowo ikonę i **polską** etykietę dla panelu recepcji; powierzchnie gościa
+tłumaczą po kluczu z `common.amenities.<key>`.
+
+Dzięki temu ta sama rezerwacja pokazuje „Klimatyzacja" polskiemu gościowi
+i „Klimaanlage" niemieckiemu, bez dublowania danych. `lib/amenities.test.ts`
+pilnuje trzech rzeczy: każdy klucz ma tłumaczenie we wszystkich językach,
+w słownikach nie ma osieroconych wpisów po usuniętych udogodnieniach, a żadna
+powierzchnia gościa nie sięga po polskie `label` z katalogu.
+
+### Czego (jeszcze) nie tłumaczymy
+
+Treści wpisywane przez właściciela — nazwy i opisy pokoi, sekcje stron WWW,
+regulamin. To osobny etap: wymaga wersji językowych w bazie i edytora
+per język, nie samych słowników.
+
+---
+
+## 14. Ceny dynamiczne (SmartRate)
+
+Obiekt ma **dwa silniki wyceny** i przełącza się między nimi w `/admin/cennik`.
+`quoteStayDynamic` (`lib/dynamic-pricing.ts`) pozostaje jedynym wejściem do
+wyceny — wszystkie ścieżki (wyniki wyszukiwania, strona rezerwacji, rezerwacja
+gościa, zmiana terminu, rezerwacja ręczna) widzą tę samą cenę.
+
+### Dwa silniki
+
+- **`BASIC`** — dotychczasowe reguły `PricingRule` (weekend, last minute,
+  obłożenie) nakładane na cennik statyczny (baza + sezony).
+- **`SMARTRATE`** — rekomendacje z zewnętrznego API (projekt `Rezio.SmartRate`).
+  Dostępny wyłącznie w planie **Pro** (`pricingPlanFeatures` w `lib/plans.ts`)
+  i po wskazaniu rynku. Reguły zostają widoczne jako awaryjne.
+
+### Skąd bierze się cena
+
+`POST /v1/quote` liczy każdą dobę osobno: sezonowość × dzień tygodnia ×
+wyprzedzenie × obłożenie rynku × popyt, a wynik przycina do widełek. Panel
+pokazuje rozbicie na te mnożniki, wskaźnik popytu, drivery (np. „długi
+weekend") i znacznik obcięcia — cena nie jest czarną skrzynką.
+
+### Widełki bezpieczeństwa
+
+`UnitType.minPriceGr` / `maxPriceGr`, edytowalne per typ pokoju. Przy pierwszym
+włączeniu trybu wypełniają się z ceny bazowej: **−30% / +80%**
+(`defaultGuards` w `lib/rates/refresh.ts`).
+
+### Cache i świeżość
+
+Rekomendacje trafiają do tabeli `DynamicRate` (jeden wiersz = jedna doba dla
+typu pokoju). **Ścieżka gościa nie robi HTTP** — czyta wyłącznie z cache'u.
+Wpisy starsze niż `SMARTRATE_TTL_HOURS` (domyślnie 12) nadal obsługują gościa,
+ale zlecają odświeżenie. `refreshRates` odpuszcza, jeśli którykolwiek wpis
+w zakresie ma mniej niż 60 sekund (coalesce) — inaczej popularny obiekt
+zasypałby API przy każdym wyszukiwaniu.
+
+### Wszystko albo nic
+
+Brak choćby jednej nocy w cache degraduje **całą** wycenę do reguł. Ta sama
+zasada, co „pełny kalendarz albo nic" przy push-u ARI do Channexa: gość nigdy
+nie widzi ceny sklejonej z dwóch silników, a cena w wyszukiwarce zgadza się
+z ceną przy rezerwacji.
+
+### Ceny w kanałach
+
+Push ARI do Channexa wysyła **cenę doby razem z dostępnością i `minStay`**
+(`lib/channex/ari.ts`). Stawka bierze się z `nightlyRates`, czyli z tej samej
+funkcji co wycena dla gościa — kanał sprzedaje po cenie, którą widać na naszej
+stronie, także przy włączonym SmartRate. Doba bez policzonej ceny dostaje cenę
+bazową typu pokoju; wysłanie zera byłoby gorsze niż cennik statyczny.
+
+### Odświeżanie i inwalidacja
+
+- `after()` po odpowiedzi (`afterRates`) — poza zakresem żądania degraduje się
+  do fire-and-forget, jak `afterAri`.
+- Przełączenie trybu rozgrzewa **30 dni** (tyle pokazuje panel); pełny horyzont
+  **180 dni** dobija cron `GET /api/cron/rates` (fail-closed z `CRON_SECRET`,
+  harmonogram w `vercel.json`). Cron pracuje w budżecie czasu i zaczyna od
+  najdawniej odświeżanych typów pokoi, więc przy dużej liczbie obiektów kolejne
+  przebiegi domykają ogon listy zamiast wpadać w timeout funkcji.
+- W self-hoście te same zadania (plus dobijanie outboxa ARI) odpala
+  `instrumentation.ts` — poza Vercelem nie ma crona.
+- Zmiana ceny bazowej, sezonu, widełek, rynku lub trybu kasuje wpisy dotkniętych
+  typów pokoi (`invalidateRates`).
+
+### Awarie
+
+Gdy integracja nie jest w ogóle skonfigurowana (`SMARTRATE_URL` puste i brak
+stuba), panel **nie pokazuje przełącznika silnika** — jak przy Channexie
+i własnych domenach. Wcześniej właściciel mógł wybrać SmartRate przy pustej
+liście rynków i utknąć na „Wybierz rynek" bez możliwości spełnienia warunku.
+
+Ciche dla gościa, głośne dla właściciela: błąd API ląduje w
+`Property.smartRateError` (alert w panelu), a wycena leci regułami. Timeout 5 s,
+adres bazowy przechodzi przez `assertPublicUrl` (ten sam guard co feedy iCal).
+
+### Konfiguracja
+
+| Zmienna | Znaczenie |
+|---|---|
+| `SMARTRATE_URL` | adres `Rezio.Api`; brak = tryb ukryty w panelu |
+| `SMARTRATE_API_KEY` | nagłówek `X-Api-Key` (patrz README `Rezio.SmartRate`) |
+| `SMARTRATE_STUB=1` | deterministyczny stub (dev, vitest, Playwright) — bez sieci |
+| `SMARTRATE_TTL_HOURS` | próg świeżości cache'u, domyślnie 12 |
+
+Pliki: `lib/rates/provider.ts` (abstrakcja + stub), `lib/rates/smartrate.ts`
+(klient), `lib/rates/cache.ts` (odczyt), `lib/rates/refresh.ts` (zapis),
+`components/admin/PricingEngineCard.tsx` (panel).

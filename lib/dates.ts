@@ -52,18 +52,24 @@ export function shiftMonth(month: string, delta: number): string {
   return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
 }
 
-export function formatDatePl(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
+/** Data słownie w danym języku: „14 sierpnia 2027" / „14. August 2027". */
+export function formatDate(iso: string, locale: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 }
 
-/** Zakres pobytu po polsku: "10–13 lip" lub "30 cze – 2 lip". */
-export function formatRangeShortPl(from: string, to: string): string {
+/** Data po polsku — panel recepcji i dokumenty. */
+export function formatDatePl(iso: string): string {
+  return formatDate(iso, "pl-PL");
+}
+
+/** Zakres pobytu skrótem: „10–13 lip" lub „30 cze – 2 lip" (wg języka). */
+export function formatRangeShort(from: string, to: string, locale: string): string {
   const short = (iso: string) =>
-    new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
+    new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
       day: "numeric",
       month: "short",
     });
@@ -73,10 +79,21 @@ export function formatRangeShortPl(from: string, to: string): string {
   return `${short(from)} – ${short(to)}`;
 }
 
-export function formatDateShortPl(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
+/** Zakres pobytu po polsku. */
+export function formatRangeShortPl(from: string, to: string): string {
+  return formatRangeShort(from, to, "pl-PL");
+}
+
+/** Data liczbowo w danym języku: „14.08.2027" / „08/14/2027". */
+export function formatDateShort(iso: string, locale: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
+}
+
+/** Data liczbowo po polsku. */
+export function formatDateShortPl(iso: string): string {
+  return formatDateShort(iso, "pl-PL");
 }

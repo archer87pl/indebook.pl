@@ -50,6 +50,8 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **SMS-y** (gdy gość podał telefon): potwierdzenie rezerwacji z linkiem do meldunku + przypomnienie dzień przed przyjazdem,
 - **opinie po pobycie** `/r/[kod]/opinia`: ocena 1–5 gwiazdek + komentarz (prośba e-mail/SMS dzień po wymeldowaniu, cron); publikacja na stronie obiektu pod imieniem i inicjałem,
 - wyszukiwanie rezerwacji `/moja-rezerwacja` (kod + e-mail), zgoda RODO.
+- **wielojęzyczny interfejs (PL / EN / DE)**: prefiks w URL (`/en/o/...`, polski bez prefiksu), auto-detekcja z `Accept-Language`, przełącznik w nagłówku, hreflang; maile i SMS-y lecą w języku, w którym gość rezerwował. Tłumaczymy interfejs — treści właściciela zostają w oryginale. Panel recepcji po polsku.
+- **ceny dynamiczne (Pro)**: przełącznik silnika wyceny — podstawowe reguły RezFlow albo zewnętrzne API SmartRate (rekomendacja per doba z rozbiciem na sezon, dzień tygodnia, wyprzedzenie, obłożenie rynku i popyt); ceny czytane z cache w bazie, odświeżane w tle, awaria API cicho degraduje do reguł.
 
 **Blog / poradnik (`/blog`)**
 - artykuły jako pliki Markdown w `content/blog/*.md` (frontmatter: tytuł, data, zajawka, tag, okładka, `draft`), generowane statycznie; treść przez `marked`, JSON-LD `BlogPosting`, sekcja najnowszych na landingu i wpisy w `sitemap.xml`. Instrukcja dla autorów: `content/blog/README.md`.
@@ -87,11 +89,27 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 **Pozostałe integracje**
 - płatności Przelewy24 per obiekt (pola `Property.p24*` z panelu obiektu, fallback: symulacja), e-maile Resend (env `RESEND_API_KEY`, fallback: konsola), SMS-y SMSAPI (env `SMSAPI_TOKEN`, fallback: konsola) — potwierdzenie rezerwacji i przypomnienie dzień przed przyjazdem (z linkiem do meldunku, cron, wysyłka tylko 8–21).
 
+## CI
+
+`.github/workflows/ci.yml` odpala się na PR-ach i push-ach do `main` w dwóch jobach:
+
+- **check** — `tsc`, `eslint`, testy jednostkowe i `npm run build`; bez bazy, bo
+  testy jednostkowe jej nie potrzebują (te, które potrzebują, same się pomijają
+  bez `TEST_DATABASE_URL`).
+- **e2e** — Playwright na realnej aplikacji z Postgresem w usłudze i danymi
+  z `npm run db:seed`; ceny dynamiczne na stubie (`SMARTRATE_STUB=1`), żeby nic
+  nie wychodziło do sieci. Przy porażce wrzuca `test-results/` jako artefakt.
+
+Wersja npm jest przypięta do tej z `package.json#packageManager` — starszy npm
+inaczej rozwiązuje peery optional deps i `npm ci` się wywala.
+
 ## Konwencje
 
 - Daty pobytu: stringi `YYYY-MM-DD`, przedziały półotwarte `[checkIn, checkOut)`, porównania leksykograficzne.
 - Kwoty w groszach (int, sufiks `Gr`); formatowanie i odmiana nocy w `lib/format.ts`.
 - Dostępność i przydział jednostki w transakcji (`lib/availability.ts`); PENDING po 30 min zwalnia termin.
+- Teksty interfejsu gościa: `messages/<pl|en|de>/<namespace>.json` (polski źródłem prawdy, test parzystości kluczy w `i18n/messages.test.ts`). W trasach gościa linkuj przez `Link` z `@/i18n/navigation`, a `href` dla `components/ui/Button` buduj `localePath()` z `lib/locale-urls.ts`.
+- Ceny dynamiczne: `quoteStayDynamic` jest jedynym wejściem do wyceny; SmartRate wchodzi przez cache `DynamicRate` (nigdy HTTP w ścieżce gościa), a niepełne pokrycie degraduje CAŁĄ wycenę do reguł.
 
 ## Wdrożenie na Vercel (zalecane)
 
@@ -113,13 +131,44 @@ Baza: **Supabase Postgres**, storage zdjęć: **Vercel Blob**, zadania w tle: **
 
 ## Wdrożenie na Docker (self-host)
 
+Dwa warianty. **Sama aplikacja** (RezFlow + własny Postgres; ceny dynamiczne chodzą wtedy na deterministycznym stubie):
+
 ```bash
-# uploady wymagają BLOB_READ_WRITE_TOKEN (zdjęcia trafiają do Vercel Blob)
 APP_URL=https://twojadomena.pl docker compose up -d --build
 ```
 
+**Cały system** — aplikacja razem z silnikiem cen SmartRate z sąsiedniego repo `Rezio.SmartRate`:
+
+```bash
+docker compose -f docker-compose.full.yml up -d --build
+```
+
+Podnosi 8 usług w jednym projekcie Compose (wspólna sieć, więc widzą się po nazwach):
+
+| Usługa | Adres | Rola |
+|---|---|---|
+| `rezflow` | http://localhost:3000 | aplikacja |
+| `rezflow-db` | localhost:5433 | Postgres aplikacji |
+| `rezio-api` | http://localhost:8080 | silnik cen SmartRate + jego panel |
+| `scraper-api` | http://localhost:8082 | scraper rynków |
+| `postgres` | localhost:5432 | Postgres SmartRate |
+| `grafana` | http://localhost:3001 | logi (datasource Loki) |
+| `loki` | http://localhost:3101 | zbieranie logów |
+| `healthchecks-ui` | http://localhost:8090 | zdrowie usług .NET |
+
+Dane startowe (konta demo i dwa obiekty) wgrasz z hosta przez wystawiony port bazy:
+
+```bash
+DATABASE_URL=postgresql://rezflow:rezflow@localhost:5433/rezflow DIRECT_URL=postgresql://rezflow:rezflow@localhost:5433/rezflow npm run db:seed
+```
+
 - Obraz buduje standalone Next (`output: "standalone"` poza Vercelem), przy starcie robi `prisma db push`.
-- Wymaga zewnętrznego Postgresa (`DATABASE_URL`/`DIRECT_URL`) — SQLite nie jest już wspierany.
+- Zadania okresowe poza Vercelem odpala `instrumentation.ts` (długożyjący proces) — nie `vercel.json`.
+- Konfiguracja przez zmienne środowiskowe (patrz `.env.example`); wszystkie mają sensowne domyślne, więc `up` działa bez żadnego pliku `.env`.
+- Zdjęcia: z `BLOB_READ_WRITE_TOKEN` lecą do Vercel Blob, bez niego na dysk (wolumen `rezflow-uploads`, katalog z `UPLOADS_DIR`). Pliki serwuje trasa `/uploads/*`, bo Next w trybie standalone nie oddaje plików dopisanych do `public` po zbudowaniu obrazu.
+- Porty SmartRate są w `docker-compose.full.yml` przemapowane (Grafana 3000→3001, Loki 3100→3101), bo domyślne zderzają się z aplikacją i z testami e2e.
+- `SMARTRATE_API_KEY` ustawione po obu stronach włącza autoryzację silnika cen. Puste = endpointy SmartRate otwarte, co jest dopuszczalne tylko dlatego, że nie wychodzą poza sieć Compose.
+- Repo SmartRate w innej lokalizacji wskażesz zmienną `SMARTRATE_REPO`.
 - Za reverse proxy (nginx/traefik) wystaw port 3000 + HTTPS.
 - SEO: `app/sitemap.ts` i `app/robots.ts` generują sitemap.xml/robots.txt; landing ma JSON-LD (FAQPage, SoftwareApplication z ofertami planów, Organization).
 

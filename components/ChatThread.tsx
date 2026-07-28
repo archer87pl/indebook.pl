@@ -1,17 +1,33 @@
 // Wątek czatu gość <-> obiekt (server component — odświeżanie przez reload).
 type Msg = { id: number; sender: string; body: string; createdAt: Date };
 
+/** Etykiety UI. Panel recepcji zostaje po polsku (domyślne), panel gościa
+ *  podaje tłumaczenia z namespace „guest". */
+export type ChatThreadLabels = {
+  empty: string;
+  you: string;
+  owner: string;
+  guest: string;
+};
+
+const DEFAULT_LABELS: ChatThreadLabels = {
+  empty: "Brak wiadomości — napisz pierwszą.",
+  you: "Ty",
+  owner: "Obiekt",
+  guest: "Gość",
+};
+
 export default function ChatThread({
   messages,
   viewer,
+  labels = DEFAULT_LABELS,
 }: {
   messages: Msg[];
   viewer: "GUEST" | "OWNER";
+  labels?: ChatThreadLabels;
 }) {
   if (messages.length === 0) {
-    return (
-      <p className="text-sm text-slate-400">Brak wiadomości — napisz pierwszą.</p>
-    );
+    return <p className="text-sm text-slate-400">{labels.empty}</p>;
   }
   return (
     <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">
@@ -29,7 +45,7 @@ export default function ChatThread({
               <p className="whitespace-pre-line break-words">{m.body}</p>
             </div>
             <p className="mt-1 text-[10.5px] text-slate-400">
-              {own ? "Ty" : m.sender === "OWNER" ? "Obiekt" : "Gość"} ·{" "}
+              {own ? labels.you : m.sender === "OWNER" ? labels.owner : labels.guest} ·{" "}
               {m.createdAt.toLocaleString("pl-PL", {
                 dateStyle: "short",
                 timeStyle: "short",

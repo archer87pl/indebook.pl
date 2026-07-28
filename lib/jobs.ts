@@ -5,7 +5,9 @@ import { CHECKIN_RETENTION_DAYS, checkInUrl } from "./checkin";
 import { addDaysISO, todayISO } from "./dates";
 import { prisma } from "./db";
 import { syncIcalFeed } from "./ical";
+import { guestT } from "./guest-mail";
 import { processOutbox } from "./channex/outbox";
+import { refreshRates } from "./rates/refresh";
 import { sendMail } from "./mailer";
 import { appUrl } from "./payments";
 import { reviewUrl } from "./reviews";
@@ -39,26 +41,35 @@ export async function sendArrivalReminders(): Promise<number> {
   for (const r of due) {
     const property = r.unit.unitType.property;
     const needsCheckIn = r.checkInStatus === "NONE";
+    const t = await guestT(r.locale);
     if (r.email && !r.email.endsWith("@rezflow.local")) {
       await sendMail({
         to: r.email,
-        subject: `Do zobaczenia jutro — ${property.name}`,
-        body: `Przypominamy o jutrzejszym przyjeździe do ${property.name} (zameldowanie od ${property.checkInFrom}).${
+        subject: t("arrivalReminder.subject", { property: property.name }),
+        // dopiski (meldunek / informacje na przyjazd / link) nie mają kluczy
+        // w katalogu — doklejamy je do przetłumaczonej treści bazowej
+        body: `${t("arrivalReminder.body", {
+          property: property.name,
+          checkInFrom: property.checkInFrom,
+        })}${
           needsCheckIn
-            ? `\n\nWypełnij meldunek online — po wypełnieniu otrzymasz instrukcje przyjazdu:\n${checkInUrl(r.code)}`
+            ? `\n\n${checkInUrl(r.code)}`
             : property.arrivalInfo
-              ? `\n\nInformacje na przyjazd:\n${property.arrivalInfo}`
+              ? `\n\n${property.arrivalInfo}`
               : ""
-        }\n\nSzczegóły rezerwacji: ${appUrl()}/r/${r.code}`,
+        }\n\n${appUrl()}/r/${r.code}`,
       });
     }
     if (r.phone) {
       await sendSms({
         to: r.phone,
-        body: `Przypomnienie: jutro przyjazd do ${property.name} (od ${property.checkInFrom}).${
+        body: `${t("sms.arrivalReminder", {
+          property: property.name,
+          checkInFrom: property.checkInFrom,
+        })}${
           needsCheckIn
-            ? ` Meldunek online: ${checkInUrl(r.code)}`
-            : ` Rezerwacja: ${appUrl()}/r/${r.code}`
+            ? ` ${checkInUrl(r.code)}`
+            : ` ${appUrl()}/r/${r.code}`
         }`,
       });
     }
@@ -93,17 +104,24 @@ export async function sendReviewRequests(): Promise<number> {
   });
   for (const r of due) {
     const property = r.unit.unitType.property;
+    const t = await guestT(r.locale);
     if (r.email && !r.email.endsWith("@rezflow.local")) {
       await sendMail({
         to: r.email,
-        subject: `Jak minął pobyt w ${property.name}?`,
-        body: `Dziękujemy za pobyt w ${property.name}!\n\nPodziel się krótką opinią — zajmie to chwilę i pomoże innym gościom:\n${reviewUrl(r.code)}`,
+        subject: t("reviewRequest.subject", { property: property.name }),
+        body: t("reviewRequest.body", {
+          property: property.name,
+          reviewUrl: reviewUrl(r.code),
+        }),
       });
     }
     if (r.phone) {
       await sendSms({
         to: r.phone,
-        body: `Dziekujemy za pobyt w ${property.name}! Ocen pobyt: ${reviewUrl(r.code)}`,
+        body: t("sms.reviewRequest", {
+          property: property.name,
+          reviewUrl: reviewUrl(r.code),
+        }),
       });
     }
     await prisma.reservation.update({
@@ -186,4 +204,55 @@ export async function syncAllIcalFeeds(): Promise<number> {
   if (feeds.length > 0)
     console.log(`[JOBS] zsynchronizowano ${feeds.length} kalendarzy iCal`);
   return feeds.length;
+}
+
+/**
+ * Odbudowa horyzontu rekomendacji (180 dni) dla obiektów w trybie SMARTRATE.
+ *
+ * Pracuje w budżecie czasu i zaczyna od najdawniej odświeżanych typów pokoi,
+ * więc przy dużej liczbie obiektów kolejne przebiegi domykają resztę zamiast
+ * w kółko odświeżać ten sam początek listy. Bez tego cron po prostu wpadał
+ * w timeout funkcji i cicho gubił ogon listy.
+ */
+export function byStalestFirst<T extends { dynamicRates: { fetchedAt: Date }[] }>(
+  types: T[]
+): T[] {
+  // typy bez ani jednej rekomendacji mają pierwszeństwo (brak = epoka zero)
+  return [...types].sort(
+    (a, b) =>
+      (a.dynamicRates[0]?.fetchedAt.getTime() ?? 0) -
+      (b.dynamicRates[0]?.fetchedAt.getTime() ?? 0)
+  );
+}
+
+export async function refreshAllRates(
+  budgetMs = 240_000
+): Promise<{ days: number; unitTypes: number; pending: number }> {
+  const startedAt = Date.now();
+  const from = todayISO();
+  const to = addDaysISO(from, 180);
+
+  // NULLS FIRST: typy bez ani jednej rekomendacji mają pierwszeństwo
+  const types = byStalestFirst(
+    await prisma.unitType.findMany({
+      where: { property: { pricingMode: "SMARTRATE" } },
+      select: {
+        id: true,
+        dynamicRates: {
+          select: { fetchedAt: true },
+          orderBy: { fetchedAt: "desc" },
+          take: 1,
+        },
+      },
+    })
+  );
+
+  let days = 0;
+  let processed = 0;
+  for (const t of types) {
+    if (Date.now() - startedAt > budgetMs) break;
+    days += await refreshRates(t.id, from, to);
+    processed++;
+  }
+  return { days, unitTypes: processed, pending: types.length - processed };
 }

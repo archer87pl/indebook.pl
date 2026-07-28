@@ -1,0 +1,20 @@
+{
+  "title": "Opinia o pobycie",
+  "back": "Wróć do rezerwacji",
+  "thanks": "Dziękujemy za opinię! Twoja ocena:",
+  "notYet": "Opinię będzie można wystawić po zakończonym pobycie (po {date}).",
+  "heading": "Jak minął pobyt?",
+  "rating": "Twoja ocena *",
+  "comment": "Opinia (opcjonalnie)",
+  "commentPlaceholder": "Co Ci się podobało? Co moglibyśmy poprawić?",
+  "consent": "Zgadzam się na publikację opinii na stronie obiektu pod moim imieniem i inicjałem nazwiska (np. „{example} K.”). *",
+  "submit": "Wyślij opinię",
+  "starsAria": "{count} z 5",
+  "stars": {
+    "1": "Słabo",
+    "2": "Może być",
+    "3": "Dobrze",
+    "4": "Bardzo dobrze",
+    "5": "Rewelacyjnie"
+  }
+}

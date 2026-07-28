@@ -1,0 +1,36 @@
+{
+  "steps": {
+    "room": "Room",
+    "details": "Details and deposit"
+  },
+  "soldOut": {
+    "title": "No “{unitType}” rooms available for {from} → {to}",
+    "hint": "Try different dates or one of the other rooms at {property}.",
+    "cta": "Go back and pick other dates"
+  },
+  "form": {
+    "title": "Your details",
+    "name": "Full name *",
+    "email": "Email *",
+    "phone": "Phone",
+    "taxId": "VAT ID (for an invoice, optional)",
+    "promo": "Promo code",
+    "promoPlaceholder": "e.g. SUMMER10",
+    "notes": "Notes for the host (optional)",
+    "notesPlaceholder": "e.g. arriving around 3 pm, please add a cot for a child",
+    "consent": "I agree to the processing of my personal data for the purpose of this booking (GDPR) and accept the <terms>property terms</terms>. *",
+    "submit": "Pay {amount} and book",
+    "securePayment": "Encrypted payment · Przelewy24 (BLIK, card, bank transfer)",
+    "holdNotice": "Your booking is held for 30 minutes — the {amount} deposit confirms it."
+  },
+  "summary": {
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Guests",
+    "stay": "Stay ({nights})",
+    "total": "Total",
+    "depositNow": "Deposit now ({percent}%)",
+    "remaining": "Remaining {amount} on arrival",
+    "backToProperty": "← Back to the property page"
+  }
+}

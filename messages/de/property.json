@@ -1,0 +1,45 @@
+{
+  "suspended": {
+    "title": "Diese Unterkunft ist derzeit nicht verfügbar",
+    "description": "Die Buchungsseite von {name} ist vorübergehend deaktiviert.",
+    "browseOther": "Andere Unterkünfte ansehen"
+  },
+  "gallery": {
+    "mainPhoto": "Hauptfoto",
+    "roomPhoto": "Zimmerfoto",
+    "morePhotos": "+{count, plural, one {# Foto} other {# Fotos}}"
+  },
+  "ratingAriaLabel": "Bewertung {value} von 5",
+  "zeroCommission": "0 % Provision",
+  "roomsTitle": "Unsere Zimmer",
+  "noRoomsYet": "Diese Unterkunft hat noch kein Angebot hinterlegt.",
+  "upToGuests": "für bis zu {count, plural, one {# Gast} other {# Gäste}}",
+  "units": "{count, plural, one {# Einheit} other {# Einheiten}}",
+  "minStay": "mind. {count, plural, one {# Nacht} other {# Nächte}}",
+  "viewRoom": "Zimmer ansehen",
+  "perNightShort": "/ Nacht",
+  "reviewsTitle": "Gästebewertungen",
+  "ownerReply": "Antwort der Unterkunft",
+  "faqTitle": "Häufige Fragen",
+  "depositNote": "{percent} % Anzahlung online · Rest bei Anreise",
+  "directBooking": "Direkt beim Gastgeber buchen — bester Preis, keine Provision.",
+  "checkInOut": "Anreise ab {checkIn} · Abreise bis {checkOut}",
+  "termsAndPrivacy": "AGB und Datenschutzerklärung",
+  "amenitiesTitle": "Ausstattung",
+  "bookThisRoom": "Dieses Zimmer buchen",
+  "availabilityNote": "Die Verfügbarkeit prüfen wir im nächsten Schritt. Eine Anzahlung von {percent} % bestätigt Ihre Buchung.",
+  "pricing": {
+    "title": "Preise",
+    "season": "Saison",
+    "period": "Zeitraum",
+    "pricePerNight": "Preis / Nacht",
+    "standard": "Standardpreis",
+    "outsideSeasons": "außerhalb der Saisons"
+  },
+  "terms": {
+    "title": "Hausordnung der Unterkunft",
+    "privacyTitle": "Datenschutzerklärung",
+    "emptyTitle": "Keine Hausordnung veröffentlicht",
+    "emptyDescription": "Diese Unterkunft hat noch keine Hausordnung veröffentlicht. Bei Fragen zu den Aufenthaltsregeln wenden Sie sich bitte direkt an die Unterkunft."
+  }
+}

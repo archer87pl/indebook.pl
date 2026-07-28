@@ -1,7 +1,8 @@
 import { Star } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { averageRating } from "@/lib/reviews";
-import { formatDatePl } from "@/lib/dates";
+import { formatDate } from "@/lib/dates";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 
@@ -24,6 +25,7 @@ function Stars({ value }: { value: number }) {
 }
 
 export default async function Reviews({ section, ctx }: { section: ReviewsSection; ctx: SiteCtx }) {
+  const t = await getTranslations({ locale: ctx.locale, namespace: "site" });
   const reviews = await prisma.review.findMany({
     where: { propertyId: ctx.property.id, hidden: false },
     orderBy: { createdAt: "desc" },
@@ -37,7 +39,10 @@ export default async function Reviews({ section, ctx }: { section: ReviewsSectio
         <h2 className="mb-2 text-center text-3xl font-bold">{section.data.title}</h2>
         <p className="mb-8 flex items-center justify-center gap-2 text-sm text-[var(--site-muted)]">
           <Stars value={avg} />
-          {avg.toFixed(1).replace(".", ",")} / 5 · {reviews.length} opinii
+          {t("reviews.summary", {
+            avg: avg.toFixed(1).replace(".", ","),
+            count: reviews.length,
+          })}
         </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {reviews.map((rev) => (
@@ -50,7 +55,7 @@ export default async function Reviews({ section, ctx }: { section: ReviewsSectio
                 <Stars value={rev.rating} />
               </div>
               <p className="text-xs text-[var(--site-muted)]">
-                {formatDatePl(rev.createdAt.toISOString().slice(0, 10))}
+                {formatDate(rev.createdAt.toISOString().slice(0, 10), ctx.locale)}
               </p>
               {rev.comment && (
                 <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--site-muted)]">

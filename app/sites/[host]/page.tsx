@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Construction } from "lucide-react";
 import SiteRenderer from "@/components/site/SiteRenderer";
+import { getSiteLocale } from "@/lib/site-locale";
 import { formatPln } from "@/lib/format";
 import { normalizeConfig } from "@/lib/site-config";
 import { siteUrl } from "@/lib/site-host";
@@ -65,6 +66,7 @@ export default async function PublicSitePage(props: {
   }
 
   const config = normalizeConfig(site.publishedConfig);
+  const siteLocale = await getSiteLocale();
   const p = site.property;
   const prices = p.unitTypes.map((ut) => ut.basePriceGr);
   const jsonLd = {
@@ -85,7 +87,7 @@ export default async function PublicSitePage(props: {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <SiteRenderer site={site} config={config} />
+      <SiteRenderer site={site} config={config} locale={siteLocale} />
     </>
   );
 }

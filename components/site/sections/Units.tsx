@@ -1,12 +1,16 @@
 import { Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { AMENITIES, parseAmenities } from "@/lib/amenities";
-import { formatPln } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
+import { localePath } from "@/lib/locale-urls";
 import type { SiteSection } from "@/lib/site-config";
 import type { SiteCtx } from "../SiteRenderer";
 
 type UnitsSection = Extract<SiteSection, { type: "units" }>;
 
-export default function Units({ section, ctx }: { section: UnitsSection; ctx: SiteCtx }) {
+export default async function Units({ section, ctx }: { section: UnitsSection; ctx: SiteCtx }) {
+  const t = await getTranslations({ locale: ctx.locale, namespace: "site" });
+  const tc = await getTranslations({ locale: ctx.locale, namespace: "common" });
   const unitTypes = ctx.property.unitTypes;
   if (unitTypes.length === 0) return null;
   return (
@@ -39,15 +43,15 @@ export default function Units({ section, ctx }: { section: UnitsSection; ctx: Si
                     <h3 className="text-lg font-bold">{ut.name}</h3>
                     <div className="text-right">
                       <div className="whitespace-nowrap text-lg font-bold text-[var(--site-primary)]">
-                        {formatPln(ut.basePriceGr)}
+                        {formatMoney(ut.basePriceGr, ctx.locale)}
                       </div>
-                      <div className="text-xs text-[var(--site-muted)]">za noc</div>
+                      <div className="text-xs text-[var(--site-muted)]">{t("units.perNight")}</div>
                     </div>
                   </div>
                   <p className="flex items-center gap-1.5 text-sm text-[var(--site-muted)]">
                     <Users size={15} strokeWidth={2} />
-                    do {ut.maxGuests} os.
-                    {ut.minStay > 1 && ` · min. ${ut.minStay} nocy`}
+                    {t("units.upTo", { count: ut.maxGuests })}
+                    {ut.minStay > 1 && ` · ${t("units.minStay", { count: ut.minStay })}`}
                   </p>
                   {ut.description && (
                     <p className="line-clamp-3 text-sm leading-relaxed text-[var(--site-muted)]">
@@ -61,16 +65,16 @@ export default function Units({ section, ctx }: { section: UnitsSection; ctx: Si
                           key={a.key}
                           className="rounded-md bg-[var(--site-text)]/5 px-2 py-0.5 text-[11px] font-medium text-[var(--site-muted)]"
                         >
-                          {a.icon} {a.label}
+                          {a.icon} {tc(`amenities.${a.key}`)}
                         </span>
                       ))}
                     </p>
                   )}
                   <a
-                    href={`${ctx.appUrl}/o/${ctx.property.slug}/pokoj/${ut.id}`}
+                    href={`${ctx.appUrl}${localePath(`/o/${ctx.property.slug}/pokoj/${ut.id}`, ctx.locale)}`}
                     className="mt-1 inline-block w-full rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-center text-sm font-semibold text-[var(--site-primary-text)] transition-opacity hover:opacity-90"
                   >
-                    Zobacz i zarezerwuj
+                    {t("units.seeAndBook")}
                   </a>
                 </div>
               </div>

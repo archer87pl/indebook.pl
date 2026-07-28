@@ -1,0 +1,17 @@
+{
+  "checkIn": "Anreise",
+  "checkOut": "Abreise",
+  "guestsLabel": "Gäste",
+  "checkAvailability": "Verfügbarkeit prüfen",
+  "searchDates": "Termin suchen",
+  "invalidRange": "Ungültiger Zeitraum — wählen Sie eine Anreise ab heute und eine Abreise danach.",
+  "photoPlaceholder": "Foto",
+  "available": "frei: {count}",
+  "totalFor": "Gesamt für {count, plural, one {# Nacht} other {# Nächte}}",
+  "minStayBadge": "Mindestaufenthalt: {count, plural, one {# Nacht} other {# Nächte}}",
+  "noResults": {
+    "title": "Keine Zimmer für diesen Zeitraum verfügbar",
+    "description": "Versuchen Sie andere Daten — die Verfügbarkeit ändert sich laufend."
+  },
+  "bookCta": "Buchen"
+}

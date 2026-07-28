@@ -2,7 +2,12 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+# schemat przed instalacją — postinstall odpala `prisma generate`
+COPY prisma ./prisma
+# npm z obrazu (10.x) rozwiązuje lockfile inaczej niż npm, który go zapisał,
+# i `npm ci` wywala się na peerach optional deps (@swc/helpers). Pinujemy
+# wersję zgodną z lockiem — zmieniaj razem z nim.
+RUN npm i -g npm@11.11.0 && npm ci --no-audit --no-fund
 COPY . .
 RUN npx prisma generate && npm run build
 

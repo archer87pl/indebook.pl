@@ -1,0 +1,20 @@
+{
+  "title": "Bewertung des Aufenthalts",
+  "back": "Zurück zur Buchung",
+  "thanks": "Vielen Dank für Ihre Bewertung! Ihre Note:",
+  "notYet": "Eine Bewertung ist nach dem Ende des Aufenthalts möglich (ab {date}).",
+  "heading": "Wie war Ihr Aufenthalt?",
+  "rating": "Ihre Bewertung *",
+  "comment": "Bewertung (optional)",
+  "commentPlaceholder": "Was hat Ihnen gefallen? Was könnten wir verbessern?",
+  "consent": "Ich bin damit einverstanden, dass meine Bewertung auf der Seite der Unterkunft mit meinem Vornamen und dem Anfangsbuchstaben meines Nachnamens veröffentlicht wird (z. B. „{example} K.“). *",
+  "submit": "Bewertung senden",
+  "starsAria": "{count} von 5",
+  "stars": {
+    "1": "Schlecht",
+    "2": "Geht so",
+    "3": "Gut",
+    "4": "Sehr gut",
+    "5": "Hervorragend"
+  }
+}

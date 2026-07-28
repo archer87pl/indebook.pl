@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 // Pole podpisu odręcznego (palec/mysz/rysik) osadzane w formularzu server action.
@@ -12,6 +13,7 @@ const W = 560;
 const H = 160;
 
 export default function SignaturePad() {
+  const t = useTranslations("checkin");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const drawing = useRef(false);
@@ -99,16 +101,14 @@ export default function SignaturePad() {
       <input ref={inputRef} type="hidden" name="signature" />
       <div className="flex items-center justify-between text-xs text-slate-500">
         <span>
-          {hasInk
-            ? "✓ Podpis złożony"
-            : "Podpisz się w polu powyżej — palcem, myszką lub rysikiem."}
+          {hasInk ? `✓ ${t("signaturePad.done")}` : t("signaturePad.hint")}
         </span>
         <button
           type="button"
           onClick={clear}
           className="text-slate-500 hover:text-red-600 underline"
         >
-          Wyczyść
+          {t("signaturePad.clear")}
         </button>
       </div>
     </div>
