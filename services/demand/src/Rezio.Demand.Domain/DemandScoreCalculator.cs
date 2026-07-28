@@ -6,7 +6,13 @@ public static class DemandScoreCalculator
 {
     public const int Baseline = 50;
 
-    public static DemandScore Score(MarketType marketType, Voivodeship voivodeship, DaySignals signals)
+    private static readonly IReadOnlyList<EventSignal> NoEvents = [];
+
+    public static DemandScore Score(
+        MarketType marketType,
+        Voivodeship voivodeship,
+        DaySignals signals,
+        IReadOnlyList<EventSignal>? events = null)
     {
         var weights = DemandWeights.ByMarketType[marketType];
 
@@ -20,8 +26,23 @@ public static class DemandScoreCalculator
             _ => 0
         };
 
+        // Wydarzenia SUMUJĄ się i dokładają na wierzchu kalendarza — festiwal
+        // w długi weekend to realnie więcej popytu niż każde z osobna. Własny
+        // sufit chroni przed tym, żeby jedno źle oszacowane wydarzenie nie
+        // przybiło score'u do 100 i nie wywindowało ceny do max_price.
+        var eventList = events ?? NoEvents;
+        var eventBonus = Math.Min(
+            weights.EventCap,
+            eventList.Sum(e => e.Scale switch
+            {
+                EventScale.Large => weights.EventLarge,
+                EventScale.Medium => weights.EventMedium,
+                _ => weights.EventSmall
+            }));
+
         var winterBreak = WinterBreakCalendar.Covers(voivodeship, signals.Date);
-        var score = Math.Clamp(Baseline + calendar + (winterBreak ? weights.WinterBreak : 0), 0, 100);
+        var score = Math.Clamp(
+            Baseline + calendar + (winterBreak ? weights.WinterBreak : 0) + eventBonus, 0, 100);
 
         var drivers = new List<string>();
         if (signals.HolidayName is not null) drivers.Add(signals.HolidayName);
@@ -29,6 +50,7 @@ public static class DemandScoreCalculator
         if (signals.IsBridge) drivers.Add("mostek");
         if (signals.IsHolidayEve) drivers.Add("przeddzień święta");
         if (winterBreak) drivers.Add($"ferie zimowe ({VoivodeshipNames.Polish(voivodeship)})");
+        drivers.AddRange(eventList.Select(e => e.Name));
 
         return new DemandScore(signals.Date, score, drivers);
     }
