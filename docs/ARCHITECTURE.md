@@ -179,8 +179,8 @@ Kluczowe klasy: `IChannelAdapter`, `SyntheticChannelAdapter`, `ConnectionRegistr
 - Wybór rynku na **mapie Polski**, kategoria/tagi (profil obiektu), cena bazowa, zakres dat.
 - Woła **realny backend** `POST /v1/quote` — zero liczenia w JS, więc nie rozjedzie się z produkcją.
 - Renderuje: cenę za noc, rozbicie na mnożniki (słupki), drivery popytu, pasek dni.
-- `QuoteService` wycenia **dowolny** z 44 rynków (nie tylko sztywny `lst_demo`) — system pokrywa
-  44 polskie rynki (data-driven, `services/monolith/src/Rezio.Api/Data/markets.json`, ładowane
+- `QuoteService` wycenia **dowolny** z 89 rynków (nie tylko sztywny `lst_demo`) — system pokrywa
+  89 polskich rynków (data-driven, `services/monolith/src/Rezio.Api/Data/markets.json`, ładowane
   przez `MarketCatalog`) w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe)
   rozrzuconych po wszystkich 16 województwach.
 

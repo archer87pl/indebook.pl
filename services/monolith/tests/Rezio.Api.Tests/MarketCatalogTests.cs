@@ -16,7 +16,7 @@ public class MarketCatalogTests(WebApplicationFactory<Program> factory)
         var resp = await _client.GetAsync("/v1/markets");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var arr = JsonNode.Parse(await resp.Content.ReadAsStringAsync())!["markets"]!.AsArray();
-        Assert.True(arr.Count >= 40);
+        Assert.True(arr.Count >= 80);
         var first = arr[0]!;
         Assert.NotNull(first["id"]); Assert.NotNull(first["name"]);
         Assert.NotNull(first["type"]); Assert.NotNull(first["voivodeship"]);

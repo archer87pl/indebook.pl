@@ -8,7 +8,7 @@ Modularny monolit `rezio-api` (:8080) — moduły pricing, demand i channel-sync
 
 ## Szybki start (lokalnie)
 
-Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazowa i daty → wycena z backendu (`POST /v1/quote`). Mapa i lista rynków budowane są dynamicznie z `GET /v1/markets` (bez zakodowanej listy w JS). System pokrywa 44 polskie rynki (data-driven, `Data/markets.json`) w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe), we wszystkich 16 województwach.
+Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazowa i daty → wycena z backendu (`POST /v1/quote`). Mapa i lista rynków budowane są dynamicznie z `GET /v1/markets` (bez zakodowanej listy w JS). System pokrywa 89 polskich rynków (data-driven, `Data/markets.json`) w 4 typach (góry / morze / miasto turystyczne / miasto biznesowe), we wszystkich 16 województwach.
 
     docker compose up --build
 
@@ -29,6 +29,10 @@ Panel administratora: `http://localhost:8080/` — mapa, wybór rynku, cena bazo
 Bez danych ze scrape'a pricing degraduje się do fallbacku syntetycznego (obłożenie 0.70, weekendowy demand 60).
 
 Dane rynkowe są trwałe (Postgres) — przeżywają restart kontenera. Dane starsze niż 7 dni degradują się do fallbacku syntetycznego (świeżość, spec §6). Bez `DATABASE_URL` monolit używa pamięci ulotnej.
+
+## Autoryzacja API
+
+`/v1/quote` i `/v1/markets` wymagają nagłówka `X-Api-Key`, gdy ustawiona jest zmienna `SMARTRATE_API_KEY` (porównanie w czasie stałym). Bez niej endpointy są otwarte — tak działa lokalny panel administratora, który woła `/v1/quote` z przeglądarki i nie ma gdzie bezpiecznie trzymać sekretu. **Wdrożenie produkcyjne musi ustawić `SMARTRATE_API_KEY`**, a serwis bez klucza nie powinien być wystawiony publicznie. Konsument (RezFlow) trzyma ten sam sekret w `SMARTRATE_API_KEY` po swojej stronie.
 
 ## Development
 
