@@ -5,7 +5,7 @@ import { loadEnvConfig } from "@next/env";
 loadEnvConfig(process.cwd());
 
 type Db = typeof import("../../lib/db");
-import { PROPERTY_SLUG, RUN, futureISO, loginAsOwner } from "./helpers";
+import { PROPERTY_SLUG, RUN, futureISO, loginAsOwner, nextFridayISO } from "./helpers";
 
 // Flow recepcji: logowanie → pulpit 1c → ręczna rezerwacja → lista/szczegóły →
 // widoki Goście, Płatności i Kalendarz.
@@ -224,5 +224,42 @@ test("zdjęcie pokoju ląduje na dysku i jest serwowane pod swoim adresem", asyn
     expect((await response.body()).length).toBe(png.length);
   } finally {
     await prisma.photo.delete({ where: { id: photo.id } });
+  }
+});
+
+test("reguła weekendowa podnosi cenę widzianą przez gościa", async ({ page }) => {
+  // Podstawowy silnik cen dotyczy każdego obiektu, a nie miał żadnego e2e.
+  const { prisma }: Db = await import("../../lib/db");
+  const property = await prisma.property.findUniqueOrThrow({ where: { slug: PROPERTY_SLUG } });
+
+  // piątek w odległej przyszłości — noc weekendowa według isWeekendNight
+  const friday = nextFridayISO(400);
+  const saturday = new Date(`${friday}T00:00:00Z`);
+  saturday.setUTCDate(saturday.getUTCDate() + 1);
+  const to = saturday.toISOString().slice(0, 10);
+  const url = `/o/${PROPERTY_SLUG}/wyniki?from=${friday}&to=${to}&guests=2`;
+
+  /** Kwota pierwszej oferty w groszach, z pominięciem formatowania. */
+  async function firstOfferGr(): Promise<number> {
+    await page.goto(url);
+    const text = await page.locator("p.tnum").first().textContent();
+    return Number((text ?? "").replace(/[^\d]/g, ""));
+  }
+
+  await prisma.pricingRule.deleteMany({ where: { propertyId: property.id, kind: "WEEKEND" } });
+  const base = await firstOfferGr();
+  expect(base).toBeGreaterThan(0);
+
+  try {
+    await prisma.pricingRule.create({
+      data: { propertyId: property.id, kind: "WEEKEND", percent: 25, param: 0, active: true },
+    });
+
+    const withRule = await firstOfferGr();
+    // +25% na nocy piątkowej musi dojść do oferty widocznej dla gościa
+    expect(withRule).toBeGreaterThan(base);
+    expect(withRule).toBe(Math.round(base * 1.25));
+  } finally {
+    await prisma.pricingRule.deleteMany({ where: { propertyId: property.id, kind: "WEEKEND" } });
   }
 });

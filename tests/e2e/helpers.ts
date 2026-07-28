@@ -27,6 +27,17 @@ export function pastISO(daysAgo: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Pierwszy piątek co najmniej `minDays` dni w przód — dla scenariuszy,
+ * w których liczy się to, że noc jest weekendowa.
+ */
+export function nextFridayISO(minDays: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + minDays);
+  while (d.getUTCDay() !== 5) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Logowanie do panelu recepcji kontem demo. */
 export async function loginAsOwner(page: Page) {
   await page.goto("/login");
