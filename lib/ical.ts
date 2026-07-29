@@ -67,6 +67,13 @@ export function parseIcsBusyRanges(ics: string): BusyRange[] {
     const body = block.split("END:VEVENT")[0];
     const prop = (name: string) =>
       body.match(new RegExp(`^${name}[^:]*:(.+)$`, "m"))?.[1]?.trim();
+    // Zdarzenie odwołane albo jawnie „niezajmujące czasu" nie oznacza zajętego
+    // pokoju. Booking i Airbnb tych pól nie wysyłają, więc ich brak = zajęte;
+    // liczy się to dla feedów z kalendarzy ogólnego przeznaczenia (Google),
+    // gdzie odwołany wpis zostaje w pliku i blokowałby wolny termin.
+    if (prop("STATUS")?.toUpperCase() === "CANCELLED") continue;
+    if (prop("TRANSP")?.toUpperCase() === "TRANSPARENT") continue;
+
     const start = prop("DTSTART") && icsDateToISO(prop("DTSTART")!);
     if (!start) continue;
     const rawEnd = prop("DTEND") && icsDateToISO(prop("DTEND")!);

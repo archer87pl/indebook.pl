@@ -157,6 +157,57 @@ describe("parseIcsBusyRanges", () => {
     expect(ranges[1]).toMatchObject({ start: "2026-07-10", end: "2026-07-11" });
   });
 
+  it("odwołane zdarzenie nie blokuje terminu", () => {
+    // Właściciel może wkleić link do Google Calendar, a tam odwołany wpis
+    // zostaje w feedzie ze STATUS:CANCELLED. Zaimportowany blokowałby
+    // termin, który jest wolny — czyli po cichu wycinał sprzedaż.
+    const ranges = parseIcsBusyRanges(
+      feed(
+        event([
+          "DTSTART;VALUE=DATE:20260703",
+          "DTEND;VALUE=DATE:20260706",
+          "STATUS:CANCELLED",
+          "SUMMARY:Odwolana rezerwacja",
+        ]),
+        event(["DTSTART;VALUE=DATE:20260710", "DTEND;VALUE=DATE:20260712", "STATUS:CONFIRMED"])
+      )
+    );
+
+    expect(ranges.map((r) => r.start)).toEqual(["2026-07-10"]);
+  });
+
+  it("zdarzenie oznaczone jako niezajmujące czasu nie blokuje terminu", () => {
+    // TRANSP:TRANSPARENT to w iCal dosłownie „to nie zajmuje mnie w kalendarzu"
+    // — przypomnienie, notatka, urodziny. Blokada pokoju z tego nie wynika.
+    const ranges = parseIcsBusyRanges(
+      feed(
+        event([
+          "DTSTART;VALUE=DATE:20260703",
+          "DTEND;VALUE=DATE:20260704",
+          "TRANSP:TRANSPARENT",
+          "SUMMARY:Przypomnienie: zamowic reczniki",
+        ]),
+        event([
+          "DTSTART;VALUE=DATE:20260710",
+          "DTEND;VALUE=DATE:20260712",
+          "TRANSP:OPAQUE",
+        ])
+      )
+    );
+
+    expect(ranges.map((r) => r.start)).toEqual(["2026-07-10"]);
+  });
+
+  it("brak STATUS i TRANSP oznacza termin zajęty", () => {
+    // Booking i Airbnb nie wysyłają tych pól — domyślnie blokujemy,
+    // bo pominięcie zajętego terminu daje podwójną rezerwację
+    const ranges = parseIcsBusyRanges(
+      feed(event(["DTSTART;VALUE=DATE:20260703", "DTEND;VALUE=DATE:20260706"]))
+    );
+
+    expect(ranges).toHaveLength(1);
+  });
+
   it("pusty kalendarz i pusty tekst dają pustą listę", () => {
     expect(parseIcsBusyRanges(feed())).toEqual([]);
     expect(parseIcsBusyRanges("")).toEqual([]);
