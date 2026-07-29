@@ -32,6 +32,13 @@ export function restrictionValues(propertyId: string, ratePlanId: string, days: 
 
 type Json = Record<string, unknown> & { data?: { id?: string; attributes?: unknown } };
 
+/**
+ * Błąd, którego ponawianie nie ma sensu: odrzucenie z winy żądania (4xx poza
+ * 429). Odpowiedź nie zmieni się przy drugiej próbie, a trzy podejścia tylko
+ * potrajają ruch i opóźniają komunikat dla właściciela.
+ */
+class FatalRequestError extends Error {}
+
 export class ChannexClient implements ChannelProvider {
   constructor(
     private apiKey: string,
@@ -48,14 +55,17 @@ export class ChannexClient implements ChannelProvider {
           body: body ? JSON.stringify(body) : undefined,
           signal: AbortSignal.timeout(15_000),
         });
-        if (res.status >= 500) throw new Error(`Channex HTTP ${res.status}`);
+        // awaria po ich stronie i przekroczony limit zapytań są przejściowe
+        if (res.status >= 500 || res.status === 429)
+          throw new Error(`Channex HTTP ${res.status}`);
         const json = (await res.json().catch(() => null)) as Json | null;
         if (!res.ok) {
           const detail = json?.errors ? JSON.stringify(json.errors) : `HTTP ${res.status}`;
-          throw new Error(`Channex: ${detail}`);
+          throw new FatalRequestError(`Channex: ${detail}`);
         }
         return json ?? {};
       } catch (e) {
+        if (e instanceof FatalRequestError) throw e;
         lastErr = e;
         if (attempt === 2) break;
       }
