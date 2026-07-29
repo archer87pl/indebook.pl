@@ -12,5 +12,15 @@ export default defineConfig({
     // razem z testami — bez tego po `npm run build` vitest uruchamia je drugi
     // raz, z innym katalogiem bazowym, i te kopie failują.
     exclude: ["**/node_modules/**", "**/.next/**", "tests/e2e/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      reportsDirectory: "coverage",
+      // Mierzymy logikę, nie warstwę widoku: komponenty React i strony chodzą
+      // przez e2e (Playwright), którego ten pomiar nie widzi — wliczone tutaj
+      // dawałyby fałszywy obraz „nieprzetestowanego" kodu.
+      include: ["lib/**/*.ts", "app/api/**/*.ts", "i18n/**/*.ts", "proxy.ts"],
+      exclude: ["**/*.test.ts", "lib/db.ts", "lib/generated/**"],
+    },
   },
 });
