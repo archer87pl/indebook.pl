@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { loadEnvConfig } from "@next/env";
 import { RUN, loginAsOwner, PROPERTY_SLUG } from "./helpers";
 
@@ -150,4 +150,77 @@ test.describe("kreator strony WWW", () => {
     });
     expect(res.status()).toBe(404);
   });
+
+  // Limit zgłoszeń (5/10 min) ma testy w lib/rate-limit.test.ts — poza
+  // produkcją limiter celowo przepuszcza wszystko, więc e2e go nie zobaczy.
+  // Formularz kontaktowy strony WWW (POST /api/sites/inquiry). Zapytanie idzie
+  // mailem do właściciela, więc bez klucza Resend nie ma skutku w bazie —
+  // asercje opierają się na statusach, które i tak niosą całą logikę bramki.
+  const inquiry = (page: Page, data: Record<string, string>) =>
+    page.request.post("http://localhost:3100/api/sites/inquiry", {
+      headers: { Host: `${data.siteKey}.localhost` },
+      data,
+    });
+
+  test("formularz kontaktowy przyjmuje zapytanie, honeypot ucina je przed pracą", async ({
+    page,
+  }) => {
+    const sub = `e2e-strona-${RUN}`;
+
+    const human = await inquiry(page, {
+      siteKey: sub,
+      name: `E2E Gość ${RUN}`,
+      email: `inquiry-${RUN}@example.com`,
+      message: "Czy jest wolny pokój w sierpniu?",
+    });
+    expect(human.status()).toBe(200);
+    expect(await human.json()).toEqual({ ok: true });
+
+    // Pułapka na boty: pole „website" jest ukryte, więc człowiek go nie wypełni.
+    // Odpowiedź CELOWO udaje sukces — bot nie ma się dowiedzieć, że wpadł.
+    // Dowodem, że nic się nie wydarzyło, jest ten sam ładunek pod nieistniejącą
+    // stroną: z honeypotem 200, bez niego 404, bo dopiero wtedy trasa w ogóle
+    // szuka strony i wysyła maila.
+    const spam = {
+      siteKey: `nie-ma-takiej-${RUN}`,
+      name: "Bot",
+      email: "bot@example.com",
+      message: "spam spam spam",
+    };
+    const trapped = await inquiry(page, { ...spam, website: "https://spam.example" });
+    expect(trapped.status()).toBe(200);
+    expect(await trapped.json()).toEqual({ ok: true });
+
+    expect((await inquiry(page, spam)).status()).toBe(404);
+  });
+
+  test("formularz kontaktowy odrzuca zły e-mail i pustą wiadomość", async ({ page }) => {
+    const sub = `e2e-strona-${RUN}`;
+
+    const bad = await inquiry(page, {
+      siteKey: sub,
+      name: "Ktoś",
+      email: "to-nie-jest-email",
+      message: "Wiadomość testowa",
+    });
+    expect(bad.status()).toBe(400);
+
+    // wiadomość jest przycinana przed walidacją — same spacje to pustka
+    const blank = await inquiry(page, {
+      siteKey: sub,
+      name: "Ktoś",
+      email: "ktos@example.com",
+      message: "          ",
+    });
+    expect(blank.status()).toBe(400);
+
+    const tooShort = await inquiry(page, {
+      siteKey: sub,
+      name: "Ktoś",
+      email: "ktos@example.com",
+      message: "za krotka",
+    });
+    expect(tooShort.status()).toBe(400);
+  });
+
 });

@@ -77,6 +77,90 @@ test.describe("akcje platformy", () => {
     await expect(page).toHaveURL(/\/superadmin$/);
   }
 
+  test("usunięcie obiektu wymaga wpisania slugu i zabiera cały graf danych", async ({
+    page,
+  }) => {
+    // Operacja nieodwracalna, więc obiekt jest jednorazowy — nigdy nie tykamy
+    // obiektu demo, na którym stoi reszta zestawu.
+    const { prisma }: Db = await import("../../lib/db");
+    const slug = `e2e-do-kasacji-${RUN}`;
+    const property = await prisma.property.create({
+      data: {
+        slug,
+        name: `E2E Do kasacji ${RUN}`,
+        owner: {
+          create: {
+            email: `kasacja-${RUN}@example.com`,
+            name: `E2E Właściciel ${RUN}`,
+            passwordHash: "x", // konto nigdy się nie loguje
+          },
+        },
+        unitTypes: {
+          create: {
+            name: "Pokój",
+            maxGuests: 2,
+            basePriceGr: 20000,
+            units: { create: { name: "1" } },
+          },
+        },
+      },
+      include: { unitTypes: { include: { units: true } } },
+    });
+    const unitId = property.unitTypes[0].units[0].id;
+    const code = `HO-E2E-DEL-${RUN}`.toUpperCase().slice(0, 20);
+    await prisma.reservation.create({
+      data: {
+        code,
+        unitId,
+        guestName: `E2E Gość ${RUN}`,
+        email: `gosc-kasacja-${RUN}@example.com`,
+        guests: 2,
+        checkIn: futureISO(800),
+        checkOut: futureISO(802),
+        totalGr: 40000,
+        depositGr: 12000,
+        status: "CONFIRMED",
+      },
+    });
+
+    const stillThere = () => prisma.property.count({ where: { id: property.id } });
+
+    try {
+      await loginAsAdmin(page);
+      await page.goto(`/superadmin/obiekt/${property.id}`);
+
+      // zły slug — bramka nie przepuszcza, obiekt zostaje
+      await page.locator('input[name="confirmSlug"]').fill(`${slug}-nie-ten`);
+      await page.getByRole("button", { name: "Usuń obiekt trwale" }).click();
+      await expect(page.getByText("wpisz dokładnie jego adres")).toBeVisible();
+      expect(await stillThere()).toBe(1);
+
+      // pusty slug też nie wystarcza
+      await page.getByRole("button", { name: "Usuń obiekt trwale" }).click();
+      await expect(page.getByText("wpisz dokładnie jego adres")).toBeVisible();
+      expect(await stillThere()).toBe(1);
+
+      // dokładny slug — kasacja razem z rezerwacjami, jednostkami i kontem
+      await page.locator('input[name="confirmSlug"]').fill(slug);
+      await page.getByRole("button", { name: "Usuń obiekt trwale" }).click();
+
+      await expect.poll(stillThere, { timeout: 20_000 }).toBe(0);
+      expect(await prisma.reservation.count({ where: { code } })).toBe(0);
+      expect(await prisma.unit.count({ where: { id: unitId } })).toBe(0);
+      expect(await prisma.unitType.count({ where: { propertyId: property.id } })).toBe(0);
+      expect(await prisma.user.count({ where: { id: property.ownerId } })).toBe(0);
+    } finally {
+      // gdyby test padł przed kasacją — sprzątamy po sobie
+      if (await stillThere()) {
+        await prisma.reservation.deleteMany({ where: { code } });
+        await prisma.unit.deleteMany({ where: { unitType: { propertyId: property.id } } });
+        await prisma.unitType.deleteMany({ where: { propertyId: property.id } });
+        await prisma.property.delete({ where: { id: property.id } });
+        await prisma.user.delete({ where: { id: property.ownerId } });
+      }
+    }
+  });
+
   test("zwykły właściciel nie wchodzi do panelu platformy", async ({ page }) => {
     // Granica uprawnień: konto obiektu nie może zobaczyć danych całej platformy.
     await loginAsOwner(page);
