@@ -41,6 +41,34 @@ describe("stubProvider", () => {
     expect(days[0].clampedBy).toBeNull();
   });
 
+  it("dolna granica też działa — obiekt nie sprzedaje poniżej progu", async () => {
+    // to jest ważniejsza z dwóch granic: górna kosztuje utracony zysk,
+    // dolna — sprzedaż poniżej kosztów
+    const days = await stubProvider.quote({ ...input, minPriceGr: 25000 });
+
+    expect(days.map((d) => d.priceGr)).toEqual([25000, 25000, 25000]);
+    expect(days.map((d) => d.clampedBy)).toEqual(["min", "min", "min"]);
+  });
+
+  it("cena dokładnie na granicy nie jest oznaczana jako przycięta", async () => {
+    // przycięcie to informacja o utraconej rekomendacji; równość niczego nie
+    // traci. Widełki ustawione co do grosza na obie wyliczone ceny:
+    // czwartek 200 zł (×1) i piątek 230 zł (×1,15)
+    const days = await stubProvider.quote({ ...input, minPriceGr: 20000, maxPriceGr: 23000 });
+
+    expect(days[0]).toMatchObject({ priceGr: 20000, clampedBy: null });
+    expect(days[1]).toMatchObject({ priceGr: 23000, clampedBy: null });
+  });
+
+  it("podaje rynki do wyboru w panelu, z województwem do grupowania", async () => {
+    // pusta lista zamyka właściciela w pętli „wybierz rynek" bez czego wybierać
+    const markets = await stubProvider.markets();
+
+    expect(markets.length).toBeGreaterThan(0);
+    expect(markets.every((m) => m.id && m.name && m.voivodeship)).toBe(true);
+    expect(new Set(markets.map((m) => m.id)).size).toBe(markets.length);
+  });
+
   it("jest deterministyczny", async () => {
     const a = await stubProvider.quote(input);
     const b = await stubProvider.quote(input);

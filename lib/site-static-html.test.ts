@@ -49,6 +49,45 @@ describe("renderSectionHtml — statyczny HTML przy odpinaniu sekcji", () => {
     expect(html.length).toBeGreaterThan(20);
   });
 
+  it("attractions: puste pola opcjonalne nie zostawiają pustych nawiasów i myślników", () => {
+    // odpięta sekcja staje się kodem, który właściciel edytuje ręcznie —
+    // „Jezioro () —" to śmieci, które musiałby po nas sprzątać
+    const s = newSection("attractions");
+    if (s.type === "attractions") {
+      s.data.items = [{ name: "Rynek", desc: "", distance: "" }];
+    }
+    const html = renderSectionHtml(s, ctx);
+    expect(html).toContain("<b>Rynek</b>");
+    expect(html).not.toContain("()");
+    expect(html).not.toContain("—");
+  });
+
+  it("contact: adres obiektu i opcjonalny wstęp", () => {
+    const s = newSection("contact");
+    if (s.type === "contact") s.data.intro = "Zapraszamy do kontaktu";
+    const html = renderSectionHtml(s, ctx);
+
+    expect(html).toContain("ul. Prosta 1, Testowo");
+    expect(html).toContain("Zapraszamy do kontaktu");
+  });
+
+  it("contact: bez wstępu nie ma pustego akapitu", () => {
+    const s = newSection("contact");
+    if (s.type === "contact") s.data.intro = "";
+    const html = renderSectionHtml(s, ctx);
+
+    expect(html).not.toContain("<p></p>");
+    expect(html).toContain("ul. Prosta 1, Testowo");
+  });
+
+  it("customHtml: kod właściciela przechodzi bez zmian", () => {
+    // ta sekcja JUŻ jest własnym kodem — przepisanie go przy odpinaniu
+    // znaczyłoby, że właściciel traci swój układ
+    const s = newSection("customHtml");
+    if (s.type === "customHtml") s.data.html = '<div class="promo">Promocja</div>';
+    expect(renderSectionHtml(s, ctx)).toBe('<div class="promo">Promocja</div>');
+  });
+
   it("escapuje treści tekstowe (bez wstrzyknięcia tagów z pól tekstowych)", () => {
     const s = newSection("hero");
     if (s.type === "hero") s.data.headline = "<script>zle()</script>";
