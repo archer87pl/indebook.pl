@@ -19,6 +19,14 @@ function recorder(model: string) {
 }
 
 let due: Reservation[] = [];
+let icalFeeds: { id: number }[] = [];
+let smartRateTypes: { id: number; dynamicRates: { fetchedAt: Date }[] }[] = [];
+const typeQueries: Record<string, unknown>[] = [];
+const syncedFeeds: number[] = [];
+const refreshCalls: { unitTypeId: number; from: string; to: string }[] = [];
+let refreshReturns: number[] = [];
+/** Ile „zajmuje" jedno odświeżenie na zegarze testowym (budżet crona). */
+let refreshTakesMs = 0;
 const dueQueries: Record<string, unknown>[] = [];
 const mails: { to: string; subject: string; body: string }[] = [];
 const smses: { to: string; body: string }[] = [];
@@ -54,6 +62,13 @@ vi.mock("./db", () => ({
     rateLimit: { deleteMany: recorder("rateLimit") },
     eventLog: { deleteMany: recorder("eventLog") },
     channexProperty: { findMany: async () => activeChannex },
+    icalFeed: { findMany: async () => icalFeeds },
+    unitType: {
+      findMany: async (args: { where: Record<string, unknown> }) => {
+        typeQueries.push(args.where);
+        return smartRateTypes;
+      },
+    },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   },
 }));
@@ -69,7 +84,12 @@ vi.mock("./sms", () => ({
     smses.push(s);
   },
 }));
-vi.mock("./ical", () => ({ syncIcalFeed: async () => ({ ok: true, imported: 0 }) }));
+vi.mock("./ical", () => ({
+  syncIcalFeed: async (f: { id: number }) => {
+    syncedFeeds.push(f.id);
+    return { ok: true, imported: 0 };
+  },
+}));
 vi.mock("./guest-mail", () => ({
   guestT: async (locale: string) => {
     localeAsked.push(locale);
@@ -80,7 +100,13 @@ vi.mock("./guest-mail", () => ({
       params ? `${key} ${JSON.stringify(params)}` : key;
   },
 }));
-vi.mock("./rates/refresh", () => ({ refreshRates: async () => 0 }));
+vi.mock("./rates/refresh", () => ({
+  refreshRates: async (unitTypeId: number, from: string, to: string) => {
+    refreshCalls.push({ unitTypeId, from, to });
+    if (refreshTakesMs) vi.advanceTimersByTime(refreshTakesMs);
+    return refreshReturns.shift() ?? 0;
+  },
+}));
 vi.mock("./channex/outbox", () => ({
   processOutbox: async (propertyId: number) => {
     outboxCalls.push(propertyId);
@@ -89,6 +115,9 @@ vi.mock("./channex/outbox", () => ({
 }));
 
 const {
+  byStalestFirst,
+  refreshAllRates,
+  syncAllIcalFeeds,
   expireReservations,
   sendArrivalReminders,
   sendReviewRequests,
@@ -109,6 +138,13 @@ beforeEach(() => {
   smses.length = 0;
   localeAsked.length = 0;
   due = [];
+  icalFeeds = [];
+  smartRateTypes = [];
+  typeQueries.length = 0;
+  syncedFeeds.length = 0;
+  refreshCalls.length = 0;
+  refreshReturns = [];
+  refreshTakesMs = 0;
   counts = {};
   activeChannex = [];
   vi.useFakeTimers();
@@ -402,5 +438,118 @@ describe("sendReviewRequests", () => {
     expect(mails).toEqual([]);
     // rezerwację i tak odznaczamy, żeby nie wracała w każdym biegu
     expect(last("reservationUpdate").data).toHaveProperty("reviewRequestedAt");
+  });
+});
+
+describe("syncAllIcalFeeds", () => {
+  it("synchronizuje każdy feed w systemie i oddaje ich liczbę", async () => {
+    // to cron globalny (instrumentation.ts / trasa crona) — bierze feedy
+    // wszystkich obiektów, w przeciwieństwie do akcji panelu
+    icalFeeds = [{ id: 61 }, { id: 62 }, { id: 63 }];
+
+    expect(await syncAllIcalFeeds()).toBe(3);
+    expect(syncedFeeds).toEqual([61, 62, 63]);
+  });
+
+  it("brak feedów to zero roboty", async () => {
+    icalFeeds = [];
+    expect(await syncAllIcalFeeds()).toBe(0);
+  });
+});
+
+describe("byStalestFirst", () => {
+  const t = (id: number, fetchedAt?: string) => ({
+    id,
+    dynamicRates: fetchedAt ? [{ fetchedAt: new Date(fetchedAt) }] : [],
+  });
+
+  it("najdawniej odświeżane idą pierwsze", async () => {
+    const sorted = byStalestFirst([
+      t(1, "2026-07-30T10:00:00Z"),
+      t(2, "2026-07-28T10:00:00Z"),
+      t(3, "2026-07-29T10:00:00Z"),
+    ]);
+
+    expect(sorted.map((x) => x.id)).toEqual([2, 3, 1]);
+  });
+
+  it("typy bez ani jednej rekomendacji mają pierwszeństwo", async () => {
+    // nowo włączony obiekt nie może czekać, aż cron obsłuży wszystkich,
+    // którzy już mają ceny
+    const sorted = byStalestFirst([t(1, "2026-07-28T10:00:00Z"), t(2), t(3, "2026-07-20T10:00:00Z")]);
+
+    expect(sorted[0].id).toBe(2);
+  });
+
+  it("nie modyfikuje wejścia", async () => {
+    const input = [t(1, "2026-07-30T10:00:00Z"), t(2, "2026-07-28T10:00:00Z")];
+
+    byStalestFirst(input);
+
+    expect(input.map((x) => x.id)).toEqual([1, 2]);
+  });
+});
+
+describe("refreshAllRates", () => {
+  it("odbudowuje horyzont 180 dni dla obiektów w trybie SmartRate", async () => {
+    smartRateTypes = [{ id: 7, dynamicRates: [] }, { id: 8, dynamicRates: [] }];
+
+    const result = await refreshAllRates();
+
+    expect(refreshCalls).toEqual([
+      { unitTypeId: 7, from: "2026-07-29", to: "2027-01-25" },
+      { unitTypeId: 8, from: "2026-07-29", to: "2027-01-25" },
+    ]);
+    expect(result).toMatchObject({ unitTypes: 2, pending: 0 });
+  });
+
+  it("pobiera tylko typy obiektów w trybie SmartRate", async () => {
+    // obiekt na regułach nie ma po co odpytywać płatnego silnika
+    smartRateTypes = [{ id: 7, dynamicRates: [] }];
+
+    await refreshAllRates();
+
+    expect(JSON.stringify(typeQueries[0])).toContain("SMARTRATE");
+  });
+
+  it("zaczyna od najdawniej odświeżanych", async () => {
+    smartRateTypes = [
+      { id: 7, dynamicRates: [{ fetchedAt: new Date("2026-07-30T10:00:00Z") }] },
+      { id: 8, dynamicRates: [{ fetchedAt: new Date("2026-07-20T10:00:00Z") }] },
+    ];
+
+    await refreshAllRates();
+
+    expect(refreshCalls.map((c) => c.unitTypeId)).toEqual([8, 7]);
+  });
+
+  it("przerywa po wyczerpaniu budżetu czasu i raportuje zaległość", async () => {
+    // cron ma limit czasu funkcji; bez budżetu wpadał w timeout i cicho
+    // gubił ogon listy, a kolejny przebieg zaczynał od tego samego początku
+    smartRateTypes = [
+      { id: 7, dynamicRates: [] },
+      { id: 8, dynamicRates: [] },
+      { id: 9, dynamicRates: [] },
+    ];
+    // każde odświeżenie „zajmuje" 100 ms zegara testowego
+    refreshTakesMs = 100;
+
+    const result = await refreshAllRates(150);
+
+    expect(refreshCalls).toHaveLength(2); // trzeci już poza budżetem
+    expect(result).toMatchObject({ unitTypes: 2, pending: 1 });
+  });
+
+  it("sumuje liczbę zapisanych dób", async () => {
+    smartRateTypes = [{ id: 7, dynamicRates: [] }, { id: 8, dynamicRates: [] }];
+    refreshReturns = [30, 12];
+
+    expect((await refreshAllRates()).days).toBe(42);
+  });
+
+  it("brak obiektów w trybie SmartRate to zero roboty", async () => {
+    smartRateTypes = [];
+
+    expect(await refreshAllRates()).toEqual({ days: 0, unitTypes: 0, pending: 0 });
   });
 });

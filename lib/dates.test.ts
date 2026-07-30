@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   addDaysISO,
   eachNight,
+  formatDateShort,
+  formatDateShortPl,
+  formatRangeShort,
+  formatRangeShortPl,
   isValidISO,
   nightsBetween,
+  shiftMonth,
   todayISO,
 } from "./dates";
 
@@ -63,5 +68,61 @@ describe("todayISO", () => {
   it("zwraca datę w formacie YYYY-MM-DD", () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(isValidISO(todayISO())).toBe(true);
+  });
+});
+
+// shiftMonth obsługuje strzałki „poprzedni / następny miesiąc" w kalendarzu
+// obłożenia. Przełom roku to jedyne miejsce, gdzie arytmetyka jest nieoczywista.
+describe("shiftMonth", () => {
+  it("przesuwa w przód i w tył w obrębie roku", () => {
+    expect(shiftMonth("2026-07", 1)).toBe("2026-08");
+    expect(shiftMonth("2026-07", -1)).toBe("2026-06");
+    expect(shiftMonth("2026-07", 3)).toBe("2026-10");
+  });
+
+  it("przechodzi przez przełom roku w obie strony", () => {
+    expect(shiftMonth("2026-12", 1)).toBe("2027-01");
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+  });
+
+  it("przeskok o wiele miesięcy trafia we właściwy rok", () => {
+    expect(shiftMonth("2026-07", 12)).toBe("2027-07");
+    expect(shiftMonth("2026-07", -12)).toBe("2025-07");
+    expect(shiftMonth("2026-07", 18)).toBe("2028-01");
+  });
+
+  it("zero nie zmienia miesiąca", () => {
+    expect(shiftMonth("2026-07", 0)).toBe("2026-07");
+  });
+
+  it("miesiąc zawsze ma dwie cyfry", () => {
+    // wartość wraca do URL-a i do zapytań — „2026-7" nie przeszłoby walidacji
+    expect(shiftMonth("2026-12", 1)).toMatch(/^\d{4}-\d{2}$/);
+    expect(shiftMonth("2026-09", 1)).toBe("2026-10");
+  });
+});
+
+describe("formatRangeShort", () => {
+  it("pobyt w jednym miesiącu skraca zapis do jednej nazwy miesiąca", () => {
+    // „10–14 sie" zamiast „10 sie – 14 sie"
+    const range = formatRangeShort("2026-08-10", "2026-08-14", "pl-PL");
+
+    expect(range).toMatch(/^10–14/);
+    expect(range.match(/sie/g) ?? []).toHaveLength(1);
+  });
+
+  it("pobyt na przełomie miesięcy pokazuje oba miesiące", () => {
+    const range = formatRangeShort("2026-08-30", "2026-09-02", "pl-PL");
+
+    expect(range).toContain("–");
+    expect(range).toMatch(/sie/);
+    expect(range).toMatch(/wrz/);
+  });
+
+  it("skróty polskie mają swoje aliasy dla panelu", () => {
+    expect(formatRangeShortPl("2026-08-10", "2026-08-14")).toBe(
+      formatRangeShort("2026-08-10", "2026-08-14", "pl-PL")
+    );
+    expect(formatDateShortPl("2026-08-10")).toBe(formatDateShort("2026-08-10", "pl-PL"));
   });
 });
