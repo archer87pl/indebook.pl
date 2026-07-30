@@ -16,11 +16,18 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       reportsDirectory: "coverage",
-      // Mierzymy logikę, nie warstwę widoku: komponenty React i strony chodzą
-      // przez e2e (Playwright), którego ten pomiar nie widzi — wliczone tutaj
-      // dawałyby fałszywy obraz „nieprzetestowanego" kodu.
-      include: ["lib/**/*.ts", "app/api/**/*.ts", "i18n/**/*.ts", "proxy.ts"],
-      exclude: ["**/*.test.ts", "lib/db.ts", "lib/generated/**"],
+      // Logika (lib/, app/api/, i18n/, proxy.ts) plus komponenty klienckie,
+      // które mają własną logikę — te testujemy w jsdom (@vitest-environment
+      // w nagłówku pliku). Strony i layouty App Routera zostają poza pomiarem:
+      // to serwerowe komponenty renderowane przez Next, sprawdzane e2e.
+      include: [
+        "lib/**/*.ts",
+        "app/api/**/*.ts",
+        "i18n/**/*.ts",
+        "proxy.ts",
+        "components/**/*.tsx",
+      ],
+      exclude: ["**/*.test.ts", "**/*.test.tsx", "lib/db.ts", "lib/generated/**"],
     },
   },
 });

@@ -39,7 +39,7 @@ npm run db:seed   # dwa demo obiekty (dane logowania poniżej)
 npm run dev
 ```
 
-Testy: `npm test` (Vitest, jednostkowe lib/) oraz `npm run test:e2e` (Playwright, 50 testów — rezerwacja gościa z e-podpisem meldunku, panel recepcji, rejestracja i reset hasła, kanały i iCal, wielojęzyczność, strony WWW obiektów oraz akcje panelu platformy; wymaga bazy z .env, dane testowe znakowane „E2E …”).
+Testy: `npm test` (Vitest — logika w `lib/`, trasy `app/api/`, `proxy.ts` oraz komponenty klienckie z logiką; te ostatnie w jsdom, przez `// @vitest-environment jsdom` w nagłówku pliku). `npm run test:coverage` daje raport pokrycia oraz `npm run test:e2e` (Playwright, 50 testów — rezerwacja gościa z e-podpisem meldunku, panel recepcji, rejestracja i reset hasła, kanały i iCal, wielojęzyczność, strony WWW obiektów oraz akcje panelu platformy; wymaga bazy z .env, dane testowe znakowane „E2E …”).
 
 Konta:
 
