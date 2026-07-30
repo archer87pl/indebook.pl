@@ -17,7 +17,9 @@ import { requireOwner } from "@/lib/auth";
 import { addDaysISO, formatRangeShortPl, nightsBetween, todayISO } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { formatPln } from "@/lib/format";
+import { loadPropertyHealth } from "@/lib/health";
 import { findChannelConflicts } from "@/lib/ical";
+import HealthPanel from "@/components/admin/HealthPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -151,6 +153,10 @@ export default async function AdminDashboard() {
     );
   }
 
+  // Gotowość obiektu — dociągana dopiero za pustym stanem, bo obiekt bez pokoi
+  // ma najpierw jedno zadanie, a nie listę piętnastu.
+  const health = await loadPropertyHealth(property.id, property);
+
   // KPI: przychód bieżącego miesiąca + trend m/m
   const revenue = monthReservations.reduce((sum, r) => sum + r.totalGr, 0);
   const prevRevenue = prevMonthReservations.reduce((sum, r) => sum + r.totalGr, 0);
@@ -255,6 +261,8 @@ export default async function AdminDashboard() {
           między kanałem a rezerwacją bezpośrednią — zobacz w Kanałach →
         </Link>
       )}
+
+      <HealthPanel report={health} />
 
       {/* KPI */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.3fr_1fr_1fr_1fr]">

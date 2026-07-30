@@ -227,6 +227,15 @@ rezerwacja”; na mobile rail zamienia się w poziomy pasek ikon.
 
 Centrum dowodzenia dnia:
 
+- **Gotowość obiektu**: pasek postępu z procentem uzupełnienia i lista
+  kontrolna w czterech grupach (Oferta, Płatności i faktury, Formalności,
+  Widoczność). Każda niezrobiona pozycja jest odnośnikiem do ekranu, na którym
+  się ją uzupełnia, i tłumaczy konsekwencję braku; pozycje blokujące sprzedaż
+  (pokoje, jednostki, ceny, adres, klucze Przelewy24, regulamin, polityka
+  prywatności) są oznaczone jako **wymagane** i zliczane osobno. Pozycje
+  niedostępne w planie (strona WWW, synchronizacja kanałów, rynek SmartRate)
+  nie wchodzą do licznika — plan Free też może mieć 100%. Po komplecie lista
+  zwija się do jednego wiersza,
 - **KPI**: przychód bieżącego miesiąca (ciemna karta hero z trendem m/m
   i dopiskiem „0 zł prowizji”), przyjazdy dziś / wyjazdy, obłożenie na
   najbliższe 14 dni (pasek postępu), ADR i RevPAR,
@@ -242,8 +251,9 @@ Centrum dowodzenia dnia:
   (konflikt kanał × bezpośrednia) z linkami do właściwych zakładek,
 - pusty stan onboardingu po rejestracji („dodaj pierwszy typ pokoju”).
 
-*Pliki:* `app/admin/page.tsx`, `app/admin/layout.tsx`,
-`components/admin/AdminNav.tsx`, `components/admin/AdminTopbar.tsx`
+*Pliki:* `app/admin/page.tsx`, `app/admin/layout.tsx`, `lib/health.ts`,
+`components/admin/HealthPanel.tsx`, `components/admin/AdminNav.tsx`,
+`components/admin/AdminTopbar.tsx`
 
 ### 3.2 Rezerwacje (`/admin/rezerwacje`)
 

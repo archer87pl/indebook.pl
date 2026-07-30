@@ -77,7 +77,7 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 
 **Właściciel (`/admin`)**
 - onboarding po rejestracji („dodaj pierwszy typ pokoju"),
-- pulpit 1c (KPI z przychodem i trendem m/m, plan dnia, obłożenie 14 dni, feed aktywności + alerty nieprzeczytanych wiadomości i konfliktów kanałów), rezerwacje z zakładkami statusów, wyszukiwarką i szczegółami ze stepperem, rezerwacje ręczne,
+- pulpit 1c (**gotowość obiektu**: postęp uzupełnienia z listą kontrolną i odnośnikami, KPI z przychodem i trendem m/m, plan dnia, obłożenie 14 dni, feed aktywności + alerty nieprzeczytanych wiadomości i konfliktów kanałów), rezerwacje z zakładkami statusów, wyszukiwarką i szczegółami ze stepperem, rezerwacje ręczne,
 - **Goście (CRM)**: baza budowana z rezerwacji (pobyty, wydatki, tagi VIP/Powracający/Nowy) i **Płatności**: rejestr zaliczek online, potwierdzeń ręcznych i oczekujących wpłat,
 - **czat z gościem** przy rezerwacji (badge nieprzeczytanych na liście i pulpicie),
 - **opinie gości** (zakładka Opinie): moderacja (ukryj/przywróć), publiczna odpowiedź obiektu; średnia i `aggregateRating` (JSON-LD) na stronie obiektu,
