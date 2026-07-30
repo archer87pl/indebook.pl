@@ -118,6 +118,9 @@ Plany (`lib/plans.ts`): Start 0 zł (3 jednostki) / Standard 79 zł (15) / Pro 1
 - **e2e** — Playwright na realnej aplikacji z Postgresem w usłudze i danymi
   z `npm run db:seed`; ceny dynamiczne na stubie (`SMARTRATE_STUB=1`), żeby nic
   nie wychodziło do sieci. Przy porażce wrzuca `test-results/` jako artefakt.
+  **Nie odpala się na pushu ani na PR** — to najdroższy job w tym repo, a logikę
+  pokrywają testy jednostkowe. Uruchomienie na żądanie: Actions → *ci* → *Run
+  workflow*; lokalnie `npm run test:e2e`.
 
 Wersja npm jest przypięta do tej z `package.json#packageManager` — starszy npm
 inaczej rozwiązuje peery optional deps i `npm ci` się wywala.

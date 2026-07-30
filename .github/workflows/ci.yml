@@ -15,6 +15,10 @@ on:
       - "services/smartrate/**"
       - "docs/**"
       - "**.md"
+  # e2e uruchamiamy WYŁĄCZNIE ręcznie (Actions → ci → Run workflow):
+  # przy każdym pushu zjadałyby minuty runnera nieproporcjonalnie do tego,
+  # co dokładają — logikę pokrywają testy jednostkowe.
+  workflow_dispatch:
 
 jobs:
   # Szybka bramka: typy, lint, testy jednostkowe i build. Bez bazy — testy
@@ -38,8 +42,11 @@ jobs:
       - run: npm run build
 
   # Testy e2e chodza po realnej aplikacji, wiec potrzebuja Postgresa
-  # i danych startowych.
+  # i danych startowych — a przez to sa najdrozszym jobem w tym repo.
+  # Dlatego NIE odpalaja sie na pushu ani na PR: tylko na zadanie
+  # (Actions -> ci -> Run workflow). Lokalnie: `npm run test:e2e`.
   e2e:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     services:
       postgres:
