@@ -34,14 +34,23 @@ vi.mock("./db", () => ({
   },
 }));
 
-// clientIp() sięga po nagłówki Next; tutaj testujemy samo liczenie
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+// Nagłówki żądania podstawiamy per test — od nich zależy klucz licznika
+let requestHeaders = new Headers();
+vi.mock("next/headers", () => ({ headers: async () => requestHeaders }));
 
-const { rateLimit } = await import("./rate-limit");
+// redirect() w Next rzuca; atrapa robi to samo, żeby dało się złapać cel
+vi.mock("next/navigation", () => ({
+  redirect: (to: string) => {
+    throw new Error(`REDIRECT ${to}`);
+  },
+}));
+
+const { clientIp, rateLimit, rateLimitOrRedirect } = await import("./rate-limit");
 
 beforeEach(() => {
   rows.clear();
   failDb = false;
+  requestHeaders = new Headers();
   vi.useFakeTimers();
   // NODE_ENV jest read-only w typach Node, a nam potrzeba tu produkcji
   vi.stubEnv("NODE_ENV", "production");
@@ -99,5 +108,71 @@ describe("rateLimit", () => {
     // dostępu do panelu — właściwa autoryzacja i tak sprawdza hasło
     failDb = true;
     expect(await rateLimit("login:1.2.3.4", 5, WINDOW)).toBe(true);
+  });
+});
+
+// clientIp czyta nagłówki proxy. Od niego zależy, czy licznik dotyczy jednego
+// napastnika, czy wszystkich gości naraz — pomyłka albo nie chroni niczego,
+// albo blokuje cały ruch po pierwszym nadużyciu.
+describe("clientIp", () => {
+  it("bierze pierwszy adres z listy x-forwarded-for", async () => {
+    // proxy dokleja swoje adresy z prawej; pierwszy to klient
+    requestHeaders = new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1, 10.0.0.2" });
+
+    expect(await clientIp()).toBe("203.0.113.7");
+  });
+
+  it("obcina spacje wokół adresu", async () => {
+    requestHeaders = new Headers({ "x-forwarded-for": "  203.0.113.7  , 10.0.0.1" });
+
+    expect(await clientIp()).toBe("203.0.113.7");
+  });
+
+  it("bez x-forwarded-for schodzi do x-real-ip", async () => {
+    requestHeaders = new Headers({ "x-real-ip": "198.51.100.9" });
+
+    expect(await clientIp()).toBe("198.51.100.9");
+  });
+
+  it("bez żadnego nagłówka oddaje stały klucz zastępczy", async () => {
+    // „unknown" jest wspólnym wiadrem: gorzej niż per-IP, ale lepiej niż
+    // wyłączenie limitu, gdy proxy nie dołoży nagłówka
+    requestHeaders = new Headers();
+
+    expect(await clientIp()).toBe("unknown");
+  });
+});
+
+describe("rateLimitOrRedirect", () => {
+  it("w limicie nie przekierowuje", async () => {
+    requestHeaders = new Headers({ "x-forwarded-for": "203.0.113.7" });
+
+    await expect(
+      rateLimitOrRedirect("login", 5, WINDOW, "/login?error=rate")
+    ).resolves.toBeUndefined();
+  });
+
+  it("po przekroczeniu limitu przekierowuje na podany adres", async () => {
+    requestHeaders = new Headers({ "x-forwarded-for": "203.0.113.7" });
+    for (let i = 0; i < 5; i++) await rateLimitOrRedirect("login", 5, WINDOW, "/login?error=rate");
+
+    await expect(rateLimitOrRedirect("login", 5, WINDOW, "/login?error=rate")).rejects.toThrow(
+      "REDIRECT /login?error=rate"
+    );
+  });
+
+  it("licznik jest per akcja i per adres", async () => {
+    // wyczerpanie limitu logowania nie może zablokować resetu hasła
+    requestHeaders = new Headers({ "x-forwarded-for": "203.0.113.7" });
+    for (let i = 0; i < 5; i++) await rateLimitOrRedirect("login", 5, WINDOW, "/login?error=rate");
+
+    await expect(
+      rateLimitOrRedirect("reset", 5, WINDOW, "/zapomniane-haslo?sent=1")
+    ).resolves.toBeUndefined();
+
+    requestHeaders = new Headers({ "x-forwarded-for": "9.9.9.9" });
+    await expect(
+      rateLimitOrRedirect("login", 5, WINDOW, "/login?error=rate")
+    ).resolves.toBeUndefined();
   });
 });

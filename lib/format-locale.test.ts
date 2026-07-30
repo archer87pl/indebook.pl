@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatMoney, formatPln } from "./format";
+import { formatMoney, formatPln, plNights } from "./format";
 import { formatDate, formatDatePl, formatDateShort, formatRangeShort } from "./dates";
 
 describe("formatMoney", () => {
@@ -95,5 +95,45 @@ describe("powierzchnie gościa nie używają polskich formatterów", () => {
       }
     }
     expect(offenders, `użyj wersji z językiem: ${offenders.join(", ")}`).toEqual([]);
+  });
+});
+
+// Polska odmiana „nocy" pojawia się w wynikach wyszukiwania i w podsumowaniu
+// rezerwacji. Reguła nie jest oczywista: 22 noce, ale 12 nocy — decyduje
+// końcówka setek, nie samych dziesiątek.
+describe("plNights", () => {
+  it("liczba pojedyncza", () => {
+    expect(plNights(1)).toBe("1 noc");
+  });
+
+  it("2–4 to „noce”", () => {
+    expect(plNights(2)).toBe("2 noce");
+    expect(plNights(3)).toBe("3 noce");
+    expect(plNights(4)).toBe("4 noce");
+  });
+
+  it("5–21 to „nocy”", () => {
+    for (const n of [5, 9, 10, 11, 14, 21]) {
+      expect(plNights(n), `${n}`).toBe(`${n} nocy`);
+    }
+  });
+
+  it("nastki są wyjątkiem: 12, 13, 14 to „nocy”, nie „noce”", () => {
+    // to jest właśnie miejsce, w którym naiwna reguła „mod 10 w 2..4" myli się
+    expect(plNights(12)).toBe("12 nocy");
+    expect(plNights(13)).toBe("13 nocy");
+    expect(plNights(14)).toBe("14 nocy");
+  });
+
+  it("powyżej nastek końcówka znów decyduje", () => {
+    expect(plNights(22)).toBe("22 noce");
+    expect(plNights(23)).toBe("23 noce");
+    expect(plNights(25)).toBe("25 nocy");
+    expect(plNights(112)).toBe("112 nocy");
+    expect(plNights(122)).toBe("122 noce");
+  });
+
+  it("zero to „nocy”", () => {
+    expect(plNights(0)).toBe("0 nocy");
   });
 });
