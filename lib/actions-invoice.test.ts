@@ -59,6 +59,8 @@ let invoiceCount = 0;
 let failCreate = false;
 const created: Record<string, unknown>[] = [];
 const countQueries: Record<string, unknown>[] = [];
+/** Numery już wystawione w tej serii — z lukami po skasowanych fakturach. */
+let istniejaceSeq: number[] = [];
 
 vi.mock("./db", () => ({
   prisma: {
@@ -68,9 +70,27 @@ vi.mock("./db", () => ({
         countQueries.push(where);
         return invoiceCount;
       },
+      findFirst: async ({
+        where,
+        orderBy,
+      }: {
+        where: Record<string, unknown>;
+        orderBy?: { seq?: "asc" | "desc" };
+      }) => {
+        countQueries.push(where);
+        if (!istniejaceSeq.length) return null;
+        // atrapa honoruje kierunek sortowania — bez tego „najstarszy zamiast
+        // najnowszego" przechodziłby niezauważony (wychwycone mutacją)
+        const malejaco = orderBy?.seq === "desc";
+        return { seq: malejaco ? Math.max(...istniejaceSeq) : Math.min(...istniejaceSeq) };
+      },
       create: async ({ data }: { data: Record<string, unknown> }) => {
+        // baza ma @@unique([propertyId, kind, year, seq]) — atrapa też pilnuje
         if (failCreate) throw new Error("kolizja numeru");
+        if (istniejaceSeq.includes(data.seq as number))
+          throw Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
         created.push(data);
+        istniejaceSeq.push(data.seq as number);
         return { id: 900 + created.length, ...data };
       },
     },
@@ -81,9 +101,27 @@ vi.mock("./db", () => ({
             countQueries.push(where);
             return invoiceCount;
           },
+          findFirst: async ({
+            where,
+            orderBy,
+          }: {
+            where: Record<string, unknown>;
+            orderBy?: { seq?: "asc" | "desc" };
+          }) => {
+            countQueries.push(where);
+            if (!istniejaceSeq.length) return null;
+            // atrapa honoruje kierunek sortowania — bez tego „najstarszy zamiast
+            // najnowszego" przechodziłby niezauważony (wychwycone mutacją)
+            const malejaco = orderBy?.seq === "desc";
+            return { seq: malejaco ? Math.max(...istniejaceSeq) : Math.min(...istniejaceSeq) };
+          },
           create: async ({ data }: { data: Record<string, unknown> }) => {
+            // baza ma @@unique([propertyId, kind, year, seq]) — atrapa też pilnuje
             if (failCreate) throw new Error("kolizja numeru");
+            if (istniejaceSeq.includes(data.seq as number))
+              throw Object.assign(new Error("Unique constraint failed"), { code: "P2002" });
             created.push(data);
+            istniejaceSeq.push(data.seq as number);
             return { id: 900 + created.length, ...data };
           },
         },
@@ -155,6 +193,7 @@ beforeEach(() => {
   failCreate = false;
   created.length = 0;
   countQueries.length = 0;
+  istniejaceSeq = [];
   vi.useFakeTimers();
   vi.setSystemTime(new Date(2026, 6, 30, 12, 0, 0));
 });
@@ -167,15 +206,50 @@ describe("issueInvoice — numeracja", () => {
     expect(created[0].number).toContain("1/2026");
   });
 
-  it("kolejny numer wynika z liczby faktur tego rodzaju i roku", async () => {
+  it("kolejny numer wynika z NAJWYŻSZEGO dotychczasowego, nie z liczby faktur", async () => {
     // gdyby licznik obejmował wszystkie rodzaje, serie zaliczkowa i końcowa
     // dzieliłyby numerację i obie miałyby luki
-    invoiceCount = 7;
+    istniejaceSeq = [1, 2, 3, 4, 5, 6, 7];
 
     await target(issueInvoice(form(VALID)));
 
     expect(created[0]).toMatchObject({ seq: 8 });
     expect(countQueries[0]).toEqual({ propertyId: 3, kind: "KONCOWA", year: 2026 });
+  });
+
+  it("skasowanie faktury ze ŚRODKA serii nie blokuje wystawiania kolejnych", async () => {
+    // liczenie po `count` dawało tu seq 3, który już istnieje — unikalne
+    // ograniczenie odrzucało zapis i wystawianie faktur przestawało działać
+    // do końca roku
+    istniejaceSeq = [1, 3]; // FV 2 skasowana
+
+    expect(await target(issueInvoice(form(VALID)))).toContain("/admin/faktury/");
+
+    expect(created[0]).toMatchObject({ seq: 4 });
+  });
+
+  it("numer skasowanej faktury nie wraca do obiegu", async () => {
+    // skasowana FV 3 mogła już trafić do ksiąg klienta; wystawienie drugiej
+    // z tym samym numerem to dwa różne dokumenty o jednym numerze
+    istniejaceSeq = [1, 2]; // FV 3 była, została skasowana — ale seq idzie dalej
+    await target(issueInvoice(form(VALID)));
+    expect(created[0]).toMatchObject({ seq: 3 });
+
+    created.length = 0;
+    istniejaceSeq = [1, 2, 3];
+    await target(issueInvoice(form(VALID)));
+
+    expect(created[0]).toMatchObject({ seq: 4 });
+  });
+
+  it("luka w numeracji nie jest zasypywana", async () => {
+    // numeracja ma być rosnąca; wciśnięcie faktury w lukę zmienia kolejność
+    // dokumentów względem dat wystawienia
+    istniejaceSeq = [1, 5];
+
+    await target(issueInvoice(form(VALID)));
+
+    expect(created[0]).toMatchObject({ seq: 6 });
   });
 
   it("numerację liczy tylko w obrębie własnego obiektu", async () => {

@@ -60,6 +60,12 @@ let freeUnitList: { id: number }[] = [];
 
 const created: Record<string, unknown>[] = [];
 const promoIncrements: number[] = [];
+/**
+ * Stan kodu W CHWILI ZAPISU. Domyślnie ten sam co przy sprawdzeniu; test
+ * wyścigu podstawia tu kod już wyczerpany przez kogoś innego — bez tego
+ * `applicablePromo` odrzuca kod na wejściu i transakcja nigdy nie rusza.
+ */
+let promoPrzyZapisie: { maxUses: number; usedCount: number } | null = null;
 const ariCalls: { propertyId: number; unitTypeId: number }[] = [];
 const mails: { to: string }[] = [];
 const events: { message: string }[] = [];
@@ -77,8 +83,23 @@ vi.mock("./db", () => ({
       opcjeTransakcji.push(opcje);
       return fn({
         promoCode: {
-          update: async ({ where }: { where: { id: number } }) => {
+          // Atrapa WYKONUJE warunek podany przez kod, zamiast powtarzać regułę
+          // po swojemu. Pierwsza wersja liczyła limit sama i przez to zaliczała
+          // każdą wersję produkcji — pięć mutacji przeszło bez mrugnięcia.
+          updateMany: async ({
+            where,
+          }: {
+            where: { id: number; OR?: { maxUses?: number; usedCount?: { lt: number } }[] };
+          }) => {
+            const p = promoPrzyZapisie ?? promo!;
+            const pasuje =
+              !where.OR ||
+              where.OR.some((w) =>
+                w.usedCount ? p.usedCount < w.usedCount.lt : p.maxUses === w.maxUses
+              );
+            if (!pasuje) return { count: 0 };
             promoIncrements.push(where.id);
+            return { count: 1 };
           },
         },
         reservation: {
@@ -195,6 +216,7 @@ beforeEach(() => {
   freeUnitList = [{ id: 101 }, { id: 102 }];
   created.length = 0;
   promoIncrements.length = 0;
+  promoPrzyZapisie = null;
   ariCalls.length = 0;
   mails.length = 0;
   events.length = 0;
@@ -449,6 +471,42 @@ describe("createReservation — kod promocyjny", () => {
     // inkrement poza transakcją pozwalałby przekroczyć limit użyć
     // przy równoległych rezerwacjach
     promo = { ...activePromo, maxUses: 1 };
+
+    await target(createReservation(form({ ...VALID, promo: "wakacje10" })));
+
+    expect(promoIncrements).toEqual([41]);
+    expect(created).toHaveLength(1);
+  });
+
+  it("wyczerpanie limitu MIĘDZY sprawdzeniem a zapisem nie przepuszcza rabatu", async () => {
+    // Sedno wyścigu: przy sprawdzeniu zostało jedno użycie, przy zapisie już
+    // żadne — bo ktoś był szybszy. `applicablePromo` sprawdza limit POZA
+    // transakcją, więc obie rezerwacje przechodziły kontrolę i obie zwiększały
+    // licznik. Warunek jest teraz częścią samego UPDATE-a: przegrany nie ma
+    // czego zmienić i cała rezerwacja się cofa.
+    promo = { ...activePromo, maxUses: 1, usedCount: 0 };
+    promoPrzyZapisie = { ...activePromo, maxUses: 1, usedCount: 1 };
+
+    const to = await target(createReservation(form({ ...VALID, promo: "wakacje10" })));
+
+    expect(to).toContain("promoInvalid");
+    expect(created).toEqual([]);
+    expect(promoIncrements).toEqual([]);
+  });
+
+  it("gdy limit jeszcze jest, rezerwacja przechodzi normalnie", async () => {
+    // przeciwwaga: warunek nie może blokować użycia, które się mieści
+    promo = { ...activePromo, maxUses: 5, usedCount: 4 };
+
+    await target(createReservation(form({ ...VALID, promo: "wakacje10" })));
+
+    expect(promoIncrements).toEqual([41]);
+    expect(created).toHaveLength(1);
+  });
+
+  it("kod bez limitu nie da się wyczerpać", async () => {
+    // maxUses = 0 to „bez ograniczeń"; warunek nie może go blokować
+    promo = { ...activePromo, maxUses: 0, usedCount: 999 };
 
     await target(createReservation(form({ ...VALID, promo: "wakacje10" })));
 

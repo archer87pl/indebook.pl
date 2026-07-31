@@ -293,11 +293,13 @@ export async function createReservation(formData: FormData) {
   // kod promocyjny (opcjonalny)
   let discountGr = 0;
   let promoId: number | null = null;
+  let maxUses = 0;
   if (promoInput) {
     const promo = await applicablePromo(unitType.propertyId, promoInput);
     if (!promo) fail("promoInvalid");
     discountGr = Math.round((quote.totalGr * promo!.percentOff) / 100);
     promoId = promo!.id;
+    maxUses = promo!.maxUses;
   }
   const totalGr = quote.totalGr - discountGr;
   const depositGr = Math.round((totalGr * unitType.property.depositPercent) / 100);
@@ -308,10 +310,19 @@ export async function createReservation(formData: FormData) {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
       if (promoId) {
-        await tx.promoCode.update({
-          where: { id: promoId },
+        // Limit użyć sprawdza `applicablePromo` — ale POZA transakcją, więc dwie
+        // rezerwacje sięgające po ostatnie użycie obie przechodziły kontrolę
+        // i obie zwiększały licznik. Tu sprawdzamy i zwiększamy jednym
+        // zapytaniem: warunek jest częścią UPDATE-a, więc drugi nie ma czego
+        // zmienić. `maxUses = 0` oznacza bez limitu.
+        const zajete = await tx.promoCode.updateMany({
+          where: {
+            id: promoId,
+            OR: [{ maxUses: 0 }, { usedCount: { lt: maxUses } }],
+          },
           data: { usedCount: { increment: 1 } },
         });
+        if (zajete.count === 0) throw new Error("PROMO_EXHAUSTED");
       }
       const reservation = await tx.reservation.create({
         data: {
@@ -341,6 +352,10 @@ export async function createReservation(formData: FormData) {
   } catch (e) {
     if (e instanceof Error && e.message === "NO_UNITS")
       fail("datesJustTaken");
+    // ktoś wykorzystał ostatnie użycie kodu w międzyczasie — dla gościa
+    // nieodróżnialne od kodu, który wygasł
+    if (e instanceof Error && e.message === "PROMO_EXHAUSTED")
+      fail("promoInvalid");
     throw e;
   }
 
@@ -1147,10 +1162,19 @@ export async function issueInvoice(formData: FormData) {
   let invoiceId = 0;
   try {
     invoiceId = await prisma.$transaction(async (tx) => {
-      const count = await tx.invoice.count({
+      // Numer bierzemy z NAJWYŻSZEGO dotychczasowego, nie z liczby faktur.
+      // Faktury da się usunąć (`deleteInvoice`), a wtedy licznik się cofa:
+      // po skasowaniu FV 2 z serii 1-2-3 kolejna dostawała seq 3, który już
+      // istnieje — unikalne ograniczenie odrzucało zapis i wystawianie faktur
+      // przestawało działać do końca roku. Gdy skasowana była ostatnia, numer
+      // wracał do obiegu i dwie różne faktury nosiły ten sam numer, choć
+      // pierwsza mogła już być w księgach klienta.
+      const ostatnia = await tx.invoice.findFirst({
         where: { propertyId: property.id, kind, year },
+        orderBy: { seq: "desc" },
+        select: { seq: true },
       });
-      const seq = count + 1;
+      const seq = (ostatnia?.seq ?? 0) + 1;
       const inv = await tx.invoice.create({
         data: {
           propertyId: property.id,
