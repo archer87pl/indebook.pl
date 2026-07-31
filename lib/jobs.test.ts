@@ -267,17 +267,29 @@ function reservation(over: Partial<Reservation> = {}): Reservation {
 const atHour = (hour: number) => vi.setSystemTime(new Date(2026, 6, 29, hour, 0, 0));
 
 describe("sendArrivalReminders", () => {
-  it("bierze jutrzejsze przyjazdy, którym jeszcze nie przypomniano", async () => {
-    // flaga arrivalReminderAt to cała idempotencja tego zadania: cron chodzi
-    // co godzinę, a gość ma dostać jedno przypomnienie, nie kilkanaście
+  it("bierze przyjazdy z okna DZIŚ–JUTRO, którym jeszcze nie przypomniano", async () => {
+    // Znacznik arrivalReminderAt to cała idempotencja tego zadania — gość ma
+    // dostać jedno przypomnienie. Okno zamiast jednej daty jest po to, żeby
+    // przebieg ucięty w połowie pętli dało się dokończyć nazajutrz: przy
+    // sztywnym „jutro" goście z końca listy nigdy nie zostaliby złapani.
     atHour(10);
     await sendArrivalReminders();
 
     expect(dueQueries[0]).toEqual({
       status: "CONFIRMED",
-      checkIn: "2026-07-30",
+      checkIn: { gte: "2026-07-29", lte: "2026-07-30" },
       arrivalReminderAt: null,
     });
+  });
+
+  it("nie przypomina o przyjeździe, który już był", async () => {
+    // dolna granica okna to DZIŚ; sięgnięcie wstecz oznaczałoby wiadomość
+    // „jutro przyjeżdżasz" wysłaną komuś, kto właśnie się wymeldowuje
+    atHour(10);
+    await sendArrivalReminders();
+
+    const okno = dueQueries[0].checkIn as { gte: string };
+    expect(okno.gte).toBe("2026-07-29"); // dzisiaj, nie wcześniej
   });
 
   it("wysyła e-mail i SMS, po czym odznacza rezerwację", async () => {
@@ -395,10 +407,20 @@ describe("sendReviewRequests", () => {
 
     expect(dueQueries[0]).toEqual({
       status: "CONFIRMED",
-      checkOut: "2026-07-28",
+      // okno tygodnia wstecz — patrz komentarz przy przypomnieniach o przyjeździe
+      checkOut: { gte: "2026-07-22", lte: "2026-07-28" },
       reviewRequestedAt: null,
       review: null,
     });
+  });
+
+  it("nie prosi o opinię przed wymeldowaniem", async () => {
+    // górna granica to WCZORAJ; gość w trakcie pobytu nie ma czego oceniać
+    atHour(10);
+    await sendReviewRequests();
+
+    const okno = dueQueries[0].checkOut as { lte: string };
+    expect(okno.lte).toBe("2026-07-28"); // wczoraj, nie dziś
   });
 
   it("wysyła prośbę i odznacza rezerwację", async () => {

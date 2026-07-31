@@ -14,6 +14,9 @@ import { reviewUrl } from "./reviews";
 import { sendSms } from "./sms";
 
 /** Anuluje nieopłacone rezerwacje PENDING po upływie czasu na zaliczkę. */
+/** Jak długo po wymeldowaniu wypada jeszcze poprosić o opinię. */
+const REVIEW_REQUEST_WINDOW_DAYS = 7;
+
 export async function expireReservations(): Promise<number> {
   const { count } = await prisma.reservation.updateMany({
     where: { status: "PENDING", expiresAt: { lt: new Date() } },
@@ -33,9 +36,19 @@ export async function sendArrivalReminders(): Promise<number> {
   const hour = new Date().getHours();
   if (hour < 8 || hour >= 21) return 0;
 
-  const tomorrow = addDaysISO(todayISO(), 1);
+  // OKNO, nie pojedyncza data. Cron chodzi raz na dobę; gdy przebieg zostanie
+  // ucięty w połowie pętli, goście z końca listy nigdy nie zostaliby złapani —
+  // nazajutrz ich przyjazd nie jest już „jutrzejszy". Wstecz nie schodzimy
+  // poniżej dzisiaj: przypomnienie o przyjeździe, który już był, to spam.
+  // Za brak duplikatów odpowiada znacznik `arrivalReminderAt`.
+  const today = todayISO();
+  const tomorrow = addDaysISO(today, 1);
   const due = await prisma.reservation.findMany({
-    where: { status: "CONFIRMED", checkIn: tomorrow, arrivalReminderAt: null },
+    where: {
+      status: "CONFIRMED",
+      checkIn: { gte: today, lte: tomorrow },
+      arrivalReminderAt: null,
+    },
     include: { unit: { include: { unitType: { include: { property: true } } } } },
   });
   for (const r of due) {
@@ -92,11 +105,15 @@ export async function sendReviewRequests(): Promise<number> {
   const hour = new Date().getHours();
   if (hour < 8 || hour >= 21) return 0;
 
+  // Jak wyżej: okno zamiast jednej daty, żeby ucięty przebieg dało się
+  // dokończyć. Tydzień wstecz to wciąż sensowny moment na prośbę o opinię,
+  // a `reviewRequestedAt` pilnuje, żeby poszła raz.
   const yesterday = addDaysISO(todayISO(), -1);
+  const weekAgo = addDaysISO(todayISO(), -REVIEW_REQUEST_WINDOW_DAYS);
   const due = await prisma.reservation.findMany({
     where: {
       status: "CONFIRMED",
-      checkOut: yesterday,
+      checkOut: { gte: weekAgo, lte: yesterday },
       reviewRequestedAt: null,
       review: null,
     },

@@ -581,9 +581,13 @@ i wszystkie komponenty z przykładami.
 - **Domeny własne**: routing serwuje stronę tylko dla domen `VERIFIED`;
   niezweryfikowany „claim" nie blokuje onboardingu prawdziwego właściciela.
 - **RODO**: karta meldunkowa bez skanów dokumentów (tylko typ + numer,
-  maskowany na listach), automatyczna retencja PII 12 miesięcy po
-  wymeldowaniu, zgody (RODO przy rezerwacji, publikacja przy opinii,
+  maskowany na listach), zgody (RODO przy rezerwacji, publikacja przy opinii,
   akceptacja regulaminu przy meldunku), polityka prywatności per obiekt.
+  Automatyczna retencja obejmuje **kartę meldunkową** (kasowana 12 miesięcy po
+  wymeldowaniu, `purgeExpiredCheckIns`) oraz sesje, tokeny resetu i dziennik
+  zdarzeń. Dane samej rezerwacji (imię, e-mail, telefon, NIP) zostają —
+  wiążą je faktury i obowiązek podatkowy; ich usuwanie na żądanie to osobna
+  ścieżka, której na razie nie ma.
 - **Płatności**: weryfikacja podpisu webhooka P24 (`lib/payments.ts`);
   sekretne tokeny w URL-ach eksportu iCal.
 
