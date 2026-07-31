@@ -27,10 +27,17 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IListingSource, SyntheticListingSource>();
 builder.Services.AddSingleton<IStatsStore, InMemoryStatsStore>();
 builder.Services.AddSingleton<ScrapeRunner>();
+// Klucz do monolitu: trasy /v1/internal/* wymagają go tak samo jak reszta API.
+// Bez tego scraper POST-owałby statystyki w pustkę — a błąd zostaje w logu,
+// więc pętla scrape→cena umierałaby po cichu.
+var apiKey = builder.Configuration["SMARTRATE_API_KEY"];
+
 builder.Services.AddHttpClient<ScrapeAndPublish>(client =>
 {
     var monolithUrl = builder.Configuration["MONOLITH_URL"] ?? "http://localhost:8080";
     client.BaseAddress = new Uri(monolithUrl);
+    if (!string.IsNullOrWhiteSpace(apiKey))
+        client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
 });
 
 // Wydarzenia: bez klucza do Discovery API NIE rejestrujemy zastępczego źródła.
@@ -48,6 +55,8 @@ if (!string.IsNullOrWhiteSpace(ticketmasterKey))
     {
         var monolithUrl = builder.Configuration["MONOLITH_URL"] ?? "http://localhost:8080";
         client.BaseAddress = new Uri(monolithUrl);
+        if (!string.IsNullOrWhiteSpace(apiKey))
+            client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
     });
 }
 

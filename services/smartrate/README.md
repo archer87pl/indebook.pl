@@ -32,7 +32,7 @@ Dane rynkowe są trwałe (Postgres) — przeżywają restart kontenera. Dane sta
 
 ## Autoryzacja API
 
-`/v1/quote` i `/v1/markets` wymagają nagłówka `X-Api-Key`, gdy ustawiona jest zmienna `SMARTRATE_API_KEY` (porównanie w czasie stałym). Bez niej endpointy są otwarte — tak działa lokalny panel administratora, który woła `/v1/quote` z przeglądarki i nie ma gdzie bezpiecznie trzymać sekretu. **Wdrożenie produkcyjne musi ustawić `SMARTRATE_API_KEY`**, a serwis bez klucza nie powinien być wystawiony publicznie. Konsument (RezFlow) trzyma ten sam sekret w `SMARTRATE_API_KEY` po swojej stronie.
+**Całe `/v1`** wymaga nagłówka `X-Api-Key`, gdy ustawiona jest zmienna `SMARTRATE_API_KEY` (porównanie w czasie stałym). Bez niej endpointy są otwarte — tak działa lokalny panel administratora, który woła `/v1/quote` z przeglądarki i nie ma gdzie bezpiecznie trzymać sekretu. **Wdrożenie produkcyjne musi ustawić `SMARTRATE_API_KEY`**, a serwis bez klucza nie powinien być wystawiony publicznie. Konsument (RezFlow) trzyma ten sam sekret w `SMARTRATE_API_KEY` po swojej stronie. **Scraper też** — bez klucza jego POST-y na `/v1/internal/*` odbiją się od 401, a błąd zostaje w logu, więc pętla scrape→cena umarłaby po cichu. Komplet pokrycia pilnuje `ApiKeyCoverageTests`, chodząc po realnej tablicy tras.
 
 ## Development
 

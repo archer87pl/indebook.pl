@@ -104,7 +104,7 @@ app.MapGet("/v1/listings/{id}/prices",
         .ToList();
 
     return Results.Ok(new PricesResponse(id, "PLN", prices));
-});
+}).RequireApiKey();
 
 app.MapGet("/v1/markets", (MarketCatalog catalog) =>
     Results.Ok(new MarketsResponse(catalog.Records
@@ -126,7 +126,7 @@ app.MapGet("/v1/markets/{id}/demand",
         .Select(signals => DemandScoreCalculator.Score(market.Type, market.Voivodeship, signals))
         .ToList();
     return Results.Ok(new DemandResponse(id, scores));
-});
+}).RequireApiKey();
 
 app.MapPost("/v1/listings/{id}/publish-prices",
     async (string id, PublishPricesRequest request, PricePusher pusher, TimeProvider clock, CancellationToken ct) =>
@@ -142,7 +142,7 @@ app.MapPost("/v1/listings/{id}/publish-prices",
     return days == 0
         ? Results.Problem(statusCode: 404, title: "Listing or connection not found")
         : Results.Accepted($"/v1/listings/{id}/prices", new PublishPricesResponse(days));
-});
+}).RequireApiKey();
 
 app.MapPost("/v1/internal/market-stats",
     async (MarketStatsIngestRequest request, IMarketDataStore store, CancellationToken ct) =>
@@ -150,7 +150,7 @@ app.MapPost("/v1/internal/market-stats",
     foreach (var line in request.Stats)
         await store.SetStatsAsync(request.MarketId, line.Date, line.OccupancyRate, ct);
     return Results.Accepted(value: new { ingested_days = request.Stats.Count });
-});
+}).RequireApiKey();
 
 app.MapPost("/v1/internal/events",
     async (EventsIngestRequest request, IEventStore store, CancellationToken ct) =>
@@ -161,7 +161,7 @@ app.MapPost("/v1/internal/events",
         await store.SetEventsAsync(request.MarketId, day.Date, events, ct);
     }
     return Results.Accepted(value: new { ingested_days = request.Days.Count });
-});
+}).RequireApiKey();
 
 app.MapPost("/v1/quote",
     async (QuoteRequest req, QuoteService quotes, IMarketRegistry registry, TimeProvider clock, CancellationToken ct) =>
@@ -192,7 +192,7 @@ app.MapPost("/v1/connections", (CreateConnectionRequest request, ConnectionRegis
     var connection = registry.Add(provider);
     return Results.Created($"/v1/connections/{connection.Id}",
         new ConnectionResponse(connection.Id, connection.Provider.ToString().ToLowerInvariant(), connection.Status));
-});
+}).RequireApiKey();
 
 app.MapGet("/v1/connections/{id}", (string id, ConnectionRegistry registry) =>
 {
@@ -200,7 +200,7 @@ app.MapGet("/v1/connections/{id}", (string id, ConnectionRegistry registry) =>
     return connection is null
         ? Results.Problem(statusCode: 404, title: "Connection not found")
         : Results.Ok(new ConnectionResponse(id, connection.Provider.ToString().ToLowerInvariant(), connection.Status));
-});
+}).RequireApiKey();
 
 app.MapGet("/v1/connections/{id}/listings", async (string id, ConnectionRegistry registry, IAdapterFactory factory, CancellationToken ct) =>
 {
@@ -211,7 +211,7 @@ app.MapGet("/v1/connections/{id}/listings", async (string id, ConnectionRegistry
     var adapter = factory.For(connection.Provider);
     var listings = await adapter.PullListingsAsync(ct);
     return Results.Ok(new ListingsResponse(id, listings));
-});
+}).RequireApiKey();
 
 app.MapPost("/v1/connections/{id}/sync", async (string id, SyncRequest request, ConnectionRegistry registry, SyncRunner runner, IAdapterFactory factory, CancellationToken ct) =>
 {
@@ -226,7 +226,7 @@ app.MapPost("/v1/connections/{id}/sync", async (string id, SyncRequest request, 
     var adapter = factory.For(connection.Provider);
     var result = await runner.SyncAsync(adapter, id, request.From, request.To, ct);
     return Results.Ok(result);
-});
+}).RequireApiKey();
 
 app.MapFallbackToFile("index.html");
 
