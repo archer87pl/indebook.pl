@@ -24,6 +24,8 @@ const mails: { to: string; subject: string }[] = [];
 const smses: { to: string }[] = [];
 const events: { kind: string; message: string }[] = [];
 
+/** Status widziany przez UPDATE — w teście równoczesności inny niż przy odczycie. */
+let statusPrzyZapisie: string | null = null;
 let signOk = true;
 let verifyOk = true;
 const signChecks: { crc: string }[] = [];
@@ -32,9 +34,15 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     reservation: {
       findUnique: async () => reservation,
-      update: async (args: { where: unknown; data: Record<string, unknown> }) => {
+      updateMany: async (args: {
+        where: { id: number; status?: string };
+        data: Record<string, unknown>;
+      }) => {
         updates.push(args);
-        return { ...reservation, ...args.data };
+        // atrapa WYKONUJE warunek podany przez kod, zamiast zgadywać wynik
+        const stan = statusPrzyZapisie ?? reservation!.status;
+        const pasuje = args.where.status === undefined || args.where.status === stan;
+        return { count: pasuje ? 1 : 0 };
       },
     },
   },
@@ -106,6 +114,7 @@ beforeEach(() => {
   smses.length = 0;
   events.length = 0;
   signChecks.length = 0;
+  statusPrzyZapisie = null;
   signOk = true;
   verifyOk = true;
   seed();
@@ -208,6 +217,29 @@ describe("POST /api/payments/p24", () => {
     expect(updates).toEqual([]);
     expect(mails).toEqual([]);
     expect(events).toEqual([]);
+  });
+
+  it("dwa powiadomienia doręczone RÓWNOCZEŚNIE potwierdzają raz", async () => {
+    // Sprawdzenie statusu wyżej to zwykły ODCZYT, więc oba przebiegi widzą
+    // PENDING i oba przechodzą dalej. O tym, który powiadamia gościa, decyduje
+    // dopiero warunek w samym UPDATE-cie — przegrany zmienia zero wierszy.
+    // Bez tego gość dostawał dwa maile i dwa SMS-y, a te ostatnie są płatne.
+    statusPrzyZapisie = "CONFIRMED"; // drugi przebieg zastaje już potwierdzoną
+
+    const res = await notify(payment());
+
+    expect(res.status).toBe(200); // dla P24 to sukces — nie ponawiaj
+    expect(updates).toHaveLength(1); // próba zapisu była
+    expect(mails).toEqual([]); // ale nic nie zmieniła
+    expect(smses).toEqual([]);
+    expect(events).toEqual([]);
+  });
+
+  it("warunek statusu jest częścią zapytania, nie tylko odczytem wyżej", async () => {
+    // gdyby UPDATE nie niósł warunku, powyższy test nie miałby czego złapać
+    await notify(payment());
+
+    expect(updates[0].where).toEqual({ id: 1, status: "PENDING" });
   });
 
   it("anulowana rezerwacja nie daje się reaktywować płatnością", async () => {

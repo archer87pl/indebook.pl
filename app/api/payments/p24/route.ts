@@ -40,14 +40,21 @@ export async function POST(req: Request) {
   const verified = await verifyP24Transaction(notification, property);
   if (!verified) return new Response("Verification failed", { status: 400 });
 
-  await prisma.reservation.update({
-    where: { id: reservation.id },
+  // Przelewy24 ponawiają powiadomienie, dopóki nie dostaną 200 — a sprawdzenie
+  // statusu wyżej jest tylko odczytem. Dwa powiadomienia doręczone równocześnie
+  // przechodziły je oba i gość dostawał dwa maile ORAZ dwa SMS-y (płatne).
+  // Warunek jest częścią samego UPDATE-a: potwierdzenie zmienia dokładnie jeden
+  // wiersz, więc powiadamia dokładnie jeden przebieg.
+  const potwierdzone = await prisma.reservation.updateMany({
+    where: { id: reservation.id, status: "PENDING" },
     data: {
       status: "CONFIRMED",
       expiresAt: null,
       paymentOrderId: String(notification.orderId),
     },
   });
+  if (potwierdzone.count === 0) return new Response("OK");
+
   await logEvent({
     kind: "PAYMENT",
     message: `Zaliczka ${formatPln(reservation.depositGr)} zaksięgowana (Przelewy24) — rezerwacja ${reservation.code}`,
