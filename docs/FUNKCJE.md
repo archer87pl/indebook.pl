@@ -557,10 +557,16 @@ i wszystkie komponenty z przykładami.
   mutacje weryfikowane helperami `owned*` względem `propertyId`; superadmin
   osobną barierą `requireSuperadmin()`.
 - **Anty-abuse**: rate-limiter oknem stałym w bazie (`lib/rate-limit.ts`)
-  na logowaniu, resecie hasła, wyszukiwaniu rezerwacji i formularzu
-  kontaktowym stron WWW (aktywny w produkcji); crony (`app/api/cron/*`)
-  fail-closed przy pustym `CRON_SECRET`; porównania sekretów przez
-  `timingSafeEqual` (`safeEqual`).
+  na logowaniu, rejestracji, resecie hasła, **składaniu rezerwacji**,
+  wyszukiwaniu rezerwacji i formularzu kontaktowym stron WWW (aktywny
+  w produkcji); crony (`app/api/cron/*`) fail-closed przy pustym
+  `CRON_SECRET`; porównania sekretów przez `timingSafeEqual` (`safeEqual`).
+  Limit na rezerwacji chroni dostępność: wpis `PENDING` blokuje termin do
+  wygaśnięcia, więc bez niego skrypt przytrzymuje wszystkie pokoje obiektu.
+- **Wartownicy nie do obejścia przez pominięcie**: `app/guards.test.ts`
+  i `lib/action-guards.test.ts` skanują wszystkie ekrany, trasy API i akcje
+  serwerowe i wymagają wartownika albo jawnego wpisu na liście publicznych
+  (z powodem). Nowy ekran panelu bez `requireOwner` wywraca pakiet testów.
 - **SSRF**: feedy iCal walidowane przed pobraniem (`lib/net.ts` — blokada
   adresów prywatnych/loopback/metadata, `redirect:"error"`).
 - **Nagłówki**: `X-Frame-Options`, `X-Content-Type-Options`,

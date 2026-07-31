@@ -104,6 +104,16 @@ export async function register(formData: FormData) {
   const back = `/rejestracja?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&propertyName=${encodeURIComponent(propertyName)}`;
   const fail = (msg: string) => redirect(`${back}&error=${encodeURIComponent(msg)}`);
 
+  // Każda rejestracja zakłada konto ORAZ obiekt — bez limitu jeden skrypt
+  // zapełnia bazę kontami i zajmuje slugi obiektów. Strona rejestracji
+  // wypisuje `error` dosłownie, więc idzie tu gotowe zdanie, a nie kod.
+  await rateLimitOrRedirect(
+    "register",
+    5,
+    60 * 60_000,
+    `${back}&error=${encodeURIComponent("Za dużo prób rejestracji z tego adresu. Spróbuj ponownie za godzinę.")}`,
+  );
+
   if (name.length < 3) fail("Podaj imię i nazwisko.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fail("Podaj poprawny adres e-mail.");
   if (password.length < 8) fail("Hasło musi mieć co najmniej 8 znaków.");
@@ -243,6 +253,19 @@ export async function createReservation(formData: FormData) {
     redirect(`${back}&${guestErrorQuery(code, n)}`);
 
   if (!Number.isInteger(unitTypeId) || unitTypeId <= 0) redirect("/");
+
+  // Rezerwacja PENDING BLOKUJE dostępność do czasu wygaśnięcia, więc bez limitu
+  // jeden skrypt przytrzymuje wszystkie pokoje obiektu i odcina prawdziwe
+  // rezerwacje. Cron wygaszający nie wystarcza — wystarczy odnawiać blokady.
+  // Próg z zapasem: prawdziwy gość rezerwuje raz, czasem dwa razy pod rząd,
+  // a z jednego adresu (biuro, wi-fi hotelu) potrafi to zrobić kilka osób.
+  await rateLimitOrRedirect(
+    "booking",
+    10,
+    60 * 60_000,
+    `${back}&${guestErrorQuery("tooManyRequests")}`,
+  );
+
   if (!isValidISO(from) || !isValidISO(to) || to <= from) fail("invalidRange");
   if (from < todayISO()) fail("pastArrival");
   if (!Number.isInteger(guests) || guests < 1) fail("guestsRequired");

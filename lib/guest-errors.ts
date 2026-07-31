@@ -41,6 +41,7 @@ export const GUEST_ERROR_CODES = [
   "signatureRequired",
   "additionalGuestName",
   "additionalGuestBirthDate",
+  "tooManyRequests",
 ] as const;
 
 export type GuestErrorCode = (typeof GUEST_ERROR_CODES)[number];

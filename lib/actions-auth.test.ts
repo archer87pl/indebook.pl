@@ -177,6 +177,26 @@ describe("register", () => {
     expect(sessionsCreated).toEqual([77]);
   });
 
+  it("zakładanie kont jest limitowane", async () => {
+    // każda rejestracja tworzy konto ORAZ obiekt (zajmuje slug) — bez limitu
+    // jeden skrypt zapełnia bazę; 5 prób na godzinę z jednego adresu
+    rateLimited = "register";
+
+    const to = await target(register(form(VALID)));
+
+    expect(to).toContain("Za dużo prób rejestracji");
+    expect(createdUsers).toEqual([]);
+  });
+
+  it("limit nie kasuje tego, co gość zdążył wpisać", async () => {
+    // po odbiciu formularz ma się wypełnić z powrotem, jak przy innych błędach
+    rateLimited = "register";
+
+    const to = await target(register(form(VALID)));
+
+    expect(to).toContain("propertyName=Willa");
+  });
+
   it("hasło nigdy nie ląduje w bazie jawnie", async () => {
     await target(register(form(VALID)));
 

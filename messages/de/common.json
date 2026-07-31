@@ -38,7 +38,8 @@
     "termsRequired": "Die Hausordnung der Unterkunft muss akzeptiert werden.",
     "signatureRequired": "Eine Unterschrift ist erforderlich — bitte im Formularfeld unterschreiben.",
     "additionalGuestName": "Gast {n}: Vor- und Nachname angeben.",
-    "additionalGuestBirthDate": "Gast {n}: ungültiges Geburtsdatum."
+    "additionalGuestBirthDate": "Gast {n}: ungültiges Geburtsdatum.",
+    "tooManyRequests": "Zu viele Buchungsversuche von dieser Adresse. Bitte versuchen Sie es in einer Stunde erneut."
   },
   "amenities": {
     "wifi": "WLAN",

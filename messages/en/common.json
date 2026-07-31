@@ -38,7 +38,8 @@
     "termsRequired": "You must accept the property's terms.",
     "signatureRequired": "A signature is required — please sign in the form field.",
     "additionalGuestName": "Guest {n}: enter the full name.",
-    "additionalGuestBirthDate": "Guest {n}: invalid date of birth."
+    "additionalGuestBirthDate": "Guest {n}: invalid date of birth.",
+    "tooManyRequests": "Too many booking attempts from this address. Please try again in an hour."
   },
   "amenities": {
     "wifi": "Wi-Fi",

@@ -38,7 +38,8 @@
     "termsRequired": "Wymagana jest akceptacja regulaminu obiektu.",
     "signatureRequired": "Podpis jest wymagany — złóż podpis w polu formularza.",
     "additionalGuestName": "Gość {n}: podaj imię i nazwisko.",
-    "additionalGuestBirthDate": "Gość {n}: nieprawidłowa data urodzenia."
+    "additionalGuestBirthDate": "Gość {n}: nieprawidłowa data urodzenia.",
+    "tooManyRequests": "Za dużo prób rezerwacji z tego adresu. Spróbuj ponownie za godzinę."
   },
   "amenities": {
     "wifi": "Wi-Fi",

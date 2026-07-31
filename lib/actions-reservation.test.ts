@@ -107,7 +107,13 @@ vi.mock("./sms", () => ({ sendSms: async () => {} }));
 vi.mock("./log", () => ({
   logEvent: async (e: { message: string }) => void events.push(e),
 }));
-vi.mock("./rate-limit", () => ({ rateLimitOrRedirect: async () => {}, rateLimit: async () => true }));
+let limitOsiagniety = false;
+vi.mock("./rate-limit", () => ({
+  rateLimitOrRedirect: async (_a: string, _l: number, _w: number, redirectTo: string) => {
+    if (limitOsiagniety) throw new RedirectError(redirectTo);
+  },
+  rateLimit: async () => true,
+}));
 vi.mock("./channex/enqueue-helpers", () => ({
   afterAri: async (propertyId: number, unitTypeId: number) => {
     ariCalls.push({ propertyId, unitTypeId });
@@ -163,6 +169,7 @@ async function target(run: Promise<void>): Promise<string> {
 
 beforeEach(() => {
   guestLocale = "pl";
+  limitOsiagniety = false;
   unitType = {
     id: 7,
     propertyId: 3,
@@ -191,6 +198,30 @@ beforeEach(() => {
   freeUnitCalls.length = 0;
   vi.useFakeTimers();
   vi.setSystemTime(TODAY);
+});
+
+describe("createReservation — limit prób", () => {
+  it("nadmiar prób z jednego adresu odbija się od limitu", async () => {
+    // rezerwacja PENDING BLOKUJE dostępność do czasu wygaśnięcia, więc bez
+    // limitu jeden skrypt przytrzymuje wszystkie pokoje obiektu i odcina
+    // prawdziwe rezerwacje
+    limitOsiagniety = true;
+
+    const to = await target(createReservation(form(VALID)));
+
+    expect(to).toContain("tooManyRequests");
+    expect(created).toEqual([]);
+  });
+
+  it("komunikat idzie kodem, nie polskim zdaniem", async () => {
+    // stronę ogląda gość w swoim języku — gotowe zdanie trafiłoby do Niemca
+    // po polsku
+    limitOsiagniety = true;
+
+    const to = await target(createReservation(form(VALID)));
+
+    expect(to).not.toContain("Za dużo");
+  });
 });
 
 describe("createReservation — udana rezerwacja", () => {
