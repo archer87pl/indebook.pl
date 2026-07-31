@@ -4,7 +4,7 @@ import { randomBytes, randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { freeUnits, isUnitFree } from "./availability";
+import { NoUnitsError, bookingTransaction, freeUnits, isUnitFree } from "./availability";
 import {
   createSession,
   destroySession,
@@ -304,7 +304,7 @@ export async function createReservation(formData: FormData) {
 
   let code = "";
   try {
-    code = await prisma.$transaction(async (tx) => {
+    code = await bookingTransaction(async (tx) => {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
       if (promoId) {
@@ -540,7 +540,7 @@ export async function changeReservationDates(formData: FormData) {
   );
 
   try {
-    await prisma.$transaction(async (tx) => {
+    await bookingTransaction(async (tx) => {
       const units = await freeUnits(unitType.id, from, to, tx, r.id);
       if (units.length === 0) throw new Error("NO_UNITS");
       // preferuj dotychczasową jednostkę, żeby gość nie zmieniał pokoju bez potrzeby
@@ -865,24 +865,36 @@ export async function adminSetStatus(formData: FormData) {
   if (!["PENDING", "CONFIRMED", "CANCELLED"].includes(status)) return;
   const reservation = await ownedReservation(id, property.id);
   if (!reservation) return;
-  if (status !== "CANCELLED" && reservation.status === "CANCELLED") {
-    // przywrócenie — sprawdź, czy termin nadal wolny
-    const free = await isUnitFree(
-      reservation.unitId,
-      reservation.checkIn,
-      reservation.checkOut,
-      reservation.id
-    );
-    if (!free)
+  // Przywrócenie anulowanej rezerwacji to sprawdzenie wolnego terminu i zapis —
+  // rozdzielone zostawiały okno, w którym gość zdążył wziąć ten sam pokój przez
+  // internet. Jedna transakcja SERIALIZABLE zamyka i to okno, i wyścig recepcji
+  // z drugą recepcjonistką.
+  const przywracanie = status !== "CANCELLED" && reservation.status === "CANCELLED";
+  try {
+    await bookingTransaction(async (tx) => {
+      if (przywracanie) {
+        const free = await isUnitFree(
+          reservation.unitId,
+          reservation.checkIn,
+          reservation.checkOut,
+          reservation.id,
+          tx
+        );
+        if (!free) throw new NoUnitsError();
+      }
+      await tx.reservation.update({
+        where: { id },
+        data: { status, ...(status === "CONFIRMED" ? { expiresAt: null } : {}) },
+      });
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "NO_UNITS")
       redirect(
         "/admin/rezerwacje?error=" +
           encodeURIComponent("Termin jest już zajęty — nie można przywrócić.")
       );
+    throw e;
   }
-  await prisma.reservation.update({
-    where: { id },
-    data: { status, ...(status === "CONFIRMED" ? { expiresAt: null } : {}) },
-  });
   if (status === "CONFIRMED" && reservation.status !== "CONFIRMED") {
     if (reservation.email && !reservation.email.endsWith("@rezflow.local")) {
       const t = await guestT(reservation.locale);
@@ -965,7 +977,7 @@ export async function adminCreateReservation(formData: FormData) {
   // rezerwacja ręczna nie zna języka gościa — bierzemy domyślny z rekordu
   let guestLocale = "";
   try {
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await bookingTransaction(async (tx) => {
       const units = await freeUnits(unitTypeId, from, to, tx);
       if (units.length === 0) throw new Error("NO_UNITS");
       const reservation = await tx.reservation.create({
@@ -1046,7 +1058,7 @@ export async function adminUpdateReservation(formData: FormData) {
 
   const datesChanged = from !== r.checkIn || to !== r.checkOut;
   try {
-    await prisma.$transaction(async (tx) => {
+    await bookingTransaction(async (tx) => {
       let unitId = r.unitId;
       if (datesChanged && r.status !== "CANCELLED") {
         const units = await freeUnits(r.unit.unitTypeId, from, to, tx, r.id);

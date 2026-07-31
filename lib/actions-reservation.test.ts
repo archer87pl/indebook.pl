@@ -64,6 +64,7 @@ const ariCalls: { propertyId: number; unitTypeId: number }[] = [];
 const mails: { to: string }[] = [];
 const events: { message: string }[] = [];
 const freeUnitCalls: { unitTypeId: number; from: string; to: string; inTx: boolean }[] = [];
+const opcjeTransakcji: unknown[] = [];
 
 vi.mock("./db", () => ({
   prisma: {
@@ -72,8 +73,9 @@ vi.mock("./db", () => ({
     property: { findUnique: async () => unitType?.property ?? null },
     pricingRule: { findMany: async () => [] },
     unit: { findMany: async () => freeUnitList },
-    $transaction: async (fn: (tx: unknown) => Promise<unknown>) =>
-      fn({
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>, opcje?: unknown) => {
+      opcjeTransakcji.push(opcje);
+      return fn({
         promoCode: {
           update: async ({ where }: { where: { id: number } }) => {
             promoIncrements.push(where.id);
@@ -86,7 +88,8 @@ vi.mock("./db", () => ({
           },
         },
         unit: { findMany: async () => freeUnitList },
-      }),
+      });
+    },
   },
 }));
 
@@ -196,6 +199,7 @@ beforeEach(() => {
   mails.length = 0;
   events.length = 0;
   freeUnitCalls.length = 0;
+  opcjeTransakcji.length = 0;
   vi.useFakeTimers();
   vi.setSystemTime(TODAY);
 });
@@ -239,6 +243,14 @@ describe("createReservation — udana rezerwacja", () => {
       status: "PENDING",
       source: "ONLINE",
     });
+  });
+
+  it("wybór pokoju idzie transakcją SERIALIZABLE", async () => {
+    // domyślny poziom izolacji pozwala dwóm równoczesnym rezerwacjom zobaczyć
+    // ten sam ostatni wolny pokój i obu go zapisać
+    await target(createReservation(form(VALID)));
+
+    expect(opcjeTransakcji).toEqual([{ isolationLevel: "Serializable" }]);
   });
 
   it("kwota i zaliczka liczą się na serwerze, a nie z formularza", async () => {

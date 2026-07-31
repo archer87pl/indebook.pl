@@ -567,6 +567,13 @@ i wszystkie komponenty z przykładami.
   i `lib/action-guards.test.ts` skanują wszystkie ekrany, trasy API i akcje
   serwerowe i wymagają wartownika albo jawnego wpisu na liście publicznych
   (z powodem). Nowy ekran panelu bez `requireOwner` wywraca pakiet testów.
+- **Podwójna sprzedaż**: każde przydzielenie jednostki (rezerwacja gościa,
+  zmiana terminu, rezerwacja recepcji, przywrócenie anulowanej) idzie przez
+  `bookingTransaction` — transakcję SERIALIZABLE. `freeUnits` sprawdza
+  NIEOBECNOŚĆ kolidującej rezerwacji, a nieistniejącego wiersza nie da się
+  zablokować (`FOR UPDATE` nie ma na czym), więc na domyślnym poziomie izolacji
+  dwie równoczesne rezerwacje widziały ten sam ostatni wolny pokój. Konflikt
+  (P2034 / 40001) wraca do gościa jako „termin właśnie zajęty".
 - **SSRF**: feedy iCal walidowane przed pobraniem (`lib/net.ts` — blokada
   adresów prywatnych/loopback/metadata, `redirect:"error"`).
 - **Nagłówki**: `X-Frame-Options`, `X-Content-Type-Options`,
