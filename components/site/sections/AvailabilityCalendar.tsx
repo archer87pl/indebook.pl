@@ -40,12 +40,19 @@ export default function AvailabilityCalendar({
   appUrl,
   bookPath,
   labels,
+  linkTarget,
 }: {
   unitTypes: { id: number; name: string }[];
   appUrl: string;
   /** ścieżka rezerwacji z prefiksem języka, np. „/en/rezerwuj" */
   bookPath: string;
   labels: CalendarLabels;
+  /**
+   * `_blank` dla widgetu osadzonego na cudzej stronie — bez tego rezerwacja
+   * otwierałaby się WEWNĄTRZ ramki, czyli w kilkusetpikselowym okienku.
+   * Na stronach RezFlow zostaje domyślne (ta sama karta).
+   */
+  linkTarget?: "_blank";
 }) {
   const [unitTypeId, setUnitTypeId] = useState(unitTypes[0]?.id);
   const [month, setMonth] = useState(currentMonth);
@@ -214,6 +221,8 @@ export default function AvailabilityCalendar({
         {range.from && range.to && unitTypeId && (
           <a
             href={`${appUrl}${bookPath}/${unitTypeId}?from=${range.from}&to=${range.to}&guests=2`}
+            target={linkTarget}
+            rel={linkTarget ? "noopener" : undefined}
             className="rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--site-primary-text)] transition-opacity hover:opacity-90"
           >
             {labels.bookThese}

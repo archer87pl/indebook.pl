@@ -19,17 +19,31 @@ const nextConfig: NextConfig = {
   // (Google Maps, YouTube), które globalny CSP by zepsuł; XSS blokujemy
   // sanityzacją treści przy renderze.
   async headers() {
+    const wspolne = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+    ];
     return [
       {
-        source: "/:path*",
+        // wszystko POZA /embed — wzorzec z negatywnym wyprzedzeniem, bo
+        // `X-Frame-Options` nie ma wartości „zezwól wszystkim": jedyny sposób,
+        // by ramka zadziałała, to w ogóle nie wysłać tego nagłówka
+        source: "/((?!embed/).*)",
+        headers: [...wspolne, { key: "X-Frame-Options", value: "SAMEORIGIN" }],
+      },
+      {
+        // Widget kalendarza osadzany na stronie właściciela. BEZ
+        // `X-Frame-Options` i z `frame-ancestors *` — świadomie tylko tutaj.
+        // Ta trasa nie ma sesji ani formularzy, więc nie ma czego przechwycić
+        // kliknięciem; panel recepcji zostaje po drugiej stronie reguły wyżej.
+        source: "/embed/:path*",
         headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
+          ...wspolne,
+          { key: "Content-Security-Policy", value: "frame-ancestors *" },
         ],
       },
     ];

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ExternalLink, Eye, Globe, Rocket, Undo2 } from "lucide-react";
 import DomainPanel from "@/components/admin/site/DomainPanel";
+import EmbedSnippet from "@/components/admin/site/EmbedSnippet";
 import PreviewPane from "@/components/admin/site/PreviewPane";
 import SectionEditor from "@/components/admin/site/SectionEditor";
 import SiteWizard from "@/components/admin/site/SiteWizard";
@@ -8,6 +9,7 @@ import SubmitButton from "@/components/ui/SubmitButton";
 import Toggle from "@/components/ui/Toggle";
 import { requireOwner } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { appUrl } from "@/lib/payments";
 import { sitePlanFeatures } from "@/lib/plans";
 import {
   publishSite,
@@ -86,10 +88,18 @@ export default async function SitePage(props: {
     );
   }
 
-  const photos = await prisma.photo.findMany({
-    where: { propertyId: property.id },
-    orderBy: { id: "asc" },
-  });
+  const [photos, unitTypes] = await prisma.$transaction([
+    prisma.photo.findMany({
+      where: { propertyId: property.id },
+      orderBy: { id: "asc" },
+    }),
+    // do generatora kodu widgetu — jeden kalendarz pokazuje jeden typ pokoju
+    prisma.unitType.findMany({
+      where: { propertyId: property.id },
+      select: { id: true, name: true },
+      orderBy: { id: "asc" },
+    }),
+  ]);
   const config = normalizeConfig(site.draftConfig);
   const template = siteTemplate(site.template);
   const dirty =
@@ -278,6 +288,12 @@ export default async function SitePage(props: {
             </form>
             <DomainPanel site={site} plan={property.plan} />
           </section>
+
+          <EmbedSnippet
+            unitTypes={unitTypes}
+            baseUrl={appUrl()}
+            published={site.publishedConfig != null}
+          />
 
           {/* SEO */}
           <section className="card space-y-3 p-5">

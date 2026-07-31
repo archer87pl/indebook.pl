@@ -574,6 +574,12 @@ i wszystkie komponenty z przykładami.
   zablokować (`FOR UPDATE` nie ma na czym), więc na domyślnym poziomie izolacji
   dwie równoczesne rezerwacje widziały ten sam ostatni wolny pokój. Konflikt
   (P2034 / 40001) wraca do gościa jako „termin właśnie zajęty".
+- **Ramkowanie**: `X-Frame-Options: SAMEORIGIN` na całej aplikacji Z WYJĄTKIEM
+  `/embed/*` (widget kalendarza do osadzenia na stronie właściciela), gdzie
+  nagłówek nie jest wysyłany, a zamiast niego idzie `frame-ancestors *`.
+  Zwolnienie dotyczy jednej ścieżki i jednego nagłówka — pilnuje tego
+  `next-config.test.ts`, bo rozlanie go na `/admin` wystawiłoby panel recepcji
+  na clickjacking.
 - **SSRF**: feedy iCal walidowane przed pobraniem (`lib/net.ts` — blokada
   adresów prywatnych/loopback/metadata, `redirect:"error"`).
 - **Nagłówki**: `X-Frame-Options`, `X-Content-Type-Options`,
