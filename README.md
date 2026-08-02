@@ -18,6 +18,13 @@ contracts/             granica HTTP między nimi (patrz niżej)
 w kontenerze i ma swój cykl wydawniczy — RezFlow woła go przez
 `lib/rates/smartrate.ts`, nigdy bezpośrednio.
 
+> **SmartRate rozwijamy wyłącznie tutaj, w `services/smartrate/`.** Serwis miał
+> wcześniej osobne repozytorium obok monorepo (`Rezio.SmartRate/`, 119 commitów,
+> bez zdalnego). Dwie kopie tego samego kodu zdążyły się rozjechać i sprowadzały
+> na manowce — poprawka trafiała do kopii, która nigdzie nie jedzie. Kopia
+> została usunięta, a jej pełna historia leży w `../Rezio.SmartRate-historia.bundle`
+> (odtworzenie: `git clone Rezio.SmartRate-historia.bundle`).
+
 Granicę pilnuje `contracts/smartrate-quote.json`: to jedno źródło prawdy dla
 kształtu odpowiedzi `POST /v1/quote`, weryfikowane testami **po obu stronach**
 (`lib/rates/smartrate.test.ts` i `QuoteContractTests.cs`). Zmiana pola w C#
