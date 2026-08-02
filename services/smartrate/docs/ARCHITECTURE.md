@@ -53,14 +53,27 @@ z warstwą pośrednią (channel manager / własny system rezerwacji), która pro
 ```
 services/
   monolith/src/Rezio.Api/          ← host monolitu (API + wwwroot + persystencja EF)
-  monolith/tests/Rezio.Api.Tests/
+    Pricing/                       ← czysta domena wyceny      (ns Rezio.Pricing.Domain)
+    Demand/                        ← czysta domena popytu      (ns Rezio.Demand.Domain)
+    ChannelSync/                   ← czysta domena kanałów     (ns Rezio.ChannelSync.Domain)
+  monolith/tests/Rezio.Api.Tests/  ← z lustrzanymi folderami Pricing/ Demand/ ChannelSync/
   scraper/src/Rezio.Scraper.Api/   ← osobny serwis scrapera
-  scraper/src/Rezio.Scraper.Domain/
-  pricing/src/Rezio.Pricing.Domain/     ← czysta domena wyceny (referowana przez monolit)
-  demand/src/Rezio.Demand.Domain/       ← czysta domena popytu
-  channelsync/src/Rezio.ChannelSync.Domain/  ← czysta domena kanałów
-  (+ *.Domain.Tests dla każdego)
+    Domain/                        ← czysta domena scrapera    (ns Rezio.Scraper.Domain)
+  scraper/tests/Rezio.Scraper.Api.Tests/
 ```
+
+**Dwa projekty deployowalne, dwa testowe.** Wcześniej było ich jedenaście: każda
+domena miała własny `.csproj` i własny projekt testowy, choć wszystkie trzy i tak
+ładują się do jednego procesu (wywołania in-process, §2). Sześćset linii domeny
+w pięciu osobnych projektach to koszt bez zysku — dłuższy build, więcej plików
+projektowych i mylące wrażenie, że to osobne serwisy.
+
+Granice modułów **nie zniknęły**, tylko są wyrażone przestrzeniami nazw i folderami
+zamiast plikami `.csproj`. `Rezio.Pricing.Domain` to wciąż osobna przestrzeń nazw
+i wciąż nie wolno jej sięgać po `Microsoft.AspNetCore` ani po EF — z tą różnicą,
+że pilnuje tego dyscyplina, a nie kompilator. Wydzielenie z powrotem (gdyby domena
+urosła albo miała pojechać na własny host) to przeniesienie folderu i jeden
+`dotnet new classlib`; namespace'y się nie zmienią, więc kod zostaje nietknięty.
 
 Zasada przewijająca się przez całość: **domena jest czysta** (bez sieci, zegara, losowości,
 za interfejsami) — dlatego jest trzonem testów i przetrwała wszystkie przebudowy nietknięta.

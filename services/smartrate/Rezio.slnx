@@ -1,40 +1,11 @@
 <Solution>
   <Folder Name="/services/" />
-  <Folder Name="/services/channelsync/" />
-  <Folder Name="/services/channelsync/src/">
-    <Project Path="services/channelsync/src/Rezio.ChannelSync.Domain/Rezio.ChannelSync.Domain.csproj" />
-  </Folder>
-  <Folder Name="/services/channelsync/tests/">
-    <Project Path="services/channelsync/tests/Rezio.ChannelSync.Domain.Tests/Rezio.ChannelSync.Domain.Tests.csproj" />
-  </Folder>
-  <Folder Name="/services/demand/" />
-  <Folder Name="/services/demand/src/">
-    <Project Path="services/demand/src/Rezio.Demand.Domain/Rezio.Demand.Domain.csproj" />
-  </Folder>
-  <Folder Name="/services/demand/tests/">
-    <Project Path="services/demand/tests/Rezio.Demand.Domain.Tests/Rezio.Demand.Domain.Tests.csproj" />
-  </Folder>
-  <Folder Name="/services/monolith/" />
-  <Folder Name="/services/monolith/src/">
+  <Folder Name="/services/monolith/">
     <Project Path="services/monolith/src/Rezio.Api/Rezio.Api.csproj" />
-  </Folder>
-  <Folder Name="/services/monolith/tests/">
     <Project Path="services/monolith/tests/Rezio.Api.Tests/Rezio.Api.Tests.csproj" />
   </Folder>
-  <Folder Name="/services/pricing/" />
-  <Folder Name="/services/pricing/src/">
-    <Project Path="services/pricing/src/Rezio.Pricing.Domain/Rezio.Pricing.Domain.csproj" />
-  </Folder>
-  <Folder Name="/services/pricing/tests/">
-    <Project Path="services/pricing/tests/Rezio.Pricing.Domain.Tests/Rezio.Pricing.Domain.Tests.csproj" />
-  </Folder>
-  <Folder Name="/services/scraper/" />
-  <Folder Name="/services/scraper/src/">
+  <Folder Name="/services/scraper/">
     <Project Path="services/scraper/src/Rezio.Scraper.Api/Rezio.Scraper.Api.csproj" />
-    <Project Path="services/scraper/src/Rezio.Scraper.Domain/Rezio.Scraper.Domain.csproj" />
-  </Folder>
-  <Folder Name="/services/scraper/tests/">
     <Project Path="services/scraper/tests/Rezio.Scraper.Api.Tests/Rezio.Scraper.Api.Tests.csproj" />
-    <Project Path="services/scraper/tests/Rezio.Scraper.Domain.Tests/Rezio.Scraper.Domain.Tests.csproj" />
   </Folder>
 </Solution>
